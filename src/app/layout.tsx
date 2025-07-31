@@ -17,6 +17,50 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
   useEffect(() => {
     require("bootstrap/dist/js/bootstrap.bundle.min.js");
+    
+    // Add sidebar event listeners for mobile close button
+    const handleSidebarShow = () => {
+      const floatingBtn = document.getElementById('floatingCloseSidebar');
+      if (floatingBtn) {
+        floatingBtn.classList.remove('d-none');
+        setTimeout(() => {
+          floatingBtn.style.opacity = '1';
+          floatingBtn.style.transform = 'translateY(-50%) scale(1)';
+        }, 100);
+      }
+    };
+    
+    const handleSidebarHide = () => {
+      const floatingBtn = document.getElementById('floatingCloseSidebar');
+      if (floatingBtn) {
+        floatingBtn.style.opacity = '0';
+        floatingBtn.style.transform = 'translateY(-50%) scale(0.8)';
+        setTimeout(() => {
+          floatingBtn.classList.add('d-none');
+        }, 300);
+      }
+    };
+    
+    // Set up event listeners when component mounts
+    const setupSidebarListeners = () => {
+      const sidebar = document.getElementById('mobileSidebar');
+      if (sidebar) {
+        sidebar.addEventListener('show.bs.offcanvas', handleSidebarShow);
+        sidebar.addEventListener('hide.bs.offcanvas', handleSidebarHide);
+      }
+    };
+    
+    // Delay setup to ensure DOM is ready
+    setTimeout(setupSidebarListeners, 500);
+    
+    // Cleanup
+    return () => {
+      const sidebar = document.getElementById('mobileSidebar');
+      if (sidebar) {
+        sidebar.removeEventListener('show.bs.offcanvas', handleSidebarShow);
+        sidebar.removeEventListener('hide.bs.offcanvas', handleSidebarHide);
+      }
+    };
   }, []);
 
   const pathname = usePathname();
@@ -35,12 +79,31 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
           {isDashboardRoute ? (
             <ToastProvider>
               <DashboardNavbar />
-              <div className="offcanvas offcanvas-start" tabIndex={-1} id="mobileSidebar">
-                <div className="offcanvas-header">
-                  <h5 className="offcanvas-title">Menu</h5>
-                  <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+              <div 
+                className="offcanvas offcanvas-start mobile-sidebar-offcanvas" 
+                tabIndex={-1} 
+                id="mobileSidebar"
+                aria-labelledby="mobileSidebarLabel"
+                style={{ width: '280px' }}
+              >
+                <div className="offcanvas-header border-bottom">
+                  <h5 className="offcanvas-title fw-bold text-primary d-flex align-items-center" id="mobileSidebarLabel">
+                    <i className="bi bi-lightning-fill me-2"></i>
+                    Menu Navigation
+                  </h5>
+                  <button 
+                    type="button" 
+                    className="btn-close mobile-close-btn" 
+                    data-bs-dismiss="offcanvas" 
+                    aria-label="Fermer le menu de navigation"
+                    style={{
+                      minWidth: '32px',
+                      minHeight: '32px',
+                      borderRadius: '8px'
+                    }}
+                  ></button>
                 </div>
-                <div className="offcanvas-body p-0">
+                <div className="offcanvas-body p-0" role="navigation" aria-label="Menu principal">
                   <Sidebar />
                 </div>
               </div>
@@ -65,6 +128,37 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
               {/* Mobile and Tablet Layout */}
               <div className="d-lg-none">
                 <FixedNotificationCenter />
+                
+                {/* Floating Close Sidebar Button */}
+                <button
+                  id="floatingCloseSidebar"
+                  className="btn btn-primary shadow-lg d-none"
+                  style={{
+                    position: 'fixed',
+                    top: '50%',
+                    right: '20px',
+                    zIndex: 1040,
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    border: 'none',
+                    transform: 'translateY(-50%)',
+                    transition: 'all 0.3s ease-in-out'
+                  }}
+                  onClick={() => {
+                    const offcanvas = document.getElementById('mobileSidebar');
+                    if (offcanvas) {
+                      const bsOffcanvas = (window as any).bootstrap?.Offcanvas?.getInstance(offcanvas);
+                      if (bsOffcanvas) {
+                        bsOffcanvas.hide();
+                      }
+                    }
+                  }}
+                  aria-label="Fermer le menu"
+                >
+                  <i className="bi bi-x" style={{ fontSize: '1.5rem' }}></i>
+                </button>
+                
                 <main 
                   className="container-fluid px-3 py-3" 
                   style={{ 

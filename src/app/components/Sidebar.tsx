@@ -36,12 +36,61 @@ export default function Sidebar() {
     return pathname.startsWith(href);
   };
 
-  // Handle navigation click
-  const handleNavClick = () => {
-    // Close mobile offcanvas if it's open
+  // Handle navigation click - simplified to not interfere with navigation
+  const handleNavClick = (e?: React.MouseEvent) => {
+    console.log('Navigation clicked - will close sidebar after navigation'); // Debug log
+    
+    // Use setTimeout to close sidebar AFTER navigation has started
+    setTimeout(() => {
+      const offcanvas = document.getElementById('mobileSidebar');
+      if (offcanvas) {
+        // Check if we're on mobile (offcanvas is visible)
+        const isShown = offcanvas.classList.contains('show');
+        
+        if (isShown) {
+          console.log('Closing sidebar after navigation...'); // Debug log
+          
+          // Try Bootstrap instance method first
+          try {
+            let bsOffcanvas = (window as any).bootstrap?.Offcanvas?.getInstance(offcanvas);
+            
+            if (!bsOffcanvas && (window as any).bootstrap?.Offcanvas) {
+              bsOffcanvas = new (window as any).bootstrap.Offcanvas(offcanvas);
+            }
+            
+            if (bsOffcanvas) {
+              bsOffcanvas.hide();
+              console.log('Sidebar closed successfully'); // Debug log
+              return;
+            }
+          } catch (error) {
+            console.log('Bootstrap method failed:', error); // Debug log
+          }
+          
+          // Fallback: click the close button
+          const closeButton = document.querySelector('#mobileSidebar [data-bs-dismiss="offcanvas"]');
+          if (closeButton) {
+            (closeButton as HTMLElement).click();
+            console.log('Closed via close button'); // Debug log
+          }
+        }
+      }
+    }, 100); // Small delay to allow navigation to start
+  };
+
+  // Handle manual close
+  const handleManualClose = () => {
     const offcanvas = document.getElementById('mobileSidebar');
-    if (offcanvas && window.getComputedStyle(offcanvas).display !== 'none') {
-      const bsOffcanvas = (window as any).bootstrap?.Offcanvas?.getInstance(offcanvas);
+    if (offcanvas) {
+      // Try to get existing instance
+      let bsOffcanvas = (window as any).bootstrap?.Offcanvas?.getInstance(offcanvas);
+      
+      // If no instance exists, create one
+      if (!bsOffcanvas && (window as any).bootstrap?.Offcanvas) {
+        bsOffcanvas = new (window as any).bootstrap.Offcanvas(offcanvas);
+      }
+      
+      // Hide the offcanvas
       if (bsOffcanvas) {
         bsOffcanvas.hide();
       }
@@ -50,24 +99,30 @@ export default function Sidebar() {
 
   // Render navigation item with active state
   const renderNavItem = (item: { name: string; href: string; icon: string }) => (
-    <li className="nav-item" key={item.name}>
+    <li className="nav-item mobile-nav-item" key={item.name}>
       <Link 
         href={item.href} 
-        className={`nav-link d-flex align-items-center py-2 px-3 rounded-2 mx-2 mb-1 ${
+        className={`nav-link d-flex align-items-center py-2 px-3 rounded-2 mx-2 mb-1 mobile-nav-link ${
           isActive(item.href) 
-            ? 'bg-primary text-white fw-semibold' 
+            ? 'bg-primary text-white fw-semibold active-nav-link' 
             : 'text-dark'
         }`}
         style={{ 
-          minHeight: '44px',
+          minHeight: '48px',
           textDecoration: 'none',
           display: 'flex',
-          alignItems: 'center'
+          alignItems: 'center',
+          transition: 'all 0.2s ease-in-out'
         }}
-        onClick={handleNavClick}
+        onClick={(e) => {
+          console.log(`Navigating to: ${item.name} (${item.href})`); // Debug log
+          handleNavClick(e);
+        }}
+        role="menuitem"
+        tabIndex={0}
       >
-        <i className={`bi ${item.icon} me-2`} style={{ fontSize: '1.1em' }}></i>
-        <span>{item.name}</span>
+        <i className={`bi ${item.icon} me-3 mobile-nav-icon`} style={{ fontSize: '1.2em', minWidth: '20px' }}></i>
+        <span className="mobile-nav-text">{item.name}</span>
       </Link>
     </li>
   );
@@ -87,12 +142,33 @@ export default function Sidebar() {
       }}
     >
       {/* Sidebar Header */}
-      <div className="p-3 border-bottom">
-        <h5 className="mb-0 text-primary fw-bold">
-          <i className="bi bi-lightning-fill me-2"></i>
-          Splitfact
-        </h5>
-        <small className="text-muted">Facturation collaborative</small>
+      <div className="p-3 border-bottom mobile-sidebar-header">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <h5 className="mb-0 text-primary fw-bold d-flex align-items-center">
+              <i className="bi bi-lightning-fill me-2" style={{ fontSize: '1.3rem' }}></i>
+              <span className="sidebar-brand-text">Splitfact</span>
+            </h5>
+            <small className="text-muted sidebar-tagline">Facturation collaborative</small>
+          </div>
+          <button
+            className="btn btn-sm btn-outline-secondary d-lg-none mobile-close-sidebar"
+            onClick={handleManualClose}
+            data-bs-dismiss="offcanvas"
+            data-bs-target="#mobileSidebar"
+            aria-label="Fermer le menu"
+            style={{
+              minWidth: '36px',
+              minHeight: '36px',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: '#f8f9fa',
+              transition: 'all 0.2s ease-in-out'
+            }}
+          >
+            <i className="bi bi-x" style={{ fontSize: '1.2rem' }}></i>
+          </button>
+        </div>
       </div>
 
       <div className="flex-grow-1 d-flex flex-column pt-3">
@@ -186,4 +262,118 @@ export default function Sidebar() {
       </div>
     </nav>
   );
+}
+
+// Add mobile-specific styles
+const mobileStyles = `
+  @media (max-width: 768px) {
+    .mobile-nav-link:hover {
+      background-color: #f8f9fa !important;
+      transform: translateX(4px);
+    }
+    
+    .mobile-nav-link:active {
+      transform: translateX(2px) scale(0.98);
+    }
+    
+    .active-nav-link {
+      box-shadow: 0 2px 8px rgba(13, 110, 253, 0.2);
+    }
+    
+    .mobile-nav-text {
+      font-size: 15px;
+      font-weight: 500;
+    }
+    
+    .mobile-section-header {
+      padding: 8px 0;
+      border-radius: 8px;
+    }
+    
+    .mobile-section-text {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+    }
+    
+    .mobile-user-btn:hover {
+      background-color: #e9ecef !important;
+      transform: scale(1.02);
+    }
+    
+    .mobile-user-name {
+      font-size: 14px;
+      line-height: 1.3;
+    }
+    
+    .mobile-user-email {
+      font-size: 12px;
+      line-height: 1.2;
+    }
+    
+    .mobile-quick-tips {
+      margin-top: 16px;
+    }
+    
+    .mobile-tip-text {
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    
+    .mobile-kbd {
+      font-size: 10px;
+      padding: 2px 4px;
+    }
+    
+    .mobile-close-sidebar:hover {
+      background-color: #e9ecef !important;
+      transform: scale(1.1);
+    }
+    
+    .mobile-close-sidebar:active {
+      background-color: #dee2e6 !important;
+      transform: scale(0.95);
+    }
+  }
+  
+  @media (max-width: 375px) {
+    .sidebar-brand-text {
+      font-size: 1.1rem;
+    }
+    
+    .sidebar-tagline {
+      font-size: 11px;
+    }
+    
+    .mobile-nav-text {
+      font-size: 14px;
+    }
+    
+    .mobile-user-name {
+      font-size: 13px;
+    }
+    
+    .mobile-user-email {
+      font-size: 11px;
+    }
+    
+    .mobile-sidebar-header {
+      padding: 16px;
+    }
+    
+    .mobile-sidebar-footer {
+      padding: 16px;
+    }
+  }
+`;
+
+// Inject styles if we're in a browser environment
+if (typeof document !== 'undefined') {
+  const styleId = 'mobile-sidebar-styles';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.innerHTML = mobileStyles;
+    document.head.appendChild(style);
+  }
 }

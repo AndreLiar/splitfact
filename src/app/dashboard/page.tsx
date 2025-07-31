@@ -201,11 +201,11 @@ export default function Dashboard() {
       <div className="row mb-4 g-3">
         {/* Total Revenue Card */}
         <div className="col-lg-4 col-md-6 col-12">
-          <div className="card shadow-sm border-0 rounded-xl p-3 p-md-4 h-100 hover-lift">
-            <h3 className="h5 text-mediumGray mb-2 d-flex align-items-center">
-              <i className="bi bi-graph-up me-2 text-primary"></i>
-              Revenus totaux
-            </h3>
+          <div className="card dashboard-stat-card shadow-sm border-0 h-100">
+            <div className="dashboard-stat-icon bg-primary bg-opacity-10">
+              <i className="bi bi-graph-up text-primary fs-4"></i>
+            </div>
+            <div className="dashboard-stat-label">Revenus totaux</div>
             {revenueLoading ? (
               <div className="d-flex align-items-center">
                 <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
@@ -214,18 +214,18 @@ export default function Dashboard() {
                 <p className="fs-6 text-mediumGray mb-0">Calcul en cours...</p>
               </div>
             ) : (
-              <p className="fs-3 fw-semibold text-darkGray mb-0">{formatCurrency(totalRevenue)}</p>
+              <div className="dashboard-stat-value text-primary">{formatCurrency(totalRevenue)}</div>
             )}
           </div>
         </div>
 
         {/* Received Money Card */}
         <div className="col-lg-4 col-md-6 col-12">
-          <div className="card shadow-sm border-0 rounded-xl p-3 p-md-4 h-100 hover-lift">
-            <h3 className="h5 text-mediumGray mb-2 d-flex align-items-center">
-              <i className="bi bi-check-circle me-2 text-success"></i>
-              Montants reçus
-            </h3>
+          <div className="card dashboard-stat-card shadow-sm border-0 h-100">
+            <div className="dashboard-stat-icon bg-success bg-opacity-10">
+              <i className="bi bi-check-circle text-success fs-4"></i>
+            </div>
+            <div className="dashboard-stat-label">Montants reçus</div>
             {revenueLoading ? (
               <div className="d-flex align-items-center">
                 <div className="spinner-border spinner-border-sm text-success me-2" role="status">
@@ -235,8 +235,8 @@ export default function Dashboard() {
               </div>
             ) : (
               <>
-                <p className="fs-3 fw-semibold text-success mb-1">{formatCurrency(revenueBreakdown.received)}</p>
-                <small className="text-mediumGray">
+                <div className="dashboard-stat-value text-success">{formatCurrency(revenueBreakdown.received)}</div>
+                <small className="text-muted">
                   {totalRevenue > 0 ? Math.round((revenueBreakdown.received / totalRevenue) * 100) : 0}% du total
                 </small>
               </>
@@ -246,11 +246,11 @@ export default function Dashboard() {
 
         {/* Unpaid Money Card */}
         <div className="col-lg-4 col-md-12 col-12">
-          <div className="card shadow-sm border-0 rounded-xl p-3 p-md-4 h-100 hover-lift">
-            <h3 className="h5 text-mediumGray mb-2 d-flex align-items-center">
-              <i className="bi bi-clock-history me-2 text-warning"></i>
-              En attente de paiement
-            </h3>
+          <div className="card dashboard-stat-card shadow-sm border-0 h-100">
+            <div className="dashboard-stat-icon bg-warning bg-opacity-10">
+              <i className="bi bi-clock-history text-warning fs-4"></i>
+            </div>
+            <div className="dashboard-stat-label">En attente de paiement</div>
             {revenueLoading ? (
               <div className="d-flex align-items-center">
                 <div className="spinner-border spinner-border-sm text-warning me-2" role="status">

@@ -9,7 +9,7 @@ export default function DashboardNavbar() {
 
   return (
     <nav 
-      className="navbar navbar-expand-lg navbar-light bg-white d-lg-none border-bottom shadow-sm" 
+      className="navbar navbar-expand-lg navbar-light bg-white d-lg-none border-bottom shadow-sm mobile-navbar" 
       style={{ 
         position: 'fixed', 
         top: 0, 
@@ -22,24 +22,78 @@ export default function DashboardNavbar() {
     >
       <div className="container-fluid px-3 py-2">
         <button
-          className="navbar-toggler border-0 p-1"
+          className="navbar-toggler border-0 p-2 mobile-menu-btn"
           type="button"
           data-bs-toggle="offcanvas"
           data-bs-target="#mobileSidebar"
           aria-controls="mobileSidebar"
           aria-expanded="false"
-          aria-label="Toggle navigation"
+          aria-label="Ouvrir le menu de navigation"
+          style={{
+            minWidth: '48px',
+            minHeight: '48px',
+            borderRadius: '12px',
+            transition: 'all 0.2s ease-in-out'
+          }}
         >
-          <i className="bi bi-list fs-4"></i>
+          <i className="bi bi-list fs-3" style={{ lineHeight: 1 }}></i>
         </button>
-        <Link href="/dashboard" className="navbar-brand fw-bold text-primary mb-0">
-          <i className="bi bi-lightning-fill me-1"></i>
-          Splitfact
+        <Link 
+          href="/dashboard" 
+          className="navbar-brand fw-bold text-primary mb-0 mobile-brand"
+          style={{
+            fontSize: '1.2rem',
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center'
+          }}
+        >
+          <i className="bi bi-lightning-fill me-2" style={{ fontSize: '1.3rem' }}></i>
+          <span className="brand-text">Splitfact</span>
         </Link>
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center mobile-nav-actions">
           <NotificationCenter />
         </div>
       </div>
+      
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .mobile-menu-btn:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.05);
+          }
+          
+          .mobile-menu-btn:active {
+            background-color: #e9ecef;
+            transform: scale(0.98);
+          }
+          
+          .mobile-brand {
+            flex: 1;
+            justify-content: center;
+            margin: 0 16px;
+          }
+          
+          .mobile-nav-actions {
+            min-width: 48px;
+            justify-content: flex-end;
+          }
+        }
+        
+        @media (max-width: 375px) {
+          .brand-text {
+            font-size: 1.1rem;
+          }
+          
+          .mobile-navbar {
+            min-height: 56px;
+          }
+          
+          .container-fluid {
+            padding: 8px 16px;
+          }
+        }
+      `}</style>
     </nav>
   );
 }

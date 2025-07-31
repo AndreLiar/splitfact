@@ -518,10 +518,7 @@ export default function InvoicesPage() {
                       </div>
                       <div className="text-end">
                         <span className="fw-bold fs-5 text-primary">
-                          {Number(invoice.amount).toLocaleString('fr-FR', { 
-                            style: 'currency', 
-                            currency: 'EUR' 
-                          })}
+                          {formatCurrency(invoice.totalAmount)}
                         </span>
                       </div>
                     </div>

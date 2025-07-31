@@ -304,25 +304,47 @@ export default function ClientManagementPage() {
   return (
     <div className="container-fluid mt-4">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h1 className="h3 mb-0 text-dark">Gestion des Clients</h1>
-          <p className="text-muted mb-0">
+      <div className="mb-4">
+        <div className="d-flex flex-column d-lg-none mb-3">
+          <h1 className="h4 mb-2 text-dark">Gestion des Clients</h1>
+          <p className="text-muted mb-3 small">
             Gérez votre carnet d'adresses clients et importez des données
           </p>
+          <div className="d-flex gap-2 flex-wrap">
+            <button 
+              className="btn btn-outline-primary btn-sm flex-fill"
+              onClick={() => setActiveTab('import')}
+            >
+              <i className="bi bi-upload me-1"></i>
+              Importer
+            </button>
+            <button className="btn btn-primary btn-sm flex-fill" onClick={handleAddClient}>
+              <i className="bi bi-person-plus me-1"></i>
+              Nouveau
+            </button>
+          </div>
         </div>
-        <div className="d-flex gap-2">
-          <button 
-            className="btn btn-outline-primary"
-            onClick={() => setActiveTab('import')}
-          >
-            <i className="bi bi-upload me-2"></i>
-            Importer CSV
-          </button>
-          <button className="btn btn-primary" onClick={handleAddClient}>
-            <i className="bi bi-person-plus me-2"></i>
-            Nouveau Client
-          </button>
+        
+        <div className="d-none d-lg-flex justify-content-between align-items-center">
+          <div>
+            <h1 className="h3 mb-0 text-dark">Gestion des Clients</h1>
+            <p className="text-muted mb-0">
+              Gérez votre carnet d'adresses clients et importez des données
+            </p>
+          </div>
+          <div className="d-flex gap-2">
+            <button 
+              className="btn btn-outline-primary"
+              onClick={() => setActiveTab('import')}
+            >
+              <i className="bi bi-upload me-2"></i>
+              Importer CSV
+            </button>
+            <button className="btn btn-primary" onClick={handleAddClient}>
+              <i className="bi bi-person-plus me-2"></i>
+              Nouveau Client
+            </button>
+          </div>
         </div>
       </div>
 
@@ -357,78 +379,155 @@ export default function ClientManagementPage() {
             <>
               {/* Filters and Search */}
               {clients.length > 0 && (
-                <div className="row g-3 mb-4">
-                  <div className="col-md-3">
-                    <label className="form-label fw-semibold">Rechercher</label>
-                    <div className="input-group">
-                      <span className="input-group-text bg-light border-end-0">
-                        <i className="bi bi-search text-muted"></i>
-                      </span>
-                      <input
-                        type="text"
-                        className="form-control border-start-0"
-                        placeholder="Nom, email, SIRET..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
+                <div className="mb-4">
+                  {/* Mobile filters */}
+                  <div className="d-lg-none">
+                    <div className="row g-2 mb-3">
+                      <div className="col-12">
+                        <div className="input-group">
+                          <span className="input-group-text bg-light border-end-0">
+                            <i className="bi bi-search text-muted"></i>
+                          </span>
+                          <input
+                            type="text"
+                            className="form-control border-start-0 mobile-input"
+                            placeholder="Rechercher..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-6">
+                        <select
+                          className="form-select mobile-select"
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                          <option value="all">Tous</option>
+                          <option value="with-email">Avec email</option>
+                          <option value="with-siret">Avec SIRET</option>
+                          <option value="complete">Complet</option>
+                        </select>
+                      </div>
+                      <div className="col-6">
+                        <select
+                          className="form-select mobile-select"
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value)}
+                        >
+                          <option value="name">Nom</option>
+                          <option value="email">Email</option>
+                          <option value="created">Récents</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="row g-2">
+                      <div className="col-6">
+                        <select
+                          className="form-select mobile-select"
+                          value={itemsPerPage}
+                          onChange={(e) => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                          }}
+                        >
+                          <option value={6}>6 par page</option>
+                          <option value={8}>8 par page</option>
+                          <option value={12}>12 par page</option>
+                        </select>
+                      </div>
+                      <div className="col-6">
+                        <button
+                          className="btn btn-outline-secondary w-100 mobile-btn"
+                          onClick={() => {
+                            setSearchTerm('');
+                            setStatusFilter('all');
+                            setSortBy('name');
+                            setCurrentPage(1);
+                          }}
+                        >
+                          <i className="bi bi-arrow-clockwise"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div className="col-md-2">
-                    <label className="form-label fw-semibold">Filtrer par</label>
-                    <select
-                      className="form-select"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                      <option value="all">Tous les clients</option>
-                      <option value="with-email">Avec email</option>
-                      <option value="with-siret">Avec SIRET</option>
-                      <option value="complete">Profil complet</option>
-                    </select>
-                  </div>
-                  <div className="col-md-2">
-                    <label className="form-label fw-semibold">Trier par</label>
-                    <select
-                      className="form-select"
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                    >
-                      <option value="name">Nom (A-Z)</option>
-                      <option value="email">Email</option>
-                      <option value="created">Plus récents</option>
-                    </select>
-                  </div>
-                  <div className="col-md-2">
-                    <label className="form-label fw-semibold">Par page</label>
-                    <select
-                      className="form-select"
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <option value={6}>6 clients</option>
-                      <option value={8}>8 clients</option>
-                      <option value={12}>12 clients</option>
-                      <option value={24}>24 clients</option>
-                      <option value={48}>48 clients</option>
-                    </select>
-                  </div>
-                  <div className="col-md-3 d-flex align-items-end">
-                    <button
-                      className="btn btn-outline-secondary w-100"
-                      onClick={() => {
-                        setSearchTerm('');
-                        setStatusFilter('all');
-                        setSortBy('name');
-                        setCurrentPage(1);
-                      }}
-                      title="Réinitialiser les filtres"
-                    >
-                      <i className="bi bi-arrow-clockwise me-1"></i>
-                      Réinitialiser
-                    </button>
+                  
+                  {/* Desktop filters */}
+                  <div className="d-none d-lg-block">
+                    <div className="row g-3">
+                      <div className="col-md-3">
+                        <label className="form-label fw-semibold">Rechercher</label>
+                        <div className="input-group">
+                          <span className="input-group-text bg-light border-end-0">
+                            <i className="bi bi-search text-muted"></i>
+                          </span>
+                          <input
+                            type="text"
+                            className="form-control border-start-0"
+                            placeholder="Nom, email, SIRET..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-2">
+                        <label className="form-label fw-semibold">Filtrer par</label>
+                        <select
+                          className="form-select"
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                          <option value="all">Tous les clients</option>
+                          <option value="with-email">Avec email</option>
+                          <option value="with-siret">Avec SIRET</option>
+                          <option value="complete">Profil complet</option>
+                        </select>
+                      </div>
+                      <div className="col-md-2">
+                        <label className="form-label fw-semibold">Trier par</label>
+                        <select
+                          className="form-select"
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value)}
+                        >
+                          <option value="name">Nom (A-Z)</option>
+                          <option value="email">Email</option>
+                          <option value="created">Plus récents</option>
+                        </select>
+                      </div>
+                      <div className="col-md-2">
+                        <label className="form-label fw-semibold">Par page</label>
+                        <select
+                          className="form-select"
+                          value={itemsPerPage}
+                          onChange={(e) => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                          }}
+                        >
+                          <option value={6}>6 clients</option>
+                          <option value={8}>8 clients</option>
+                          <option value={12}>12 clients</option>
+                          <option value={24}>24 clients</option>
+                          <option value={48}>48 clients</option>
+                        </select>
+                      </div>
+                      <div className="col-md-3 d-flex align-items-end">
+                        <button
+                          className="btn btn-outline-secondary w-100"
+                          onClick={() => {
+                            setSearchTerm('');
+                            setStatusFilter('all');
+                            setSortBy('name');
+                            setCurrentPage(1);
+                          }}
+                          title="Réinitialiser les filtres"
+                        >
+                          <i className="bi bi-arrow-clockwise me-1"></i>
+                          Réinitialiser
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -468,8 +567,8 @@ export default function ClientManagementPage() {
                     {currentClients.map((client: any) => {
                       const completeness = getClientCompleteness(client);
                       return (
-                        <div key={client.id} className="col-lg-4 col-md-6 mb-4">
-                          <div className="card h-100 shadow-sm border-0 hover-card">
+                        <div key={client.id} className="col-xl-4 col-lg-6 col-md-6 col-12 mb-3 mb-lg-4">
+                          <div className="card h-100 shadow-sm border-0 hover-card client-card">
                             <div className="card-header bg-transparent border-0 pb-2">
                               <div className="d-flex justify-content-between align-items-start">
                                 <div className="flex-grow-1">
@@ -512,10 +611,10 @@ export default function ClientManagementPage() {
                             <div className="card-body pt-0">
                               <div className="mb-3">
                                 <div className="d-flex justify-content-between align-items-center mb-1">
-                                  <small className="text-muted">Profil complété</small>
-                                  <small className="fw-semibold">{completeness}%</small>
+                                  <small className="text-muted client-card-label">Profil complété</small>
+                                  <small className="fw-semibold client-card-value">{completeness}%</small>
                                 </div>
-                                <div className="progress" style={{ height: '4px' }}>
+                                <div className="progress client-progress" style={{ height: '4px' }}>
                                   <div 
                                     className={`progress-bar ${
                                       completeness >= 80 ? 'bg-success' : 
@@ -526,40 +625,41 @@ export default function ClientManagementPage() {
                                 </div>
                               </div>
 
-                              <div className="mb-2">
-                                <i className="bi bi-envelope text-muted me-2"></i>
-                                <small>{client.email || 'Email non renseigné'}</small>
+                              <div className="client-info-item mb-2">
+                                <i className="bi bi-envelope text-muted me-2 client-icon"></i>
+                                <small className="client-info-text">{client.email || 'Email non renseigné'}</small>
                               </div>
                               
-                              <div className="mb-2">
-                                <i className="bi bi-building text-muted me-2"></i>
-                                <small>{client.siret || 'SIRET non renseigné'}</small>
+                              <div className="client-info-item mb-2">
+                                <i className="bi bi-building text-muted me-2 client-icon"></i>
+                                <small className="client-info-text">{client.siret || 'SIRET non renseigné'}</small>
                               </div>
                               
-                              <div className="mb-2">
-                                <i className="bi bi-person text-muted me-2"></i>
-                                <small>{client.contactName || 'Contact non renseigné'}</small>
+                              <div className="client-info-item mb-2">
+                                <i className="bi bi-person text-muted me-2 client-icon"></i>
+                                <small className="client-info-text">{client.contactName || 'Contact non renseigné'}</small>
                               </div>
                               
                               {client.phone && (
-                                <div className="mb-2">
-                                  <i className="bi bi-telephone text-muted me-2"></i>
-                                  <small>{client.phone}</small>
+                                <div className="client-info-item mb-2">
+                                  <i className="bi bi-telephone text-muted me-2 client-icon"></i>
+                                  <small className="client-info-text">{client.phone}</small>
                                 </div>
                               )}
                             </div>
 
                             <div className="card-footer bg-transparent border-0 pt-0">
-                              <div className="d-flex gap-2">
+                              <div className="d-flex gap-2 client-actions">
                                 <button 
-                                  className="btn btn-primary flex-fill btn-sm"
+                                  className="btn btn-primary flex-fill btn-sm mobile-touch-btn"
                                   onClick={() => handleEditClient(client)}
                                 >
                                   <i className="bi bi-pencil me-1"></i>
-                                  Modifier
+                                  <span className="d-none d-sm-inline">Modifier</span>
+                                  <span className="d-sm-none">Éditer</span>
                                 </button>
                                 <button 
-                                  className="btn btn-outline-danger btn-sm"
+                                  className="btn btn-outline-danger btn-sm mobile-touch-btn"
                                   onClick={() => handleDeleteClient(client.id)}
                                   title="Supprimer"
                                 >
@@ -895,7 +995,7 @@ export default function ClientManagementPage() {
         </div>
       )}
 
-      {/* Hover effects CSS */}
+      {/* Mobile-optimized CSS */}
       <style jsx>{`
         .hover-card {
           transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -903,6 +1003,77 @@ export default function ClientManagementPage() {
         .hover-card:hover {
           transform: translateY(-2px);
           box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+        }
+        
+        @media (max-width: 768px) {
+          .mobile-input, .mobile-select {
+            min-height: 50px;
+            padding: 14px 18px;
+            font-size: 16px; /* Prevents zoom on iOS */
+          }
+          
+          .mobile-btn {
+            min-height: 50px;
+            padding: 14px 18px;
+          }
+          
+          .mobile-touch-btn {
+            min-height: 44px;
+            padding: 12px 16px;
+            font-size: 15px;
+          }
+          
+          .client-card {
+            margin-bottom: 12px;
+            border-radius: 12px;
+          }
+          
+          .client-card-label {
+            font-size: 12px;
+          }
+          
+          .client-card-value {
+            font-size: 13px;
+          }
+          
+          .client-progress {
+            height: 6px !important;
+          }
+          
+          .client-info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+          }
+          
+          .client-icon {
+            min-width: 16px;
+            font-size: 14px;
+          }
+          
+          .client-info-text {
+            font-size: 13px;
+            line-height: 1.3;
+          }
+          
+          .client-actions {
+            gap: 8px;
+          }
+        }
+        
+        @media (max-width: 375px) {
+          .client-card {
+            margin-bottom: 10px;
+          }
+          
+          .client-info-text {
+            font-size: 12px;
+          }
+          
+          .mobile-touch-btn {
+            min-height: 48px;
+            font-size: 14px;
+          }
         }
       `}</style>
     </div>
