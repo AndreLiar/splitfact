@@ -39,6 +39,10 @@ export async function POST(
 
     const result = await generateSubInvoices({ invoiceId, sessionUserId: session.user.id, collectiveId });
 
+    if (!result) {
+      return NextResponse.json({ error: 'Failed to generate sub-invoices' }, { status: 500 });
+    }
+
     if (result.message === 'No sub-invoices to generate for this invoice.') {
       return NextResponse.json({ message: result.message }, { status: 200 });
     }

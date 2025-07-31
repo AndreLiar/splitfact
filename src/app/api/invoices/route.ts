@@ -7,7 +7,7 @@ import { Resend } from 'resend';
 import { getLegalMentionsByFiscalRegime } from '@/lib/utils';
 
 const prisma = new PrismaClient();
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || 'fake-api-key-for-build');
 
 const invoiceSchema = z.object({
   clientId: z.string(),
@@ -295,13 +295,18 @@ export async function POST(req: NextRequest) {
 
             // Send email to the receiver of the sub-invoice
             try {
-              await resend.emails.send({
-                from: 'kanmegneandre@gmail.com',
-                to: receiverEmail,
-                subject: 'You have a new sub-invoice!',
-                html: `<p>Hello,</p><p>You have a new sub-invoice from ${user.name}. You can view it in your dashboard.</p><p>Amount: ${createdSubInvoice.amount}</p><p>Description: ${createdSubInvoice.description}</p>`,
-              });
-              console.log(`Email sent to ${receiverEmail} for sub-invoice ${createdSubInvoice.id}`);
+              // Skip email sending during build or if no API key
+              if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'fake-api-key-for-build') {
+                console.log('Skipping email send (no API key configured)');
+              } else {
+                await resend.emails.send({
+                  from: 'kanmegneandre@gmail.com',
+                  to: receiverEmail,
+                  subject: 'You have a new sub-invoice!',
+                  html: `<p>Hello,</p><p>You have a new sub-invoice from ${user.name}. You can view it in your dashboard.</p><p>Amount: ${createdSubInvoice.amount}</p><p>Description: ${createdSubInvoice.description}</p>`,
+                });
+                console.log(`Email sent to ${receiverEmail} for sub-invoice ${createdSubInvoice.id}`);
+              }
             } catch (emailError) {
               console.error(`Error sending email to ${receiverEmail}:`, emailError);
             }

@@ -15,6 +15,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ inv
   try {
     const result = await generateSubInvoices({ invoiceId, sessionUserId: session.user.id });
 
+    if (!result) {
+      return NextResponse.json({ error: 'Failed to generate sub-invoices' }, { status: 500 });
+    }
+
     if (result.message === 'No sub-invoices to generate for this invoice.') {
       return new NextResponse(result.message, { status: 200 });
     }

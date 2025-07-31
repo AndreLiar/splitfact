@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Resend } from 'resend';
 
 const prisma = new PrismaClient();
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || 'fake-api-key-for-build');
 
 interface GenerateSubInvoicesParams {
   invoiceId: string;
@@ -122,6 +122,13 @@ export async function generateSubInvoices({ invoiceId, sessionUserId, collective
                  <p>Sub-Invoice ID: ${createdSubInvoice.id}</p>`,
         };
         console.log("Email details:", emailData);
+        
+        // Skip email sending during build or if no API key
+        if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'fake-api-key-for-build') {
+          console.log('Skipping email send (no API key configured)');
+          return;
+        }
+        
         const response = await resend.emails.send(emailData);
         console.log(`Email sent successfully to ${receiverEmail}:`, response);
       } catch (emailError) {
