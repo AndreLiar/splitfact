@@ -198,10 +198,10 @@ export default function Dashboard() {
       <h1 className="mb-3 text-darkGray">Tableau de bord</h1>
 
       {/* Summary Cards */}
-      <div className="row mb-3 g-3">
+      <div className="row mb-4 g-3">
         {/* Total Revenue Card */}
-        <div className="col-lg-4">
-          <div className="card shadow-sm border-0 rounded-xl p-3 h-100 hover-lift">
+        <div className="col-lg-4 col-md-6 col-12">
+          <div className="card shadow-sm border-0 rounded-xl p-3 p-md-4 h-100 hover-lift">
             <h3 className="h5 text-mediumGray mb-2 d-flex align-items-center">
               <i className="bi bi-graph-up me-2 text-primary"></i>
               Revenus totaux
@@ -220,8 +220,8 @@ export default function Dashboard() {
         </div>
 
         {/* Received Money Card */}
-        <div className="col-lg-4">
-          <div className="card shadow-sm border-0 rounded-xl p-3 h-100 hover-lift">
+        <div className="col-lg-4 col-md-6 col-12">
+          <div className="card shadow-sm border-0 rounded-xl p-3 p-md-4 h-100 hover-lift">
             <h3 className="h5 text-mediumGray mb-2 d-flex align-items-center">
               <i className="bi bi-check-circle me-2 text-success"></i>
               Montants reçus
@@ -245,8 +245,8 @@ export default function Dashboard() {
         </div>
 
         {/* Unpaid Money Card */}
-        <div className="col-lg-4">
-          <div className="card shadow-sm border-0 rounded-xl p-3 h-100 hover-lift">
+        <div className="col-lg-4 col-md-12 col-12">
+          <div className="card shadow-sm border-0 rounded-xl p-3 p-md-4 h-100 hover-lift">
             <h3 className="h5 text-mediumGray mb-2 d-flex align-items-center">
               <i className="bi bi-clock-history me-2 text-warning"></i>
               En attente de paiement

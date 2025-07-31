@@ -9,32 +9,32 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="splitfact-section main-container py-xxxl d-flex align-items-center">
         <div className="row align-items-center w-100">
-          <div className="col-md-6 pe-md-xxl">
+          <div className="col-lg-6 col-12 pe-lg-5 mb-4 mb-lg-0">
             <div className="mb-lg">
               <span className="badge bg-primary text-white px-lg py-sm rounded-pill d-inline-flex align-items-center">
                 <i className="bi bi-robot me-sm fs-6"></i>
                 IA Fiscale Intégrée
               </span>
             </div>
-            <h1 className="text-darkGray mb-lg" style={{fontSize: '48px', lineHeight: '1.2'}}>
+            <h1 className="text-darkGray mb-lg hero-title" style={{fontSize: '48px', lineHeight: '1.2'}}>
               <span className="text-primary">Facturez en collectif</span><br/>
               <span className="text-optionalAccent">100% conforme URSSAF</span>
             </h1>
-            <p className="lead mb-xl text-mediumGray" style={{fontSize: '20px', maxWidth: '500px'}}>
+            <p className="lead mb-xl text-mediumGray" style={{fontSize: '20px', maxWidth: '500px', lineHeight: '1.5'}}>
               La première plateforme qui automatise vos déclarations URSSAF Micro-BIC et génère vos factures collectives d'auto-entrepreneurs en toute légalité.
             </p>
             
             {/* CTAs */}
-            <div className="d-flex flex-column flex-md-row gap-3 mb-xl">
+            <div className="d-flex flex-column flex-sm-row gap-3 mb-xl">
               <Link href="/auth/register"
-                className="btn btn-primary btn-lg px-xxl py-lg shadow-subtle"
-                style={{fontSize: '18px', fontWeight: '600'}}
+                className="btn btn-primary btn-lg px-4 py-3 shadow-subtle text-center"
+                style={{fontSize: '18px', fontWeight: '600', minHeight: '50px'}}
               >
                 Commencer gratuitement
               </Link>
               <Link href="#demo"
-                className="btn btn-outline-primary btn-lg px-xxl py-lg"
-                style={{fontSize: '18px'}}
+                className="btn btn-outline-primary btn-lg px-4 py-3 text-center"
+                style={{fontSize: '18px', minHeight: '50px'}}
               >
                 Voir comment ça marche
               </Link>
@@ -52,7 +52,7 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          <div className="col-md-6 d-flex justify-content-center ps-md-xxl mt-xl mt-md-0">
+          <div className="col-lg-6 col-12 d-flex justify-content-center ps-lg-4 mt-4 mt-lg-0">
             <div
               className="position-relative w-100"
               style={{ maxWidth: '480px' }}

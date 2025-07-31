@@ -41,14 +41,16 @@ export default function Sidebar() {
     <li className="nav-item" key={item.name}>
       <Link 
         href={item.href} 
-        className={`nav-link d-flex align-items-center py-2 px-3 rounded-2 mx-2 mb-1 transition-all ${
+        className={`nav-link d-flex align-items-center py-3 px-3 rounded-2 mx-2 mb-1 transition-all ${
           isActive(item.href) 
             ? 'bg-primary text-white fw-semibold shadow-sm' 
             : 'text-dark hover-bg-light'
         }`}
+        style={{ minHeight: '44px' }}
+        data-bs-dismiss="offcanvas"
       >
-        <i className={`bi ${item.icon} me-2`}></i>
-        {item.name}
+        <i className={`bi ${item.icon} me-3`} style={{ fontSize: '1.1em' }}></i>
+        <span className="fs-6">{item.name}</span>
       </Link>
     </li>
   );

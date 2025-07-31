@@ -45,26 +45,38 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
                 </div>
               </div>
               {/* Desktop Layout with Fixed Sidebar */}
-              <Sidebar />
-              <FixedNotificationCenter />
-              <main 
-                className="d-none d-md-block" 
-                style={{ 
-                  marginLeft: '260px', 
-                  padding: '2rem',
-                  minHeight: '100vh',
-                  backgroundColor: '#f8f9fa'
-                }}
-              >
-                <div className="container-fluid" style={{ maxWidth: '1200px' }}>
-                  {children}
-                </div>
-              </main>
+              <div className="d-none d-lg-block">
+                <Sidebar />
+                <FixedNotificationCenter />
+                <main 
+                  style={{ 
+                    marginLeft: '260px', 
+                    padding: '2rem',
+                    minHeight: '100vh',
+                    backgroundColor: '#f8f9fa'
+                  }}
+                >
+                  <div className="container-fluid" style={{ maxWidth: '1200px' }}>
+                    {children}
+                  </div>
+                </main>
+              </div>
               
-              {/* Mobile Layout */}
-              <main className="d-md-none p-3" style={{ paddingTop: '80px' }}>
-                {children}
-              </main>
+              {/* Mobile and Tablet Layout */}
+              <div className="d-lg-none">
+                <FixedNotificationCenter />
+                <main 
+                  className="container-fluid px-3 py-3" 
+                  style={{ 
+                    paddingTop: '80px', 
+                    paddingBottom: '20px',
+                    minHeight: '100vh',
+                    backgroundColor: '#f8f9fa'
+                  }}
+                >
+                  {children}
+                </main>
+              </div>
             </ToastProvider>
           ) : (
             <>

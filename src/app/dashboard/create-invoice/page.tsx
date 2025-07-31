@@ -462,7 +462,7 @@ export default function CreateInvoicePage() {
 
                   {/* Invoice Details */}
                   <div className="row g-3">
-                    <div className="col-md-6">
+                    <div className="col-lg-6 col-12">
                       <label htmlFor="collectiveId" className="form-label fw-semibold">
                         <i className="bi bi-people me-1 text-primary"></i>
                         Collectif (optionnel)
@@ -487,7 +487,7 @@ export default function CreateInvoicePage() {
                       )}
                     </div>
 
-                    <div className="col-md-6">
+                    <div className="col-lg-6 col-12">
                       <label htmlFor="clientId" className="form-label fw-semibold">
                         <i className="bi bi-person-badge me-1 text-primary"></i>
                         Client *
@@ -507,7 +507,7 @@ export default function CreateInvoicePage() {
                       {errors.clientId && <div className="invalid-feedback">{errors.clientId}</div>}
                     </div>
 
-                    <div className="col-md-4">
+                    <div className="col-lg-4 col-md-6 col-12">
                       <label htmlFor="invoiceDate" className="form-label fw-semibold">
                         <i className="bi bi-calendar me-1 text-primary"></i>
                         Date de facture *
@@ -523,7 +523,7 @@ export default function CreateInvoicePage() {
                       {errors.invoiceDate && <div className="invalid-feedback">{errors.invoiceDate}</div>}
                     </div>
 
-                    <div className="col-md-4">
+                    <div className="col-lg-4 col-md-6 col-12">
                       <label htmlFor="dueDate" className="form-label fw-semibold">
                         <i className="bi bi-calendar-check me-1 text-primary"></i>
                         Date d'échéance *

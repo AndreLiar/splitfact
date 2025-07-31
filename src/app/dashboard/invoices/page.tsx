@@ -225,7 +225,7 @@ export default function InvoicesPage() {
       <div className="card shadow-sm border-0 mb-4">
         <div className="card-body">
           <div className="row g-3">
-            <div className="col-md-3">
+            <div className="col-lg-3 col-md-6 col-12">
               <label className="form-label fw-semibold">Rechercher</label>
               <div className="input-group">
                 <span className="input-group-text bg-light border-end-0">
@@ -240,7 +240,7 @@ export default function InvoicesPage() {
                 />
               </div>
             </div>
-            <div className="col-md-2">
+            <div className="col-lg-2 col-md-6 col-sm-6 col-12">
               <label className="form-label fw-semibold">Statut</label>
               <select
                 className="form-select"
@@ -254,7 +254,7 @@ export default function InvoicesPage() {
                 <option key="status-cancelled" value="cancelled">Annulée</option>
               </select>
             </div>
-            <div className="col-md-2">
+            <div className="col-lg-2 col-md-6 col-sm-6 col-12">
               <label className="form-label fw-semibold">Paiement</label>
               <select
                 className="form-select"
@@ -267,7 +267,7 @@ export default function InvoicesPage() {
                 <option key="payment-overdue" value="overdue">En retard</option>
               </select>
             </div>
-            <div className="col-md-2">
+            <div className="col-lg-2 col-md-6 col-sm-6 col-12">
               <label className="form-label fw-semibold">Collectif</label>
               <select
                 className="form-select"
@@ -282,7 +282,7 @@ export default function InvoicesPage() {
                 ))}
               </select>
             </div>
-            <div className="col-md-2">
+            <div className="col-lg-2 col-md-6 col-sm-6 col-12">
               <label className="form-label fw-semibold">Période</label>
               <select
                 className="form-select"
@@ -295,7 +295,7 @@ export default function InvoicesPage() {
                 <option key="date-oldest" value="oldest">+90 jours</option>
               </select>
             </div>
-            <div className="col-md-1 d-flex align-items-end">
+            <div className="col-lg-1 col-12 d-flex align-items-end">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={() => {
@@ -371,7 +371,7 @@ export default function InvoicesPage() {
         <>
           <div className="card shadow-sm border-0">
             <div className="table-responsive">
-              <table className="table table-hover mb-0">
+              <table className="table table-hover mb-0 d-none d-lg-table">
                 <thead className="table-light">
                   <tr>
                     <th className="border-0 fw-semibold">Facture</th>
@@ -501,6 +501,108 @@ export default function InvoicesPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            
+            {/* Mobile Card Layout */}
+            <div className="d-lg-none">
+              {currentInvoices.map((invoice: any) => (
+                <div key={`mobile-${invoice.id}`} className="card mb-3 border-0 shadow-sm">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-start mb-3">
+                      <div>
+                        <h6 className="fw-bold mb-1">{invoice.invoiceNumber}</h6>
+                        <small className="text-muted">
+                          <i className="bi bi-calendar3 me-1"></i>
+                          {new Date(invoice.invoiceDate).toLocaleDateString('fr-FR')}
+                        </small>
+                      </div>
+                      <div className="text-end">
+                        <span className="fw-bold fs-5 text-primary">
+                          {Number(invoice.amount).toLocaleString('fr-FR', { 
+                            style: 'currency', 
+                            currency: 'EUR' 
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Client Info */}
+                    <div className="mb-3">
+                      <div className="d-flex align-items-center mb-1">
+                        <i className="bi bi-person-circle text-muted me-2" style={{ fontSize: '1.2em' }}></i>
+                        <span className="fw-semibold">{invoice.client?.name || invoice.clientName || 'N/A'}</span>
+                      </div>
+                      <small className="text-muted ms-4">{invoice.client?.email || 'N/A'}</small>
+                    </div>
+                    
+                    {/* Type and Collective */}
+                    <div className="mb-3">
+                      {invoice.collective ? (
+                        <div className="d-flex align-items-center">
+                          <i className="bi bi-people text-primary me-2"></i>
+                          <div>
+                            <span className="fw-semibold text-primary">Collective</span>
+                            <small className="text-muted d-block">{invoice.collective.name}</small>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="d-flex align-items-center">
+                          <i className="bi bi-person text-muted me-2"></i>
+                          <span className="fw-semibold">Individuelle</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Status Badges */}
+                    <div className="d-flex gap-2 mb-3 flex-wrap">
+                      <span className={`badge ${getStatusBadgeClass(invoice.status)}`}>
+                        {getStatusText(invoice.status)}
+                      </span>
+                      <span className={`badge ${getPaymentStatusBadgeClass(invoice.paymentStatus)}`}>
+                        {getPaymentStatusText(invoice.paymentStatus)}
+                      </span>
+                    </div>
+                    
+                    {/* Due Date */}
+                    {invoice.dueDate && (
+                      <div className="mb-3">
+                        <small className="text-muted">
+                          <i className="bi bi-clock me-1"></i>
+                          Échéance: {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}
+                        </small>
+                      </div>
+                    )}
+                    
+                    {/* Actions */}
+                    <div className="d-flex gap-2 flex-wrap">
+                      <Link 
+                        href={`/dashboard/invoices/${invoice.id}`} 
+                        className="btn btn-sm btn-primary"
+                      >
+                        <i className="bi bi-eye me-1"></i>
+                        Voir
+                      </Link>
+                      <Link 
+                        href={`/api/invoices/${invoice.id}/pdf`} 
+                        target="_blank"
+                        className="btn btn-sm btn-outline-secondary"
+                      >
+                        <i className="bi bi-download me-1"></i>
+                        PDF
+                      </Link>
+                      {invoice.collective && (
+                        <Link 
+                          href={`/dashboard/invoices/${invoice.id}/sub-invoices`} 
+                          className="btn btn-sm btn-outline-info"
+                        >
+                          <i className="bi bi-files me-1"></i>
+                          Sous-factures
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

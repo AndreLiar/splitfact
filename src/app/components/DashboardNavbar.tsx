@@ -9,17 +9,18 @@ export default function DashboardNavbar() {
 
   return (
     <nav 
-      className="navbar navbar-expand-lg navbar-light bg-white d-md-none border-bottom shadow-sm" 
+      className="navbar navbar-expand-lg navbar-light bg-white d-lg-none border-bottom shadow-sm" 
       style={{ 
         position: 'fixed', 
         top: 0, 
         left: 0, 
         right: 0, 
         zIndex: 1030,
-        backdropFilter: 'blur(10px)'
+        backdropFilter: 'blur(10px)',
+        minHeight: '60px'
       }}
     >
-      <div className="container-fluid px-3">
+      <div className="container-fluid px-3 py-2">
         <button
           className="navbar-toggler border-0 p-1"
           type="button"
