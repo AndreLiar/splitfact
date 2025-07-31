@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-07-31T09:31:28.939Z",
+  "duration": 19730,
+  "results": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "issues": []
+  },
+  "environment": {
+    "nodeVersion": "v23.11.0",
+    "platform": "darwin"
+  }
+}

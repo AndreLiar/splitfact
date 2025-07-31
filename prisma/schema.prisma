@@ -1,0 +1,372 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                  String             @id @default(cuid())
+  name                String?
+  email               String?            @unique
+  password            String? // Added for email/password authentication
+  emailVerified       DateTime?
+  image               String?
+  stripeAccountId     String?            @unique // New field for Stripe Connect Account ID
+  fiscalRegime        FiscalRegime? // New field for fiscal regime
+  siret               String? // New field for SIRET
+  tvaNumber           String? // New field for TVA number
+  address             String?
+  legalStatus         String?
+  rcsNumber           String?
+  shareCapital        String?
+  apeCode             String?
+  accounts            Account[]
+  sessions            Session[]
+  collectives         CollectiveMember[]
+  invoiceShares       InvoiceShare[]
+  issuedSubInvoices   SubInvoice[]       @relation("Issuer")
+  receivedSubInvoices SubInvoice[]       @relation("Receiver")
+  createdCollectives  Collective[]       @relation("CreatedBy")
+  clients             Client[] // New field: User owns multiple Clients
+  invoices            Invoice[] // New field: User owns multiple Invoices
+  urssafReports     UrssafReport[]
+  microEntrepreneurType MicroEntrepreneurType? // New field for Micro-Entrepreneur type
+  declarationFrequency  DeclarationFrequency? // New field for declaration frequency
+  notifications     Notification[]
+  notificationQueue NotificationQueue[] // Queue for notification retries
+  collectivePayouts CollectivePayout[] // Payouts this user receives from collective invoices
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Collective {
+  id          String             @id @default(cuid())
+  name        String
+  createdBy   User               @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime           @default(now())
+  members     CollectiveMember[]
+  invoices    Invoice[]
+  collectiveClients CollectiveClient[]
+}
+
+model CollectiveMember {
+  id           String         @id @default(cuid())
+  user         User           @relation(fields: [userId], references: [id])
+  userId       String
+  collective   Collective     @relation(fields: [collectiveId], references: [id])
+  collectiveId String
+  role         CollectiveRole @default(member)
+  joinedAt     DateTime       @default(now())
+}
+
+model CollectiveClient {
+  id           String     @id @default(cuid())
+  collective   Collective @relation(fields: [collectiveId], references: [id])
+  collectiveId String
+  client       Client     @relation(fields: [clientId], references: [id])
+  clientId     String
+
+  @@unique([collectiveId, clientId]) // A client can only be assigned once per collective
+}
+
+model Client {
+  id           String     @id @default(cuid())
+  name         String
+  email        String?
+  siret        String?
+  address      String?
+  tvaNumber    String?
+  legalStatus  String?
+  shareCapital String?
+  contactName  String?
+  phone        String?
+  userId       String     // Client is owned by a User
+  user         User       @relation(fields: [userId], references: [id])
+  invoices     Invoice[]
+  collectiveClients CollectiveClient[]
+}
+
+model Invoice {
+  id                String        @id @default(cuid())
+  invoiceNumber     String
+  invoiceDate       DateTime
+  dueDate           DateTime
+  totalAmount       Decimal
+  status            InvoiceStatus @default(draft)
+  paymentStatus     PaymentStatus @default(pending)
+  stripePaymentIntentId String?       @unique
+  createdAt         DateTime      @default(now())
+  collective        Collective?    @relation(fields: [collectiveId], references: [id])
+  collectiveId      String?
+  client            Client        @relation(fields: [clientId], references: [id])
+  clientId          String
+  userId            String // New field: Invoice is owned by a User
+  user              User   @relation(fields: [userId], references: [id])
+
+  clientName        String?
+  clientAddress     String?
+  clientSiret       String?
+  clientTvaNumber   String?
+  clientLegalStatus String?
+  clientShareCapital String?
+  clientContactName String?
+  clientEmail       String?
+  clientPhone       String?
+
+  issuerName        String
+  issuerAddress     String
+  issuerSiret       String?
+  issuerTva         String?
+
+  issuerRcs         String?
+  issuerLegalStatus String?
+  issuerShareCapital String?
+  issuerApeCode     String?
+
+  paymentTerms      String?
+  latePenaltyRate   String?
+  recoveryIndemnity Float?
+  legalMentions     String?
+
+  items             InvoiceItem[]
+  shares            InvoiceShare[]
+  subInvoices       SubInvoice[]
+  payments          Payment[]
+  collectivePayouts CollectivePayout[] // Payouts generated for this invoice
+  pdfUrl            String?
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  description String
+  quantity    Int
+  unitPrice   Decimal
+  tvaRate     Decimal
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+  invoiceId   String
+}
+
+model InvoiceShare {
+  id                     String      @id @default(cuid())
+  invoice                Invoice     @relation(fields: [invoiceId], references: [id])
+  invoiceId              String
+  user                   User        @relation(fields: [userId], references: [id])
+  userId                 String
+  shareType              ShareType
+  shareValue             Decimal
+  calculatedAmount       Decimal
+  description            String? // New field for service description for this share
+  autogeneratedInvoice   SubInvoice? @relation(fields: [autogeneratedInvoiceId], references: [id])
+  autogeneratedInvoiceId String?     @unique
+}
+
+model SubInvoice {
+  id                String        @id @default(cuid())
+  issuer            User          @relation("Issuer", fields: [issuerId], references: [id])
+  issuerId          String
+  receiver          User          @relation("Receiver", fields: [receiverId], references: [id])
+  receiverId        String
+  parentInvoice     Invoice       @relation(fields: [parentInvoiceId], references: [id])
+  parentInvoiceId   String
+  amount            Decimal
+  description       String? // New field for service description
+  legalMentions     String? // New field for sub-invoice specific legal mentions
+  status            InvoiceStatus @default(draft)
+  paymentStatus     PaymentStatus @default(pending) // New field for payment status
+  stripePaymentIntentId String?                     @unique // New field for Stripe Payment Intent ID
+  createdAt         DateTime      @default(now())
+  invoiceShare      InvoiceShare?
+  pdfUrl            String?
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  invoiceId String
+  paidBy    String
+  amount    Decimal
+  paidAt    DateTime @default(now())
+}
+
+model CollectivePayout {
+  id               String      @id @default(cuid())
+  invoice          Invoice     @relation(fields: [invoiceId], references: [id])
+  invoiceId        String
+  user             User        @relation(fields: [userId], references: [id])
+  userId           String
+  amount           Decimal
+  status           PayoutStatus @default(pending)
+  stripeTransferId String?     @unique
+  errorMessage     String?     // Store error details if payout fails
+  attemptCount     Int         @default(0) // Track retry attempts
+  createdAt        DateTime    @default(now())
+  completedAt      DateTime?
+  
+  @@unique([invoiceId, userId]) // Prevent duplicate payouts
+}
+
+enum Role {
+  freelance
+  admin
+}
+
+enum CollectiveRole {
+  owner
+  admin
+  member
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum ShareType {
+  percent
+  fixed
+}
+
+enum FiscalRegime {
+  MicroBIC
+  BNC
+  SASU
+  EI
+  Other
+}
+
+enum MicroEntrepreneurType {
+  COMMERCANT
+  PRESTATAIRE
+  LIBERAL
+}
+
+enum DeclarationFrequency {
+  monthly
+  quarterly
+}
+
+enum NotificationType {
+  URSSAF_REMINDER
+  TVA_THRESHOLD_WARNING
+  TVA_THRESHOLD_EXCEEDED
+  GENERAL
+  FISCAL_INSIGHT
+  DEADLINE
+  CASH_FLOW
+}
+
+enum PayoutStatus {
+  pending
+  processing
+  completed
+  failed
+  cancelled
+}
+
+enum NotificationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model UrssafReport {
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
+  reportData      Json
+  periodStartDate DateTime
+  periodEndDate   DateTime
+  generatedAt     DateTime  @default(now())
+  isAutomatic     Boolean   @default(false)
+  paidInvoicesDisclaimer String?
+  createdAt       DateTime  @default(now())
+
+  @@unique([userId, periodStartDate, periodEndDate])
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  user        User             @relation(fields: [userId], references: [id])
+  userId      String
+  type        NotificationType
+  title       String
+  message     String
+  isRead      Boolean          @default(false)
+  actionUrl   String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+  readAt      DateTime?
+  queueItem   NotificationQueue? // Reference to queue item that created this notification
+}
+
+model NotificationQueue {
+  id                String               @id @default(cuid())
+  userId            String
+  type              NotificationType
+  title             String
+  message           String
+  actionUrl         String?
+  metadata          Json?
+  status            NotificationStatus   @default(PENDING)
+  attemptCount      Int                  @default(0)
+  maxAttempts       Int                  @default(5)
+  nextRetryAt       DateTime?
+  lastAttemptAt     DateTime?
+  errorMessage      String?
+  createdAt         DateTime             @default(now())
+  processedAt       DateTime?
+  notificationId    String?              @unique // Reference to created notification
+  
+  user              User                 @relation(fields: [userId], references: [id])
+  notification      Notification?        @relation(fields: [notificationId], references: [id])
+  
+  @@index([status, nextRetryAt])
+  @@index([userId, createdAt])
+}

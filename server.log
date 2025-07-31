@@ -1,0 +1,322 @@
+
+> splitfact-app@0.1.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use, using available port 3001 instead.
+   ▲ Next.js 15.3.5
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.1.99:3001
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1244ms
+ ○ Compiling /api/cron/generate-urssaf-reports ...
+ ✓ Compiled /api/cron/generate-urssaf-reports in 502ms (365 modules)
+ GET /api/cron/generate-urssaf-reports 200 in 1815ms
+ ✓ Compiled /api/cron/urssaf-reminders in 291ms (367 modules)
+📧 Created monthly URSSAF reminder for Julie Moreau
+📧 Created monthly URSSAF reminder for Alioune Ndiaye
+ GET /api/cron/urssaf-reminders 200 in 1511ms
+ ✓ Compiled in 284ms (279 modules)
+ ✓ Compiled in 410ms (279 modules)
+ ✓ Compiled in 143ms (279 modules)
+ ✓ Compiled in 279ms (279 modules)
+ ✓ Compiled in 230ms (279 modules)
+ ✓ Compiled in 218ms (279 modules)
+ ✓ Compiled in 323ms (279 modules)
+ ✓ Compiled in 260ms (279 modules)
+   Reload env: .env
+ ✓ Compiled in 75ms (279 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 1251ms (1641 modules)
+ GET / 200 in 1462ms
+ ✓ Compiled /api/auth/[...nextauth] in 203ms (885 modules)
+ ✓ Compiled in 488ms (758 modules)
+ GET /favicon.ico 200 in 996ms
+ GET /api/auth/session 200 in 1372ms
+ ✓ Compiled /auth/signin in 239ms (1935 modules)
+ GET /auth/signin 200 in 290ms
+ GET /api/auth/providers 200 in 75ms
+ GET /api/auth/csrf 200 in 6ms
+ POST /api/auth/callback/credentials 401 in 928ms
+ GET /auth/signin 200 in 92ms
+ GET /favicon.ico 200 in 12ms
+ GET /api/auth/session 200 in 18ms
+ GET /api/auth/providers 200 in 19ms
+ GET /api/auth/csrf 200 in 9ms
+ POST /api/auth/callback/credentials 200 in 244ms
+ GET /api/auth/session 200 in 5ms
+ ✓ Compiled /dashboard in 435ms (1952 modules)
+ GET /dashboard 200 in 492ms
+ ✓ Compiled /api/sub-invoices in 355ms (1961 modules)
+ GET /api/notifications?limit=5 200 in 1627ms
+ GET /api/sub-invoices 200 in 1779ms
+ GET /api/notifications?limit=5 200 in 287ms
+ GET /api/users/me/invoices?all=true 200 in 2045ms
+ GET /api/collectives 200 in 2047ms
+ ○ Compiling /api/insights ...
+ ✓ Compiled /api/insights in 581ms (2255 modules)
+ GET /api/notifications?limit=5 200 in 822ms
+ GET /api/users/me/invoices?page=1&limit=5 200 in 2957ms
+ GET /api/sub-invoices 200 in 2141ms
+ GET /api/users/me/invoices?all=true 200 in 2058ms
+ GET /api/collectives 200 in 2059ms
+ ✓ Compiled /api/users/me in 179ms (2257 modules)
+Session User ID: cmcq7rsoc0000s46a5omjj0ri
+ GET /api/notifications?limit=5 200 in 333ms
+ GET /api/insights?type=suggestions&context=dashboard 200 in 1917ms
+ GET /api/insights?type=health 200 in 1701ms
+Fetched User: {
+  id: 'cmcq7rsoc0000s46a5omjj0ri',
+  name: 'Alioune Ndiaye',
+  email: 'kanmegneandre@gmail.com',
+  fiscalRegime: 'MicroBIC',
+  microEntrepreneurType: 'PRESTATAIRE',
+  siret: '89123456700017',
+  tvaNumber: 'FR89503980736',
+  address: '4 Rue des Arts, 31000 Toulous',
+  legalStatus: 'Auto-Entrepreneur',
+  rcsNumber: null,
+  shareCapital: null,
+  apeCode: '6201Z',
+  stripeAccountId: 'acct_1Rp2KaEGLgc0iQ97'
+}
+ GET /api/users/me 200 in 1078ms
+ GET /api/users/me/invoices?all=true 200 in 1116ms
+ GET /api/sub-invoices 200 in 1381ms
+Session User ID: cmcq7rsoc0000s46a5omjj0ri
+Fetched User: {
+  id: 'cmcq7rsoc0000s46a5omjj0ri',
+  name: 'Alioune Ndiaye',
+  email: 'kanmegneandre@gmail.com',
+  fiscalRegime: 'MicroBIC',
+  microEntrepreneurType: 'PRESTATAIRE',
+  siret: '89123456700017',
+  tvaNumber: 'FR89503980736',
+  address: '4 Rue des Arts, 31000 Toulous',
+  legalStatus: 'Auto-Entrepreneur',
+  rcsNumber: null,
+  shareCapital: null,
+  apeCode: '6201Z',
+  stripeAccountId: 'acct_1Rp2KaEGLgc0iQ97'
+}
+ GET /api/users/me 200 in 154ms
+ GET /api/collectives 200 in 1678ms
+ GET /api/users/me/invoices?page=1&limit=5 200 in 2663ms
+ GET /api/users/me/invoices?limit=9999 200 in 994ms
+Session User ID: cmcq7rsoc0000s46a5omjj0ri
+Fetched User: {
+  id: 'cmcq7rsoc0000s46a5omjj0ri',
+  name: 'Alioune Ndiaye',
+  email: 'kanmegneandre@gmail.com',
+  fiscalRegime: 'MicroBIC',
+  microEntrepreneurType: 'PRESTATAIRE',
+  siret: '89123456700017',
+  tvaNumber: 'FR89503980736',
+  address: '4 Rue des Arts, 31000 Toulous',
+  legalStatus: 'Auto-Entrepreneur',
+  rcsNumber: null,
+  shareCapital: null,
+  apeCode: '6201Z',
+  stripeAccountId: 'acct_1Rp2KaEGLgc0iQ97'
+}
+ GET /api/users/me 200 in 92ms
+ GET /api/sub-invoices 200 in 365ms
+ GET /api/insights?type=suggestions&context=dashboard 200 in 2251ms
+ GET /api/insights?type=health 200 in 1537ms
+Session User ID: cmcq7rsoc0000s46a5omjj0ri
+Fetched User: {
+  id: 'cmcq7rsoc0000s46a5omjj0ri',
+  name: 'Alioune Ndiaye',
+  email: 'kanmegneandre@gmail.com',
+  fiscalRegime: 'MicroBIC',
+  microEntrepreneurType: 'PRESTATAIRE',
+  siret: '89123456700017',
+  tvaNumber: 'FR89503980736',
+  address: '4 Rue des Arts, 31000 Toulous',
+  legalStatus: 'Auto-Entrepreneur',
+  rcsNumber: null,
+  shareCapital: null,
+  apeCode: '6201Z',
+  stripeAccountId: 'acct_1Rp2KaEGLgc0iQ97'
+}
+ GET /api/users/me 200 in 102ms
+ GET /api/collectives 200 in 457ms
+ GET /api/users/me/invoices?all=true 200 in 1734ms
+ GET /api/users/me/invoices?page=1&limit=5 200 in 1026ms
+ GET /api/users/me/invoices?limit=9999 200 in 1085ms
+ GET /api/insights?type=suggestions&context=dashboard 200 in 1005ms
+ GET /api/insights?type=health 200 in 975ms
+ GET /api/insights?type=suggestions&context=dashboard 200 in 1733ms
+ GET /api/users/me/invoices?limit=9999 200 in 3435ms
+ GET /api/users/me/invoices?page=1&limit=5 200 in 3628ms
+ GET /api/insights?type=health 200 in 4697ms
+ GET /api/users/me/invoices?limit=9999 200 in 991ms
+ GET /api/insights?type=insights 200 in 18918ms
+ GET /api/notifications?limit=5 200 in 395ms
+ GET /api/insights?type=insights 200 in 9174ms
+ GET /api/insights?type=insights 200 in 17341ms
+ GET /api/insights?type=insights 200 in 26458ms
+ GET /api/notifications?limit=5 200 in 513ms
+ ○ Compiling /dashboard/create-invoice ...
+ ✓ Compiled /dashboard/create-invoice in 2.1s (1887 modules)
+ GET /dashboard/create-invoice 200 in 2352ms
+ GET /api/notifications?limit=5 200 in 372ms
+ GET /dashboard/create-invoice 200 in 18ms
+ GET /dashboard/create-invoice 200 in 768ms
+ GET /dashboard/create-invoice 200 in 67ms
+ ○ Compiling /dashboard/invoices ...
+ ✓ Compiled /dashboard/invoices in 920ms (1894 modules)
+ GET /dashboard/invoices 200 in 1085ms
+ GET /dashboard/invoices 200 in 11ms
+ GET /dashboard/invoices 200 in 17ms
+ GET /dashboard/invoices 200 in 9ms
+ GET /dashboard/invoices 200 in 8ms
+ GET /dashboard/invoices 200 in 6ms
+ GET /dashboard/invoices 200 in 9ms
+ GET /api/insights?type=insights 200 in 34153ms
+ ○ Compiling /dashboard/sub-invoices ...
+ ✓ Compiled /dashboard/sub-invoices in 625ms (1901 modules)
+ GET /dashboard/sub-invoices 200 in 706ms
+ GET /dashboard/sub-invoices 200 in 12ms
+ GET /dashboard/sub-invoices 200 in 11ms
+ GET /dashboard/sub-invoices 200 in 22ms
+ GET /dashboard/sub-invoices 200 in 16ms
+ GET /api/notifications?limit=5 200 in 399ms
+ GET /api/insights?type=insights 200 in 43716ms
+ GET /dashboard/invoices 200 in 265ms
+ GET /dashboard/invoices 200 in 48ms
+ GET /dashboard/invoices 200 in 143ms
+ GET /dashboard/invoices 200 in 12ms
+ GET /dashboard/invoices 200 in 13ms
+ GET /dashboard/invoices 200 in 30ms
+ GET /dashboard/invoices 200 in 26ms
+ GET /dashboard/invoices 200 in 69ms
+ GET /dashboard/sub-invoices 200 in 133ms
+ GET /dashboard/sub-invoices 200 in 23ms
+ GET /dashboard/sub-invoices 200 in 77ms
+ GET /dashboard/sub-invoices 200 in 49ms
+ GET /dashboard/sub-invoices 200 in 22ms
+ ○ Compiling /dashboard/collectives ...
+ GET /api/insights?type=insights 200 in 59783ms
+ GET /api/insights?type=insights 200 in 65874ms
+ GET /api/insights?type=insights 200 in 74972ms
+ GET /api/insights?type=insights 200 in 54748ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /api/insights?type=insights 200 in 61071ms
+ ✓ Compiled /dashboard/assistant in 59.3s (1928 modules)
+ GET /dashboard/collectives 200 in 59765ms
+ GET /dashboard/revenues 200 in 36192ms
+ GET /dashboard/clients 200 in 43462ms
+ GET /dashboard/assistant 200 in 19486ms
+ GET /dashboard 200 in 10361ms
+ GET /api/insights?type=insights 200 in 1484ms
+ ○ Compiling /dashboard/reports ...
+ ✓ Compiled /dashboard/reports in 1059ms (1941 modules)
+ ✓ Compiled /api/auth/[...nextauth] in 203ms (1144 modules)
+ ✓ Compiled (1145 modules)
+ GET /favicon.ico 200 in 457ms
+ GET /api/auth/session 200 in 453ms
+ ✓ Compiled /api/sub-invoices in 202ms (1147 modules)
+ GET /api/notifications?limit=5 200 in 786ms
+ ✓ Compiled in 0ms (1149 modules)
+ ✓ Compiled in 0ms (1149 modules)
+ ✓ Compiled in 0ms (1149 modules)
+ GET /api/notifications?limit=5 200 in 1139ms
+ GET /api/collectives 200 in 2586ms
+ GET /api/sub-invoices 200 in 2981ms
+ GET /api/users/me/invoices?all=true 200 in 2989ms
+ GET /api/sub-invoices 200 in 447ms
+ GET /api/users/me/invoices?page=1&limit=5 200 in 3921ms
+ GET /api/insights?type=suggestions&context=dashboard 200 in 898ms
+ ○ Compiling /api/users/me ...
+ GET /api/insights?type=health 200 in 1723ms
+ GET /api/collectives 200 in 2659ms
+ GET /api/users/me/invoices?all=true 200 in 2776ms
+ ✓ Compiled /api/users/me in 972ms (1136 modules)
+Session User ID: cmcq7rsoc0000s46a5omjj0ri
+Fetched User: {
+  id: 'cmcq7rsoc0000s46a5omjj0ri',
+  name: 'Alioune Ndiaye',
+  email: 'kanmegneandre@gmail.com',
+  fiscalRegime: 'MicroBIC',
+  microEntrepreneurType: 'PRESTATAIRE',
+  siret: '89123456700017',
+  tvaNumber: 'FR89503980736',
+  address: '4 Rue des Arts, 31000 Toulous',
+  legalStatus: 'Auto-Entrepreneur',
+  rcsNumber: null,
+  shareCapital: null,
+  apeCode: '6201Z',
+  stripeAccountId: 'acct_1Rp2KaEGLgc0iQ97'
+}
+ GET /api/users/me 200 in 2357ms
+ GET /api/insights?type=suggestions&context=dashboard 200 in 3367ms
+ GET /api/insights?type=health 200 in 3820ms
+ GET /api/users/me/invoices?page=1&limit=5 200 in 4853ms
+Session User ID: cmcq7rsoc0000s46a5omjj0ri
+Fetched User: {
+  id: 'cmcq7rsoc0000s46a5omjj0ri',
+  name: 'Alioune Ndiaye',
+  email: 'kanmegneandre@gmail.com',
+  fiscalRegime: 'MicroBIC',
+  microEntrepreneurType: 'PRESTATAIRE',
+  siret: '89123456700017',
+  tvaNumber: 'FR89503980736',
+  address: '4 Rue des Arts, 31000 Toulous',
+  legalStatus: 'Auto-Entrepreneur',
+  rcsNumber: null,
+  shareCapital: null,
+  apeCode: '6201Z',
+  stripeAccountId: 'acct_1Rp2KaEGLgc0iQ97'
+}
+ GET /api/users/me 200 in 153ms
+Session User ID: cmcq7rsoc0000s46a5omjj0ri
+Fetched User: {
+  id: 'cmcq7rsoc0000s46a5omjj0ri',
+  name: 'Alioune Ndiaye',
+  email: 'kanmegneandre@gmail.com',
+  fiscalRegime: 'MicroBIC',
+  microEntrepreneurType: 'PRESTATAIRE',
+  siret: '89123456700017',
+  tvaNumber: 'FR89503980736',
+  address: '4 Rue des Arts, 31000 Toulous',
+  legalStatus: 'Auto-Entrepreneur',
+  rcsNumber: null,
+  shareCapital: null,
+  apeCode: '6201Z',
+  stripeAccountId: 'acct_1Rp2KaEGLgc0iQ97'
+}
+ GET /api/users/me 200 in 96ms
+Session User ID: cmcq7rsoc0000s46a5omjj0ri
+Fetched User: {
+  id: 'cmcq7rsoc0000s46a5omjj0ri',
+  name: 'Alioune Ndiaye',
+  email: 'kanmegneandre@gmail.com',
+  fiscalRegime: 'MicroBIC',
+  microEntrepreneurType: 'PRESTATAIRE',
+  siret: '89123456700017',
+  tvaNumber: 'FR89503980736',
+  address: '4 Rue des Arts, 31000 Toulous',
+  legalStatus: 'Auto-Entrepreneur',
+  rcsNumber: null,
+  shareCapital: null,
+  apeCode: '6201Z',
+  stripeAccountId: 'acct_1Rp2KaEGLgc0iQ97'
+}
+ GET /api/users/me 200 in 94ms
+ GET /api/insights?type=suggestions&context=dashboard 200 in 515ms
+ GET /api/insights?type=health 200 in 964ms
+ GET /api/users/me/invoices?limit=9999 200 in 1162ms
+ GET /api/insights?type=suggestions&context=dashboard 200 in 991ms
+ GET /api/users/me/invoices?limit=9999 200 in 737ms
+ GET /api/insights?type=health 200 in 983ms
+ GET /api/users/me/invoices?limit=9999 200 in 718ms
+ GET /api/users/me/invoices?limit=9999 200 in 788ms
+ GET /api/insights?type=insights 200 in 31871ms
+ GET /api/notifications?limit=5 200 in 1448ms
+ GET /api/notifications?limit=5 200 in 295ms
+ GET /api/insights?type=insights 200 in 19743ms
+ GET /api/notifications?limit=5 200 in 1594ms
+ GET /api/notifications?limit=5 200 in 293ms
+ GET /api/insights?type=insights 200 in 32161ms
