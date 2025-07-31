@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import NotificationCenter from "@/app/dashboard/components/NotificationCenter";
+import FeedbackButton from "./FeedbackButton";
 
 export default function DashboardNavbar() {
   const pathname = usePathname();
@@ -51,7 +52,14 @@ export default function DashboardNavbar() {
           <i className="bi bi-lightning-fill me-2" style={{ fontSize: '1.3rem' }}></i>
           <span className="brand-text">Splitfact</span>
         </Link>
-        <div className="d-flex align-items-center mobile-nav-actions">
+        <div className="d-flex align-items-center gap-2 mobile-nav-actions">
+          <FeedbackButton 
+            variant="link" 
+            size="sm" 
+            position="navbar" 
+            showText={false}
+            className="p-2"
+          />
           <NotificationCenter />
         </div>
       </div>

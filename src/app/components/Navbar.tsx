@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import FeedbackButton from "./FeedbackButton";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -81,9 +82,28 @@ export default function Navbar() {
                 Support
               </Link>
             </li>
+            <li className="nav-item d-lg-none">
+              <div className="py-2">
+                <FeedbackButton 
+                  variant="outline" 
+                  size="sm"
+                  className="w-100"
+                  showText={true}
+                />
+              </div>
+            </li>
           </ul>
           
           <ul className="navbar-nav ms-auto align-items-center">
+            <li className="nav-item me-2 d-none d-lg-block">
+              <FeedbackButton 
+                variant="link" 
+                size="sm"
+                position="navbar"
+                showText={true}
+                className="nav-link text-darkGray fw-semibold px-lg py-md hover-text-primary"
+              />
+            </li>
             <li className="nav-item me-2">
               <Link
                 href="/auth/signin"

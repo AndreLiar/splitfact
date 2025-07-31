@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { FeedbackMenuItem } from "./FeedbackButton";
 
 export default function Sidebar() {
   const { data: session } = useSession();
@@ -238,6 +239,10 @@ export default function Sidebar() {
                 <i className="bi bi-person me-2"></i>
                 Profil
               </Link>
+            </li>
+            <li><hr className="dropdown-divider" /></li>
+            <li>
+              <FeedbackMenuItem />
             </li>
             <li><hr className="dropdown-divider" /></li>
             <li>

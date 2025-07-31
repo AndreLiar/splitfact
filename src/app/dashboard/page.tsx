@@ -10,6 +10,7 @@ import AsyncProactiveInsightsWidget from '@/app/dashboard/components/AsyncProact
 import AsyncSmartSuggestions from '@/app/dashboard/components/AsyncSmartSuggestions';
 import { formatCurrency, formatCurrencyRobust } from '@/lib/utils';
 import PerformanceMonitor from '@/app/dashboard/components/PerformanceMonitor';
+import FeedbackButton from '@/app/components/FeedbackButton';
 
 interface Collective {
   id: string;
@@ -808,6 +809,34 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Feedback Section */}
+      <div className="row mb-4 g-3">
+        <div className="col-12">
+          <div className="card shadow-sm border-0 rounded-xl p-4 bg-gradient" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+            <div className="d-flex justify-content-between align-items-center text-white">
+              <div>
+                <h3 className="h5 mb-2 fw-semibold d-flex align-items-center">
+                  <i className="bi bi-heart me-2"></i>
+                  Votre avis nous intéresse !
+                </h3>
+                <p className="mb-0 opacity-90">
+                  Aidez-nous à améliorer Splitfact en partageant votre expérience. 
+                  Vos commentaires sont précieux pour notre équipe.
+                </p>
+              </div>
+              <div className="text-end">
+                <FeedbackButton 
+                  variant="primary" 
+                  size="md"
+                  className="bg-white text-primary border-0 shadow-sm"
+                  showText={true}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Enhanced Sub-Invoices Table */}
       <div className="card shadow-sm border-0 rounded-xl p-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
@@ -859,7 +888,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {receivedSubInvoices.map((subInvoice, index) => (
+                {receivedSubInvoices.map((subInvoice) => (
                   <tr key={subInvoice.id} className="border-0">
                     <td className="py-3 border-0">
                       <code className="text-success small">{subInvoice.id.substring(0, 8)}...</code>

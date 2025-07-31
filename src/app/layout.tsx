@@ -9,6 +9,7 @@ import Navbar from "@/app/components/Navbar";
 import DashboardNavbar from "@/app/components/DashboardNavbar";
 import { ToastProvider } from "@/app/dashboard/components/ToastProvider";
 import FixedNotificationCenter from "@/app/dashboard/components/FixedNotificationCenter";
+import FeedbackButton from "@/app/components/FeedbackButton";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
@@ -111,6 +112,17 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
               <div className="d-none d-lg-block">
                 <Sidebar />
                 <FixedNotificationCenter />
+                
+                {/* Floating Feedback Button for Desktop */}
+                <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1050 }}>
+                  <FeedbackButton 
+                    variant="primary" 
+                    size="md"
+                    className="shadow-lg"
+                    showText={true}
+                  />
+                </div>
+                
                 <main 
                   style={{ 
                     marginLeft: '260px', 
@@ -158,6 +170,9 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
                 >
                   <i className="bi bi-x" style={{ fontSize: '1.5rem' }}></i>
                 </button>
+
+                {/* Floating Feedback Button for Mobile */}
+                <FeedbackButton variant="floating" />
                 
                 <main 
                   className="container-fluid px-3 py-3" 
