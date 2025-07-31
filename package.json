@@ -46,7 +46,7 @@
     "next": "15.3.5",
     "next-auth": "^4.24.11",
     "next-transpile-modules": "^10.0.1",
-    "openai": "^5.11.0",
+    "openai": "^4.62.1",
     "prisma": "^6.11.1",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.10",
