@@ -127,6 +127,11 @@ body {
   background-color: rgba(248, 249, 250, 0.8) !important;
 }
 
+/* Sidebar navigation hover */
+.nav-link:not(.bg-primary):hover {
+  background-color: rgba(248, 249, 250, 0.8) !important;
+}
+
 /* Toast notification positioning */
 .toast-container {
   position: fixed;

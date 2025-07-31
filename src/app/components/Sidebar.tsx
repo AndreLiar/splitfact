@@ -36,21 +36,38 @@ export default function Sidebar() {
     return pathname.startsWith(href);
   };
 
+  // Handle navigation click
+  const handleNavClick = () => {
+    // Close mobile offcanvas if it's open
+    const offcanvas = document.getElementById('mobileSidebar');
+    if (offcanvas && window.getComputedStyle(offcanvas).display !== 'none') {
+      const bsOffcanvas = (window as any).bootstrap?.Offcanvas?.getInstance(offcanvas);
+      if (bsOffcanvas) {
+        bsOffcanvas.hide();
+      }
+    }
+  };
+
   // Render navigation item with active state
   const renderNavItem = (item: { name: string; href: string; icon: string }) => (
     <li className="nav-item" key={item.name}>
       <Link 
         href={item.href} 
-        className={`nav-link d-flex align-items-center py-3 px-3 rounded-2 mx-2 mb-1 transition-all ${
+        className={`nav-link d-flex align-items-center py-2 px-3 rounded-2 mx-2 mb-1 ${
           isActive(item.href) 
-            ? 'bg-primary text-white fw-semibold shadow-sm' 
-            : 'text-dark hover-bg-light'
+            ? 'bg-primary text-white fw-semibold' 
+            : 'text-dark'
         }`}
-        style={{ minHeight: '44px' }}
-        data-bs-dismiss="offcanvas"
+        style={{ 
+          minHeight: '44px',
+          textDecoration: 'none',
+          display: 'flex',
+          alignItems: 'center'
+        }}
+        onClick={handleNavClick}
       >
-        <i className={`bi ${item.icon} me-3`} style={{ fontSize: '1.1em' }}></i>
-        <span className="fs-6">{item.name}</span>
+        <i className={`bi ${item.icon} me-2`} style={{ fontSize: '1.1em' }}></i>
+        <span>{item.name}</span>
       </Link>
     </li>
   );
