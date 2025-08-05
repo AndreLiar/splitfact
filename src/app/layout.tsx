@@ -12,6 +12,7 @@ import FixedNotificationCenter from "@/app/dashboard/components/FixedNotificatio
 import FeedbackButton from "@/app/components/FeedbackButton";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -194,6 +195,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
             </>
           )}
         </SessionProvider>
+        <GoogleAnalytics gaId="G-VNPY0RYV2B" />
       </body>
     </html>
   );
