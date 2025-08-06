@@ -76,11 +76,12 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
         <meta name="description" content="Générez des factures collectives conformes avec vos freelances." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         
-        {/* Favicon configuration */}
+        {/* Favicon configuration - Override Vercel default */}
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="shortcut icon" href="/favicon.png" type="image/png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
-        <link rel="shortcut icon" href="/favicon.png" />
         
         {/* Google Analytics integrated - Force deployment */}
       </head>
