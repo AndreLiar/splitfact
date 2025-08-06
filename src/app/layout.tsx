@@ -75,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
         <title>Splitfact – La facturation collaborative</title>
         <meta name="description" content="Générez des factures collectives conformes avec vos freelances." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* Google Analytics integrated */}
+        {/* Google Analytics integrated - Force deployment */}
       </head>
       <body className={`${inter.variable} antialiased`} suppressHydrationWarning={true}>
         <SessionProvider>
