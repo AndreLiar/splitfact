@@ -153,7 +153,11 @@ export async function POST(request: Request) {
         false // failed
       );
 
-      return new NextResponse(`Failed to process fiscal advice query: ${processingError.message}`, { 
+      const errorMessage = processingError instanceof Error 
+        ? processingError.message 
+        : 'Unknown error occurred';
+
+      return new NextResponse(`Failed to process fiscal advice query: ${errorMessage}`, { 
         status: 500 
       });
     }
