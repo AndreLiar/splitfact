@@ -1,44 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
-import FiscalContextService from "@/lib/fiscal-context";
+import { getSmartRouter } from "@/lib/smart-query-router";
+import { getProgressiveEnhancer } from "@/lib/progressive-enhancer";
+import { getCostMonitor } from "@/lib/cost-monitor";
+import { createSelectiveMemoryManager } from "@/lib/selective-memory-manager";
 import { getMemoryService } from "@/lib/ai-memory";
-import { getFiscalOrchestrator } from "@/lib/fiscal-agents";
-import { getUniversalAI } from "@/lib/ai-service";
 
 export const runtime = 'nodejs';
-
-// Function to determine if a query requires multi-agent processing
-function isComplexQuery(query: string): boolean {
-  const complexKeywords = [
-    'optimize', 'optimis', 'stratégie', 'strategy', 'compare', 'compar',
-    'calculate', 'calcul', 'projection', 'forecast', 'prévision',
-    'threshold', 'seuil', 'compliance', 'conformité', 'audit',
-    'multi', 'several', 'plusieurs', 'complex', 'compliqué',
-    'analyze', 'analys', 'detailed', 'détaillé', 'comprehensive'
-  ];
-
-  const simpleKeywords = [
-    'what is', 'qu\'est-ce que', 'definition', 'définition',
-    'when', 'quand', 'where', 'où', 'how much', 'combien',
-    'yes or no', 'oui ou non', 'simple', 'basic', 'basique'
-  ];
-
-  const lowerQuery = query.toLowerCase();
-  
-  // If query contains simple keywords, use simple processing
-  if (simpleKeywords.some(keyword => lowerQuery.includes(keyword))) {
-    return false;
-  }
-  
-  // If query contains complex keywords or is long, use multi-agent
-  if (complexKeywords.some(keyword => lowerQuery.includes(keyword)) || query.length > 100) {
-    return true;
-  }
-  
-  // Default to simple processing for short, basic queries
-  return query.length > 50;
-}
 
 export async function POST(request: Request) {
   try {
@@ -47,78 +16,150 @@ export async function POST(request: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { query } = await request.json();
+    const { query, options = {} } = await request.json();
     if (!query) {
       return new NextResponse("Query is required", { status: 400 });
     }
 
-    // Determine if query requires multi-agent processing
-    const requiresMultiAgent = isComplexQuery(query);
+    const userId = session.user.id;
+    const startTime = Date.now();
 
-    let result;
-    let usedMultiAgent = false;
+    // Initialize services
+    const costMonitor = getCostMonitor();
+    const smartRouter = getSmartRouter();
+    const progressiveEnhancer = getProgressiveEnhancer();
+    const memoryManager = createSelectiveMemoryManager(getMemoryService());
 
-    if (requiresMultiAgent) {
-      // Get comprehensive fiscal context for complex queries
-      const fiscalProfile = await FiscalContextService.getUserFiscalProfile(session.user.id);
+    try {
+      // Check if user can afford this query
+      const { allowed, reason, remainingBudget } = await costMonitor.canAffordQuery(userId, 0.025); // Worst case cost
       
-      // Initialize memory service for conversation continuity
-      const memoryService = getMemoryService();
-      
-      // Get relevant memories and generate memory-aware context
-      const memoryContext = await memoryService.generateMemoryContext(session.user.id, query);
-      
-      // Initialize multi-agent orchestrator
-      const orchestrator = getFiscalOrchestrator();
+      if (!allowed) {
+        return NextResponse.json({ 
+          error: "Budget limit reached",
+          reason,
+          remainingBudget,
+          suggestion: "Try a simpler query or increase your budget limits"
+        }, { status: 402 }); // Payment Required
+      }
 
+      let result;
+      let metadata;
+
+      // Choose processing approach based on options
+      if (options.useProgressiveEnhancement) {
+        // Use progressive enhancement for optimal cost/quality balance
+        const enhancementResult = await progressiveEnhancer.enhanceQuery(query, {
+          userId,
+          maxAttempts: options.maxAttempts || 2,
+          maxCost: Math.min(remainingBudget, options.maxCost || 0.05),
+          satisfactionThreshold: options.satisfactionThreshold || 0.75
+        });
+        
+        result = enhancementResult.finalAnswer;
+        metadata = {
+          route: enhancementResult.metadata.finalRoute,
+          cost: enhancementResult.totalCost,
+          processingTime: enhancementResult.metadata.processingTime,
+          confidence: enhancementResult.confidence,
+          enhancementPath: enhancementResult.enhancementPath,
+          attempts: enhancementResult.metadata.attempts,
+          escalations: enhancementResult.metadata.escalations,
+          satisfactionScore: enhancementResult.satisfactionScore
+        };
+      } else {
+        // Use smart routing for direct optimal routing
+        const routingOptions = {
+          userId,
+          maxCost: Math.min(remainingBudget, options.maxCost || 0.05),
+          forceRoute: options.forceRoute,
+          skipMemory: options.skipMemory || false,
+          skipContext: options.skipContext || false
+        };
+
+        const response = await smartRouter.routeQuery(query, routingOptions);
+        
+        result = response.answer;
+        metadata = {
+          route: response.metadata.route,
+          agents: response.metadata.agents,
+          cost: response.metadata.cost,
+          processingTime: response.metadata.processingTime,
+          confidence: response.metadata.confidence,
+          usedContext: response.metadata.usedContext,
+          usedMemory: response.metadata.usedMemory,
+          escalated: response.metadata.escalated
+        };
+      }
+
+      // Track costs and performance
+      await costMonitor.trackQueryCost(
+        userId,
+        'fiscal-advice',
+        metadata.route,
+        metadata.cost, // estimated
+        metadata.cost, // actual (same for now)
+        metadata.processingTime,
+        true, // success
+        undefined // tokens used (would be populated by AI service)
+      );
+
+      // Selective memory storage
       try {
-        // Use multi-agent orchestration for complex fiscal advice
-        result = await orchestrator.processQuery(query, fiscalProfile, memoryContext);
-        usedMultiAgent = true;
-
-        // Store the conversation in memory for future reference
-        try {
-          await memoryService.storeConversation(
-            session.user.id,
+        // This would use the classification from smart router
+        // For now, we'll store based on route complexity
+        const shouldStore = metadata.route !== 'SIMPLE' && metadata.route !== 'FALLBACK';
+        
+        if (shouldStore && !options.skipMemory) {
+          await memoryManager.storeSelectively(
+            userId,
             query,
             result,
-            fiscalProfile
+            { category: metadata.route, domain: 'FISCAL' } as any // Simplified intent
           );
-        } catch (memoryError) {
-          console.warn("Failed to store conversation in memory:", memoryError);
-          // Continue with response even if memory storage fails
         }
-      } catch (orchestrationError) {
-        console.error("Multi-agent orchestration failed:", orchestrationError);
-        return new NextResponse("Failed to process request with fiscal agents.", { status: 500 });
+      } catch (memoryError) {
+        console.warn("Failed to store in selective memory:", memoryError);
+        // Continue with response
       }
-    } else {
-      // Use simple AI service for basic queries
-      try {
-        const aiService = getUniversalAI();
-        const systemPrompt = "You are a French fiscal advisor for micro-entrepreneurs. Keep your responses brief and practical.";
-        
-        const aiResponse = await aiService.chat(systemPrompt, query);
-        result = aiResponse;
-        usedMultiAgent = false;
-      } catch (simpleError) {
-        console.error("Simple AI service failed:", simpleError);
-        return new NextResponse("Failed to generate simple fiscal advice.", { status: 500 });
-      }
-    }
 
-    if (result) {
+      // Get cost analytics for user feedback
+      const analytics = costMonitor.getCostAnalytics(userId, 7); // Last 7 days
+
       return NextResponse.json({ 
         advice: result,
-        context: {
-          multiAgent: usedMultiAgent // Indicate whether multi-agent system was used
+        metadata: {
+          ...metadata,
+          analytics: {
+            totalSpent: analytics.totalCost,
+            queriesCount: analytics.costByRoute,
+            savings: analytics.savings,
+            remainingBudget
+          }
         }
       });
-    } else {
-      return new NextResponse("Failed to generate AI fiscal advice.", { status: 500 });
+
+    } catch (processingError) {
+      console.error("Query processing failed:", processingError);
+      
+      // Track failed query cost (minimal)
+      await costMonitor.trackQueryCost(
+        userId,
+        'fiscal-advice',
+        'ERROR',
+        0.001, // minimal cost for failed query
+        0.001,
+        Date.now() - startTime,
+        false // failed
+      );
+
+      return new NextResponse(`Failed to process fiscal advice query: ${processingError.message}`, { 
+        status: 500 
+      });
     }
+
   } catch (error) {
-    console.error("Error generating AI fiscal advice:", error);
+    console.error("Error in fiscal advice API:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
