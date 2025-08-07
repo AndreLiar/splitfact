@@ -24,6 +24,7 @@
     "db:schema-backup": "chmod +x scripts/backup-to-git.sh && ./scripts/backup-to-git.sh"
   },
   "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.70",
     "@google/generative-ai": "^0.24.1",
     "@langchain/community": "^0.3.49",
     "@langchain/core": "^0.3.66",
