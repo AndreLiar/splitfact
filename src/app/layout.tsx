@@ -10,6 +10,9 @@ import DashboardNavbar from "@/app/components/DashboardNavbar";
 import { ToastProvider } from "@/app/dashboard/components/ToastProvider";
 import FixedNotificationCenter from "@/app/dashboard/components/FixedNotificationCenter";
 import FeedbackButton from "@/app/components/FeedbackButton";
+import { PWAInstallBadge } from "@/app/components/PWAInstallPrompt";
+import OfflineIndicator from "@/app/components/OfflineIndicator";
+import PWAUpdatePrompt from "@/app/components/PWAUpdatePrompt";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { GoogleAnalytics } from '@next/third-parties/google';
@@ -83,6 +86,29 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
         
+        {/* PWA Configuration */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#2563EB" />
+        <meta name="application-name" content="Splitfact" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Splitfact" />
+        <meta name="msapplication-TileColor" content="#2563EB" />
+        <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+        
+        {/* Apple Touch Icons */}
+        <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png" />
+        <link rel="apple-touch-icon" sizes="96x96" href="/icons/icon-96x96.png" />
+        <link rel="apple-touch-icon" sizes="128x128" href="/icons/icon-128x128.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
+        
+        {/* Microsoft Edge/Windows */}
+        <meta name="msapplication-starturl" content="/dashboard" />
+        <meta name="msapplication-navbutton-color" content="#2563EB" />
+        
         {/* Google Analytics integrated - Force deployment */}
       </head>
       <body className={`${inter.variable} antialiased`} suppressHydrationWarning={true}>
@@ -90,6 +116,12 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
           {isDashboardRoute ? (
             <ToastProvider>
               <DashboardNavbar />
+              
+              {/* PWA Components */}
+              <OfflineIndicator showOnlineStatus={true} />
+              <PWAUpdatePrompt />
+              <PWAInstallBadge className="d-lg-none" />
+              
               <div 
                 className="offcanvas offcanvas-start mobile-sidebar-offcanvas" 
                 tabIndex={-1} 
