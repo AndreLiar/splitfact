@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import PWAInstallPrompt from '@/app/components/PWAInstallPrompt';
 
 export default function LandingPage() {
   return (
@@ -25,7 +26,7 @@ export default function LandingPage() {
             </p>
             
             {/* CTAs */}
-            <div className="d-flex flex-column flex-sm-row gap-3 mb-xl">
+            <div className="d-flex flex-column flex-sm-row gap-3 mb-lg">
               <Link href="/auth/register"
                 className="btn btn-primary btn-lg px-4 py-3 shadow-subtle text-center"
                 style={{fontSize: '18px', fontWeight: '600', minHeight: '50px'}}
@@ -38,6 +39,41 @@ export default function LandingPage() {
               >
                 Voir comment ça marche
               </Link>
+            </div>
+            
+            {/* PWA Download Section */}
+            <div className="mb-xl">
+              <PWAInstallPrompt className="mb-3" />
+              
+              {/* Alternative download buttons for non-PWA browsers */}
+              <div className="d-flex flex-wrap gap-2 align-items-center">
+                <small className="text-mediumGray me-2">📱 Aussi disponible comme app :</small>
+                <button 
+                  className="btn btn-outline-secondary btn-sm d-flex align-items-center"
+                  onClick={() => {
+                    // Fallback for browsers that don't support PWA
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                    const isAndroid = /Android/.test(navigator.userAgent);
+                    
+                    if (isIOS) {
+                      alert('Sur iOS : Appuyez sur "Partager" puis "Ajouter à l\'écran d\'accueil"');
+                    } else if (isAndroid) {
+                      alert('Sur Android : Menu → "Ajouter à l\'écran d\'accueil"');
+                    } else {
+                      alert('Utilisez Chrome, Edge ou Safari pour installer l\'application');
+                    }
+                  }}
+                  style={{ fontSize: '13px' }}
+                >
+                  <i className="bi bi-phone me-1"></i>
+                  Installer l'app
+                </button>
+                
+                <div className="d-flex align-items-center text-muted" style={{ fontSize: '12px' }}>
+                  <i className="bi bi-check-circle text-success me-1"></i>
+                  <span>Fonctionne hors ligne</span>
+                </div>
+              </div>
             </div>
             
             {/* Trust indicators */}
@@ -288,6 +324,155 @@ export default function LandingPage() {
             <i className="bi bi-shield-check me-2"></i>
             Gratuit pour toujours • Sans engagement • Support français
           </p>
+        </div>
+      </motion.section>
+
+      {/* PWA Features Section */}
+      <motion.section
+        id="mobile-app"
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="splitfact-section bg-white"
+      >
+        <div className="main-container text-center">
+          <div className="row justify-content-center">
+            <div className="col-lg-8">
+              <h2 className="display-4 fw-semibold mb-lg text-darkGray">
+                <i className="bi bi-phone me-3 text-primary"></i>
+                Une app qui marche partout
+              </h2>
+              <p className="lead text-mediumGray mb-xxl">
+                Installez Splitfact sur tous vos appareils. Travaillez en ligne ou hors ligne, 
+                vos données se synchronisent automatiquement.
+              </p>
+            </div>
+          </div>
+          
+          <div className="row g-xl mb-xxl">
+            <div className="col-md-4">
+              <div className="text-center">
+                <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-lg" 
+                     style={{width: '80px', height: '80px'}}>
+                  <i className="bi bi-download text-primary" style={{fontSize: '32px'}}></i>
+                </div>
+                <h4 className="text-darkGray mb-md fw-bold">Installation instantanée</h4>
+                <p className="text-mediumGray">
+                  Un clic pour installer sur votre téléphone, tablette ou ordinateur. 
+                  Aucun app store requis.
+                </p>
+              </div>
+            </div>
+            
+            <div className="col-md-4">
+              <div className="text-center">
+                <div className="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-lg" 
+                     style={{width: '80px', height: '80px'}}>
+                  <i className="bi bi-wifi-off text-success" style={{fontSize: '32px'}}></i>
+                </div>
+                <h4 className="text-darkGray mb-md fw-bold">Mode hors ligne</h4>
+                <p className="text-mediumGray">
+                  Créez vos factures même sans internet. Tout se synchronise 
+                  automatiquement une fois reconnecté.
+                </p>
+              </div>
+            </div>
+            
+            <div className="col-md-4">
+              <div className="text-center">
+                <div className="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-lg" 
+                     style={{width: '80px', height: '80px'}}>
+                  <i className="bi bi-lightning text-info" style={{fontSize: '32px'}}></i>
+                </div>
+                <h4 className="text-darkGray mb-md fw-bold">Ultra rapide</h4>
+                <p className="text-mediumGray">
+                  Lancement instantané et navigation fluide grâce à la technologie PWA. 
+                  Comme une app native.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* App Preview Mockup */}
+          <div className="row justify-content-center mb-xxl">
+            <div className="col-lg-10">
+              <div className="bg-gradient-primary rounded-xl p-xxl shadow-lg" 
+                   style={{background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)'}}>
+                <div className="row align-items-center">
+                  <div className="col-md-6 text-start">
+                    <div className="text-white">
+                      <h3 className="fw-bold mb-lg">📱 Télécharger l'app Splitfact</h3>
+                      <div className="mb-lg">
+                        <div className="d-flex align-items-center mb-md">
+                          <i className="bi bi-check-circle-fill me-2"></i>
+                          <span>Fonctionne sur iOS, Android, Windows</span>
+                        </div>
+                        <div className="d-flex align-items-center mb-md">
+                          <i className="bi bi-check-circle-fill me-2"></i>
+                          <span>Accès rapide depuis l'écran d'accueil</span>
+                        </div>
+                        <div className="d-flex align-items-center mb-md">
+                          <i className="bi bi-check-circle-fill me-2"></i>
+                          <span>Notifications des échéances URSSAF</span>
+                        </div>
+                      </div>
+                      
+                      <div className="d-flex flex-wrap gap-2">
+                        <PWAInstallPrompt className="d-inline-block" />
+                        
+                        <button 
+                          className="btn btn-light d-flex align-items-center"
+                          onClick={() => {
+                            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                            if (isIOS) {
+                              alert('📱 Sur Safari iOS :\n1. Appuyez sur le bouton "Partager"\n2. Sélectionnez "Ajouter à l\'écran d\'accueil"');
+                            } else {
+                              alert('💻 Instructions d\'installation :\n• Chrome/Edge : Icône d\'installation dans la barre d\'adresse\n• Safari : Menu Fichier → Ajouter à l\'écran d\'accueil');
+                            }
+                          }}
+                        >
+                          <i className="bi bi-info-circle me-2"></i>
+                          Comment installer ?
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="col-md-6 text-center">
+                    <div className="position-relative d-inline-block">
+                      {/* Phone mockup */}
+                      <div className="bg-white rounded-4 shadow-lg p-3" 
+                           style={{width: '200px', height: '400px', display: 'inline-block'}}>
+                        <div className="bg-primary rounded-3 h-100 d-flex flex-column justify-content-center align-items-center text-white">
+                          <i className="bi bi-phone-landscape mb-3" style={{fontSize: '48px'}}></i>
+                          <div className="fw-bold mb-2">Splitfact</div>
+                          <div className="small opacity-75">Facturation Collaborative</div>
+                          <div className="mt-4">
+                            <div className="bg-white bg-opacity-20 rounded px-3 py-1 small">
+                              📊 Dashboard
+                            </div>
+                            <div className="bg-white bg-opacity-20 rounded px-3 py-1 small mt-2">
+                              🧾 Factures
+                            </div>
+                            <div className="bg-white bg-opacity-20 rounded px-3 py-1 small mt-2">
+                              🤖 IA Fiscale
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Floating elements */}
+                      <div className="position-absolute top-0 end-0 bg-success text-white rounded-circle d-flex align-items-center justify-content-center" 
+                           style={{width: '40px', height: '40px', transform: 'translate(50%, -50%)'}}>
+                        <i className="bi bi-wifi small"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </motion.section>
 
