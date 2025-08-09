@@ -11,6 +11,7 @@ import AsyncSmartSuggestions from '@/app/dashboard/components/AsyncSmartSuggesti
 import { formatCurrency, formatCurrencyRobust } from '@/lib/utils';
 import PerformanceMonitor from '@/app/dashboard/components/PerformanceMonitor';
 import FeedbackButton from '@/app/components/FeedbackButton';
+import PWAInstallPrompt from '@/app/components/PWAInstallPrompt';
 
 interface Collective {
   id: string;
@@ -197,6 +198,11 @@ export default function Dashboard() {
   return (
     <div className="container-fluid py-3 py-lg-4">
       <h1 className="mb-3 text-darkGray">Tableau de bord</h1>
+      
+      {/* PWA Install Prompt - Desktop */}
+      <div className="d-none d-lg-block mb-4">
+        <PWAInstallPrompt />
+      </div>
 
       {/* Summary Cards */}
       <div className="row mb-4 g-3">
