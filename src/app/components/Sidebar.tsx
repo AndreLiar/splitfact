@@ -103,17 +103,19 @@ export default function Sidebar() {
     <li className="nav-item mobile-nav-item" key={item.name}>
       <Link 
         href={item.href} 
-        className={`nav-link d-flex align-items-center py-2 px-3 rounded-2 mx-2 mb-1 mobile-nav-link ${
+        className={`nav-link d-flex align-items-center py-3 px-4 rounded-3 mx-2 mb-2 mobile-nav-link ${
           isActive(item.href) 
-            ? 'bg-primary text-white fw-semibold active-nav-link' 
-            : 'text-dark'
+            ? 'bg-primary text-white fw-semibold active-nav-link shadow-sm' 
+            : 'text-dark hover-bg-light'
         }`}
         style={{ 
-          minHeight: '48px',
+          minHeight: '56px',
           textDecoration: 'none',
           display: 'flex',
           alignItems: 'center',
-          transition: 'all 0.2s ease-in-out'
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          position: 'relative',
+          overflow: 'hidden'
         }}
         onClick={(e) => {
           console.log(`Navigating to: ${item.name} (${item.href})`); // Debug log
@@ -122,8 +124,22 @@ export default function Sidebar() {
         role="menuitem"
         tabIndex={0}
       >
-        <i className={`bi ${item.icon} me-3 mobile-nav-icon`} style={{ fontSize: '1.2em', minWidth: '20px' }}></i>
-        <span className="mobile-nav-text">{item.name}</span>
+        <i className={`bi ${item.icon} me-3 mobile-nav-icon`} style={{ fontSize: '1.3em', minWidth: '24px' }}></i>
+        <span className="mobile-nav-text fw-medium">{item.name}</span>
+        {isActive(item.href) && (
+          <div 
+            className="position-absolute"
+            style={{
+              right: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '4px',
+              height: '24px',
+              backgroundColor: 'rgba(255,255,255,0.8)',
+              borderRadius: '2px'
+            }}
+          />
+        )}
       </Link>
     </li>
   );
@@ -272,22 +288,35 @@ export default function Sidebar() {
 // Add mobile-specific styles
 const mobileStyles = `
   @media (max-width: 768px) {
-    .mobile-nav-link:hover {
-      background-color: #f8f9fa !important;
-      transform: translateX(4px);
+    .mobile-nav-link:hover:not(.active-nav-link) {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+      transform: translateX(6px) scale(1.02);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
     
     .mobile-nav-link:active {
-      transform: translateX(2px) scale(0.98);
+      transform: translateX(3px) scale(0.98);
+      transition: all 0.1s ease;
     }
     
     .active-nav-link {
-      box-shadow: 0 2px 8px rgba(13, 110, 253, 0.2);
+      background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%) !important;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+      transform: translateX(4px);
     }
     
     .mobile-nav-text {
       font-size: 15px;
       font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+    
+    .mobile-nav-icon {
+      transition: transform 0.2s ease;
+    }
+    
+    .mobile-nav-link:hover .mobile-nav-icon {
+      transform: scale(1.1);
     }
     
     .mobile-section-header {

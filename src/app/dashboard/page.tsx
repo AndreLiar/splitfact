@@ -675,7 +675,8 @@ export default function Dashboard() {
               </div>
             ) : (
               <>
-                <div className="table-responsive">
+                {/* Desktop Table */}
+                <div className="table-responsive-mobile d-none d-lg-block">
                   <table className="table table-hover mb-0">
                     <thead>
                       <tr>
@@ -782,6 +783,93 @@ export default function Dashboard() {
                     </tbody>
                   </table>
                 </div>
+                
+                {/* Mobile Cards */}
+                <div className="mobile-table-container d-lg-none">
+                  {userInvoices.map((invoice, index) => (
+                    <div key={invoice.id} className="mobile-table-card">
+                      <div className="mobile-table-header">
+                        <div>
+                          <div className="mobile-table-title">
+                            <i className="bi bi-building me-2 text-primary"></i>
+                            {invoice.client?.name}
+                          </div>
+                          <div className="mobile-table-subtitle">
+                            ID: <code className="text-primary">{invoice.id.substring(0, 8)}...</code>
+                          </div>
+                        </div>
+                        <div className="text-end">
+                          <span className={`badge rounded-3 px-2 py-1 ${
+                            invoice.paymentStatus === 'paid'
+                              ? 'bg-success bg-opacity-10 text-success'
+                              : (new Date(invoice.dueDate) < new Date() ? 'bg-danger bg-opacity-10 text-danger' : 'bg-warning bg-opacity-10 text-warning')
+                          }`}>
+                            <i className={`bi ${
+                              invoice.paymentStatus === 'paid' 
+                                ? 'bi-check-circle-fill' 
+                                : (new Date(invoice.dueDate) < new Date() ? 'bi-exclamation-triangle-fill' : 'bi-clock-fill')
+                            } me-1`}></i>
+                            {invoice.paymentStatus === 'paid'
+                              ? "Payée"
+                              : (new Date(invoice.dueDate) < new Date() ? "En retard" : "En attente")
+                            }
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="mobile-table-rows">
+                        <div className="mobile-table-row">
+                          <span className="mobile-table-label">Montant</span>
+                          <span className="mobile-table-value text-primary fw-bold">
+                            {invoice.collective && invoice.shares && invoice.shares.length > 0
+                              ? formatCurrencyRobust(invoice.shares.find((share: any) => share.userId === session?.user?.id)?.calculatedAmount || 0)
+                              : formatCurrencyRobust(invoice.totalAmount)
+                            }
+                          </span>
+                        </div>
+                        
+                        {invoice.collective?.name && (
+                          <div className="mobile-table-row">
+                            <span className="mobile-table-label">Collectif</span>
+                            <span className="mobile-table-value">
+                              <span className="badge bg-info bg-opacity-10 text-info rounded-3 px-2 py-1">
+                                <i className="bi bi-people me-1"></i>
+                                {invoice.collective.name}
+                              </span>
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className="mobile-table-row">
+                          <span className="mobile-table-label">Email</span>
+                          <span className="mobile-table-value text-muted">
+                            {(invoice.client as any)?.email || 'Non fourni'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="mobile-card-actions">
+                        <Link 
+                          href={`/dashboard/invoices/${invoice.id}`} 
+                          className="btn btn-sm btn-outline-primary"
+                        >
+                          <i className="bi bi-eye me-1"></i>
+                          Voir
+                        </Link>
+                        <button className="btn btn-sm btn-outline-secondary">
+                          <i className="bi bi-download me-1"></i>
+                          PDF
+                        </button>
+                        {invoice.paymentStatus !== 'paid' && (
+                          <button className="btn btn-sm btn-outline-warning">
+                            <i className="bi bi-envelope me-1"></i>
+                            Relancer
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </>
             )}
             {totalInvoices > invoicesPerPage && (
@@ -871,61 +959,103 @@ export default function Dashboard() {
             </Link>
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="table table-hover mb-0">
-              <thead>
-                <tr>
-                  <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light">
-                    <i className="bi bi-hash me-1"></i>ID
-                  </th>
-                  <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light">
-                    <i className="bi bi-person-check me-1"></i>Émetteur
-                  </th>
-                  <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light">
-                    <i className="bi bi-link-45deg me-1"></i>Facture Parent
-                  </th>
-                  <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light text-end">
-                    <i className="bi bi-currency-euro me-1"></i>Montant
-                  </th>
-                  <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light text-end">
-                    <i className="bi bi-check-square me-1"></i>Statut
-                  </th>
-                  <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light text-end">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {receivedSubInvoices.map((subInvoice) => (
-                  <tr key={subInvoice.id} className="border-0">
-                    <td className="py-3 border-0">
-                      <code className="text-success small">{subInvoice.id.substring(0, 8)}...</code>
-                    </td>
-                    <td className="py-3 border-0">
-                      <div className="d-flex align-items-center">
-                        <div className="bg-success bg-opacity-10 rounded-circle p-2 me-2">
-                          <i className="bi bi-person text-success small"></i>
+          <>
+            {/* Desktop Sub-Invoices Table */}
+            <div className="table-responsive-mobile d-none d-lg-block">
+              <table className="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light">
+                      <i className="bi bi-hash me-1"></i>ID
+                    </th>
+                    <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light">
+                      <i className="bi bi-person-check me-1"></i>Émetteur
+                    </th>
+                    <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light">
+                      <i className="bi bi-link-45deg me-1"></i>Facture Parent
+                    </th>
+                    <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light text-end">
+                      <i className="bi bi-currency-euro me-1"></i>Montant
+                    </th>
+                    <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light text-end">
+                      <i className="bi bi-check-square me-1"></i>Statut
+                    </th>
+                    <th scope="col" className="text-muted text-uppercase small fw-semibold border-0 bg-light text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {receivedSubInvoices.map((subInvoice) => (
+                    <tr key={subInvoice.id} className="border-0">
+                      <td className="py-3 border-0">
+                        <code className="text-success small">{subInvoice.id.substring(0, 8)}...</code>
+                      </td>
+                      <td className="py-3 border-0">
+                        <div className="d-flex align-items-center">
+                          <div className="bg-success bg-opacity-10 rounded-circle p-2 me-2">
+                            <i className="bi bi-person text-success small"></i>
+                          </div>
+                          <div>
+                            <div className="fw-semibold text-dark small">{subInvoice.issuer?.name || 'Nom non fourni'}</div>
+                            <div className="text-muted small">{subInvoice.issuer?.email}</div>
+                          </div>
                         </div>
+                      </td>
+                      <td className="py-3 border-0">
                         <div>
-                          <div className="fw-semibold text-dark small">{subInvoice.issuer?.name || 'Nom non fourni'}</div>
-                          <div className="text-muted small">{subInvoice.issuer?.email}</div>
+                          <span className="fw-semibold text-dark small d-block">{subInvoice.parentInvoice?.invoiceNumber}</span>
+                          <span className="badge bg-info bg-opacity-10 text-info rounded-3 px-2 py-1 small">
+                            <i className="bi bi-people me-1"></i>
+                            {subInvoice.parentInvoice?.collective?.name || 'N/A'}
+                          </span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-3 border-0">
-                      <div>
-                        <span className="fw-semibold text-dark small d-block">{subInvoice.parentInvoice?.invoiceNumber}</span>
-                        <span className="badge bg-info bg-opacity-10 text-info rounded-3 px-2 py-1 small">
-                          <i className="bi bi-people me-1"></i>
-                          {subInvoice.parentInvoice?.collective?.name || 'N/A'}
+                      </td>
+                      <td className="py-3 border-0 text-end">
+                        <span className="fw-bold text-dark">
+                          {formatCurrencyRobust(subInvoice.amount)}
                         </span>
+                      </td>
+                      <td className="py-3 border-0 text-end">
+                        <span className={`badge rounded-3 px-3 py-2 ${
+                          subInvoice.status === 'paid' 
+                            ? 'bg-success bg-opacity-10 text-success' 
+                            : 'bg-secondary bg-opacity-10 text-secondary'
+                        }`}>
+                          <i className={`bi ${
+                            subInvoice.status === 'paid' ? 'bi-check-circle-fill' : 'bi-pencil-fill'
+                          } me-1`}></i>
+                          {subInvoice.status === 'paid' ? 'Payée' : 'Brouillon'}
+                        </span>
+                      </td>
+                      <td className="py-3 border-0 text-end">
+                        <Link 
+                          href={`/dashboard/sub-invoices/${subInvoice.id}`} 
+                          className="btn btn-sm btn-outline-secondary rounded-3"
+                        >
+                          <i className="bi bi-eye"></i>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Mobile Sub-Invoices Cards */}
+            <div className="mobile-table-container d-lg-none">
+              {receivedSubInvoices.map((subInvoice) => (
+                <div key={subInvoice.id} className="mobile-table-card">
+                  <div className="mobile-table-header">
+                    <div>
+                      <div className="mobile-table-title">
+                        <i className="bi bi-person-check me-2 text-success"></i>
+                        {subInvoice.issuer?.name || 'Nom non fourni'}
                       </div>
-                    </td>
-                    <td className="py-3 border-0 text-end">
-                      <span className="fw-bold text-dark">
-                        {formatCurrencyRobust(subInvoice.amount)}
-                      </span>
-                    </td>
-                    <td className="py-3 border-0 text-end">
-                      <span className={`badge rounded-3 px-3 py-2 ${
+                      <div className="mobile-table-subtitle">
+                        ID: <code className="text-success">{subInvoice.id.substring(0, 8)}...</code>
+                      </div>
+                    </div>
+                    <div className="text-end">
+                      <span className={`badge rounded-3 px-2 py-1 ${
                         subInvoice.status === 'paid' 
                           ? 'bg-success bg-opacity-10 text-success' 
                           : 'bg-secondary bg-opacity-10 text-secondary'
@@ -935,20 +1065,55 @@ export default function Dashboard() {
                         } me-1`}></i>
                         {subInvoice.status === 'paid' ? 'Payée' : 'Brouillon'}
                       </span>
-                    </td>
-                    <td className="py-3 border-0 text-end">
-                      <Link 
-                        href={`/dashboard/sub-invoices/${subInvoice.id}`} 
-                        className="btn btn-sm btn-outline-secondary rounded-3"
-                      >
-                        <i className="bi bi-eye"></i>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mobile-table-rows">
+                    <div className="mobile-table-row">
+                      <span className="mobile-table-label">Montant</span>
+                      <span className="mobile-table-value text-success fw-bold">
+                        {formatCurrencyRobust(subInvoice.amount)}
+                      </span>
+                    </div>
+                    
+                    <div className="mobile-table-row">
+                      <span className="mobile-table-label">Email Émetteur</span>
+                      <span className="mobile-table-value text-muted">
+                        {subInvoice.issuer?.email || 'Non fourni'}
+                      </span>
+                    </div>
+                    
+                    <div className="mobile-table-row">
+                      <span className="mobile-table-label">Facture Parent</span>
+                      <span className="mobile-table-value">
+                        <div>
+                          <span className="fw-semibold text-dark small d-block">
+                            {subInvoice.parentInvoice?.invoiceNumber || 'N/A'}
+                          </span>
+                          {subInvoice.parentInvoice?.collective?.name && (
+                            <span className="badge bg-info bg-opacity-10 text-info rounded-3 px-2 py-1 small">
+                              <i className="bi bi-people me-1"></i>
+                              {subInvoice.parentInvoice.collective.name}
+                            </span>
+                          )}
+                        </div>
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="mobile-card-actions">
+                    <Link 
+                      href={`/dashboard/sub-invoices/${subInvoice.id}`} 
+                      className="btn btn-sm btn-outline-success w-100"
+                    >
+                      <i className="bi bi-eye me-1"></i>
+                      Voir les détails
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
