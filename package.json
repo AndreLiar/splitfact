@@ -82,6 +82,7 @@
     "jest-environment-node": "^29.7.0",
     "node-mocks-http": "^1.17.2",
     "nodemailer": "^6.10.1",
+    "puppeteer": "^24.16.1",
     "supertest": "^7.1.4",
     "tailwindcss": "^4",
     "typescript": "^5"
