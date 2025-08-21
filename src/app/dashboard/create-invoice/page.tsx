@@ -432,9 +432,9 @@ export default function CreateInvoicePage() {
             
             {/* Step 1: General Information */}
             {currentStep === 1 && (
-              <div className="card shadow-sm border-0 rounded-xl">
+              <div className="card shadow-sm border-0 rounded-xl mobile-form-section">
                 <div className="card-body p-4">
-                  <h5 className="card-title text-darkGray mb-4 d-flex align-items-center">
+                  <h5 className="card-title text-darkGray mb-4 d-flex align-items-center mobile-form-title">
                     <i className="bi bi-info-circle me-2 text-primary"></i>
                     Informations générales
                   </h5>
@@ -462,13 +462,13 @@ export default function CreateInvoicePage() {
 
                   {/* Invoice Details */}
                   <div className="row g-3">
-                    <div className="col-lg-6 col-12">
-                      <label htmlFor="collectiveId" className="form-label fw-semibold">
+                    <div className="col-lg-6 col-12 mobile-form-group">
+                      <label htmlFor="collectiveId" className="form-label fw-semibold mobile-form-label">
                         <i className="bi bi-people me-1 text-primary"></i>
                         Collectif (optionnel)
                       </label>
                       <select 
-                        className="form-select rounded-input" 
+                        className="form-select rounded-input mobile-form-control" 
                         id="collectiveId" 
                         name="collectiveId" 
                         value={formData.collectiveId} 
@@ -487,13 +487,13 @@ export default function CreateInvoicePage() {
                       )}
                     </div>
 
-                    <div className="col-lg-6 col-12">
-                      <label htmlFor="clientId" className="form-label fw-semibold">
+                    <div className="col-lg-6 col-12 mobile-form-group">
+                      <label htmlFor="clientId" className="form-label fw-semibold mobile-form-label">
                         <i className="bi bi-person-badge me-1 text-primary"></i>
                         Client *
                       </label>
                       <select 
-                        className={`form-select rounded-input ${errors.clientId ? 'is-invalid' : ''}`}
+                        className={`form-select rounded-input mobile-form-control ${errors.clientId ? 'is-invalid' : ''}`}
                         id="clientId" 
                         name="clientId" 
                         value={formData.clientId} 
