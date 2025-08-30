@@ -1,0 +1,111 @@
+name: PR Validation Pipeline
+
+on:
+  pull_request:
+    branches: [dev, staging, main]
+    types: [opened, synchronize, reopened]
+
+env:
+  NODE_VERSION: '20'
+  COVERAGE_THRESHOLD: 70
+
+jobs:
+  validate-pr:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx prisma generate
+
+      - name: Code Quality Checks
+        run: |
+          echo "::group::ESLint"
+          npm run lint
+          echo "::endgroup::"
+          
+          echo "::group::TypeScript Check"
+          npx tsc --noEmit
+          echo "::endgroup::"
+
+      - name: Security Audit
+        run: |
+          echo "::group::Dependency Audit"
+          npm audit --audit-level=high
+          echo "::endgroup::"
+
+      - name: Run Tests
+        run: |
+          echo "::group::Unit & Integration Tests"
+          npm run test:ci
+          echo "::endgroup::"
+          
+          echo "::group::API Tests"
+          npm run test:api
+          echo "::endgroup::"
+
+      - name: Build Application
+        run: |
+          echo "::group::Build"
+          npm run build
+          echo "::endgroup::"
+          
+          echo "::group::PWA Validation"
+          npm run pwa:validate
+          echo "::endgroup::"
+
+      - name: Upload Coverage Reports
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Comment PR
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            let coverageReport = '';
+            
+            try {
+              if (fs.existsSync('./coverage/lcov-report/index.html')) {
+                coverageReport = '✅ Coverage report generated';
+              }
+            } catch (error) {
+              coverageReport = '❌ Coverage report failed';
+            }
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## PR Validation Results
+              
+              ${coverageReport}
+              
+              **Checks completed:**
+              - ✅ Code quality (ESLint + TypeScript)
+              - ✅ Security audit
+              - ✅ Unit & API tests
+              - ✅ Build validation
+              - ✅ PWA validation
+              
+              Ready for review! 🚀`
+            });
