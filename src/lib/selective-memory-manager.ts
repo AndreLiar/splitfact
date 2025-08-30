@@ -402,7 +402,9 @@ Format: Points clés uniquement.`;
       'SIMPLE': 3,
       'MODERATE': 5,
       'COMPLEX': 8,
-      'URGENT': 9
+      'URGENT': 9,
+      'WEB_RESEARCH': 7,
+      'MULTI_AGENT': 9
     };
     importance = categoryImportance[intent.category] || 5;
 
