@@ -6,6 +6,9 @@ import { getUniversalAI } from "./ai-service";
 import { getFiscalOrchestrator } from "./fiscal-agents";
 import FiscalContextService, { UserFiscalProfile } from "./fiscal-context";
 import { getMemoryService } from "./ai-memory";
+import { getWebSearchService, SearchResult } from "./web-search-service";
+import { getWebContentExtractor, ExtractedContent } from "./web-content-extractor";
+import { getMultiAgentOrchestrator, OrchestrationQuery } from "./multi-agent-orchestrator";
 
 export interface QueryResponse {
   answer: string;
@@ -18,15 +21,20 @@ export interface QueryResponse {
     usedContext: boolean;
     usedMemory: boolean;
     escalated?: boolean;
+    usedWebSearch?: boolean;
+    webSources?: SearchResult[];
+    extractedContent?: ExtractedContent[];
   };
 }
 
 export interface QueryRoutingOptions {
   userId: string;
   maxCost?: number;
-  forceRoute?: 'SIMPLE' | 'MODERATE' | 'COMPLEX' | 'URGENT';
+  forceRoute?: 'SIMPLE' | 'MODERATE' | 'COMPLEX' | 'URGENT' | 'WEB_RESEARCH' | 'MULTI_AGENT';
   skipMemory?: boolean;
   skipContext?: boolean;
+  enableWebSearch?: boolean;
+  maxWebResults?: number;
 }
 
 export class SmartQueryRouter {
@@ -34,6 +42,9 @@ export class SmartQueryRouter {
   private aiService = getUniversalAI();
   private orchestrator = getFiscalOrchestrator();
   private memoryService = getMemoryService();
+  private webSearchService = getWebSearchService();
+  private contentExtractor = getWebContentExtractor();
+  private multiAgentOrchestrator = getMultiAgentOrchestrator();
 
   // Cost tracking per user
   private userCosts: Map<string, { daily: number; monthly: number }> = new Map();
@@ -108,7 +119,7 @@ export class SmartQueryRouter {
 
     switch (intent.category) {
       case 'SIMPLE':
-        return await this.handleSimpleQuery(query, intent);
+        return await this.handleSimpleQuery(query, intent, options);
 
       case 'MODERATE':
         return await this.handleModerateQuery(query, intent, options);
@@ -119,6 +130,12 @@ export class SmartQueryRouter {
       case 'URGENT':
         return await this.handleUrgentQuery(query, intent, options);
 
+      case 'WEB_RESEARCH':
+        return await this.handleWebResearchQuery(query, intent, options);
+
+      case 'MULTI_AGENT':
+        return await this.handleMultiAgentQuery(query, intent, options);
+
       default:
         throw new Error(`Unknown query category: ${intent.category}`);
     }
@@ -127,7 +144,11 @@ export class SmartQueryRouter {
   /**
    * Handle SIMPLE queries - Direct AI with minimal context
    */
-  private async handleSimpleQuery(query: string, intent: QueryIntent): Promise<QueryResponse> {
+  private async handleSimpleQuery(
+    query: string, 
+    intent: QueryIntent, 
+    options: QueryRoutingOptions
+  ): Promise<QueryResponse> {
     const systemPrompt = this.getSystemPromptForDomain(intent.domain, 'SIMPLE');
     
     const answer = await this.aiService.chat(systemPrompt, query, { temperature: 0.3 });
@@ -284,6 +305,137 @@ Sois direct, précis et rassurant. Format ta réponse avec des sections claires.
   }
 
   /**
+   * Handle WEB_RESEARCH queries - Enhanced with real-time web information
+   */
+  private async handleWebResearchQuery(
+    query: string, 
+    intent: QueryIntent, 
+    options: QueryRoutingOptions
+  ): Promise<QueryResponse> {
+    const maxWebResults = options.maxWebResults || 4;
+    let webSources: SearchResult[] = [];
+    let extractedContent: ExtractedContent[] = [];
+    let webSearchCost = 0;
+
+    try {
+      // Step 1: Search for relevant fiscal information
+      webSources = await this.webSearchService.searchFiscalInfo(query, {
+        maxResults: maxWebResults,
+        trustedSources: true,
+        fiscalSpecific: true
+      });
+
+      webSearchCost += this.webSearchService.getEstimatedCost(maxWebResults);
+
+      // Step 2: Extract content from top sources (limit to avoid excessive processing)
+      const topSources = webSources.slice(0, 2);
+      
+      for (const source of topSources) {
+        try {
+          const content = await this.contentExtractor.extractContent(source.url, {
+            maxLength: 2000,
+            validateFiscalContent: true,
+            extractKeyPoints: true
+          });
+          
+          if (content.reliability > 0.5) {
+            extractedContent.push(content);
+          }
+        } catch (extractError) {
+          console.warn(`Failed to extract content from ${source.url}:`, extractError);
+        }
+      }
+
+      // Step 3: Build enhanced prompt with web information
+      const systemPrompt = this.getWebResearchPrompt();
+      const webContext = this.buildWebContext(webSources, extractedContent);
+      const enhancedQuery = `${query}\n\n--- INFORMATIONS WEB RÉCENTES ---\n${webContext}`;
+
+      // Step 4: Get AI response with web-enhanced context
+      const answer = await this.aiService.chat(systemPrompt, enhancedQuery, { 
+        temperature: 0.4
+      });
+
+      return {
+        answer,
+        metadata: {
+          route: 'WEB_RESEARCH',
+          agents: ['web-researcher', 'fiscal-analyst'],
+          cost: intent.estimatedCost + webSearchCost,
+          processingTime: 0,
+          confidence: Math.min(intent.confidence + 0.1, 1.0), // Boost confidence with web data
+          usedContext: true,
+          usedMemory: false,
+          usedWebSearch: true,
+          webSources,
+          extractedContent
+        }
+      };
+
+    } catch (webError) {
+      console.error("Web research failed, falling back to standard response:", webError);
+      
+      // Fallback to moderate query handling if web search fails
+      return await this.handleModerateQuery(query, intent, options);
+    }
+  }
+
+  /**
+   * Build context from web search results and extracted content
+   */
+  private buildWebContext(sources: SearchResult[], content: ExtractedContent[]): string {
+    let context = '';
+
+    // Add key points from extracted content
+    if (content.length > 0) {
+      context += 'POINTS CLÉS EXTRAITS :\n';
+      content.forEach((item, index) => {
+        if (item.keyPoints.length > 0) {
+          context += `\nSource ${index + 1} (${item.domain}) :\n`;
+          item.keyPoints.forEach(point => {
+            context += `• ${point}\n`;
+          });
+        }
+      });
+    }
+
+    // Add source summaries
+    if (sources.length > 0) {
+      context += '\nSOURCES CONSULTÉES :\n';
+      sources.forEach((source, index) => {
+        context += `${index + 1}. ${source.title}\n`;
+        context += `   ${source.snippet}\n`;
+        context += `   Source: ${source.domain} (fiabilité: ${(source.trustScore * 100).toFixed(0)}%)\n\n`;
+      });
+    }
+
+    return context.trim();
+  }
+
+  /**
+   * Get specialized prompt for web-enhanced responses
+   */
+  private getWebResearchPrompt(): string {
+    return `Tu es un CONSEILLER FISCAL EXPERT avec accès aux informations les plus récentes.
+
+🔍 **Capacités renforcées :**
+- Accès aux dernières réglementations URSSAF et fiscales
+- Informations en temps réel sur les seuils et taux
+- Veille réglementaire active
+
+📋 **Instructions :**
+- Utilise les informations web récentes fournies pour enrichir ta réponse
+- Cite tes sources quand tu utilises des données spécifiques
+- Signale si les informations datent ou peuvent avoir évolué
+- Reste factuel et précis
+- Utilise des émojis pour structurer ta réponse
+
+⚠️ **Important :** Si les informations web semblent contradictoires avec tes connaissances, privilégie les sources officielles (.gouv.fr, urssaf.fr) et signale les divergences.
+
+Réponds de manière complète et à jour en français.`;
+  }
+
+  /**
    * Check if user can afford the estimated cost
    */
   private async checkCostLimits(
@@ -317,17 +469,87 @@ Sois direct, précis et rassurant. Format ta réponse avec des sections claires.
   }
 
   /**
+   * Handle MULTI_AGENT queries - Full multi-agent orchestration with intelligent coordination
+   */
+  private async handleMultiAgentQuery(
+    query: string, 
+    intent: QueryIntent, 
+    options: QueryRoutingOptions
+  ): Promise<QueryResponse> {
+    try {
+      // Prepare orchestration query
+      const orchestrationQuery: OrchestrationQuery = {
+        originalQuery: query,
+        userId: options.userId,
+        context: {
+          urgency: intent.priority === 'CRITICAL' ? 'high' : 
+                   intent.priority === 'HIGH' ? 'medium' : 'low',
+          requiresRealTimeData: intent.needsContext,
+          requiresNotionData: intent.domain === 'STRATEGY' || intent.category === 'COMPLEX'
+        }
+      };
+
+      // Add user context if available
+      try {
+        const fiscalProfile = await FiscalContextService.getUserFiscalProfile(options.userId);
+        orchestrationQuery.context!.userRevenue = fiscalProfile.revenue.totalPaid;
+        orchestrationQuery.context!.userThresholdProgress = fiscalProfile.compliance.bncThresholdProgress;
+        orchestrationQuery.context!.businessType = 'micro-entrepreneur';
+      } catch (contextError) {
+        console.warn("Failed to load fiscal context for multi-agent:", contextError);
+      }
+
+      // Execute multi-agent orchestration
+      const orchestrationResult = await this.multiAgentOrchestrator.processQuery(orchestrationQuery);
+
+      return {
+        answer: orchestrationResult.answer,
+        metadata: {
+          route: 'MULTI_AGENT',
+          agents: orchestrationResult.agentsUsed,
+          cost: intent.estimatedCost + (orchestrationResult.executionTime * 0.00001), // Add time-based cost
+          processingTime: 0,
+          confidence: orchestrationResult.confidence,
+          usedContext: true,
+          usedMemory: false,
+          usedWebSearch: orchestrationResult.sources.some(s => s.type === 'web'),
+          webSources: orchestrationResult.sources
+            .filter(s => s.type === 'web')
+            .map(s => ({
+              title: s.title,
+              url: s.url || '',
+              snippet: '',
+              domain: new URL(s.url || 'https://example.com').hostname,
+              trustScore: s.reliability,
+              publishDate: new Date(),
+              relevanceScore: s.reliability,
+              source: 'direct' as const
+            }))
+        }
+      };
+
+    } catch (orchestrationError) {
+      console.error("Multi-agent orchestration failed:", orchestrationError);
+      
+      // Fallback to complex query handling
+      return await this.handleComplexQuery(query, intent, options);
+    }
+  }
+
+  /**
    * Get classification for a forced route
    */
   private async getClassificationForRoute(
-    route: 'SIMPLE' | 'MODERATE' | 'COMPLEX' | 'URGENT', 
-    query: string
+    route: 'SIMPLE' | 'MODERATE' | 'COMPLEX' | 'URGENT' | 'WEB_RESEARCH' | 'MULTI_AGENT', 
+    _query: string
   ): Promise<QueryClassification> {
     const costEstimates = {
       SIMPLE: 0.001,
       MODERATE: 0.005,
       COMPLEX: 0.025,
-      URGENT: 0.015
+      URGENT: 0.015,
+      WEB_RESEARCH: 0.035,
+      MULTI_AGENT: 0.045
     };
 
     return {
@@ -335,7 +557,9 @@ Sois direct, précis et rassurant. Format ta réponse avec des sections claires.
         category: route,
         domain: 'GENERAL',
         confidence: 0.7,
-        requiredAgents: route === 'COMPLEX' ? ['analyst', 'expert'] : ['basic'],
+        requiredAgents: route === 'COMPLEX' ? ['analyst', 'expert'] : 
+                       route === 'WEB_RESEARCH' ? ['web-researcher', 'fiscal-analyst'] :
+                       route === 'MULTI_AGENT' ? ['research-agent', 'notion-agent', 'orchestrator'] : ['basic'],
         estimatedCost: costEstimates[route],
         priority: route === 'URGENT' ? 'CRITICAL' : 'MEDIUM',
         needsContext: route !== 'SIMPLE',

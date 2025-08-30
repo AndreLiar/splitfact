@@ -2,6 +2,7 @@
 // Read-only access to all user business data for intelligent context awareness
 
 import { PrismaClient } from '@prisma/client';
+import { getNotionService, NotionFiscalData } from './notion-service';
 
 const prisma = new PrismaClient();
 
@@ -51,6 +52,16 @@ export interface UserFiscalProfile {
     cashFlowForecast: CashFlowPrediction[];
     businessGrowthStage: 'startup' | 'growth' | 'mature';
     riskFactors: string[];
+  };
+
+  // Notion Integration Data
+  notion: {
+    isConnected: boolean;
+    workspaceName?: string;
+    lastSyncAt?: Date;
+    syncEnabled: boolean;
+    fiscalData?: NotionFiscalData;
+    enhancedInsights?: NotionEnhancedInsights;
   };
 }
 
@@ -107,6 +118,32 @@ export interface CashFlowPrediction {
   basedOnInvoices: string[]; // Invoice IDs
 }
 
+export interface NotionEnhancedInsights {
+  crossPlatformRevenue: {
+    splitfactTotal: number;
+    notionTotal: number;
+    discrepancies: number;
+  };
+  enhancedClientAnalysis: {
+    clientsWithNotionProjects: number;
+    totalProjectsTracked: number;
+    averageProjectValue: number;
+  };
+  businessMetricsFromNotion: {
+    customMetrics: Array<{
+      name: string;
+      value: number;
+      trend: 'up' | 'down' | 'stable';
+    }>;
+  };
+  fiscalNotesInsights: {
+    totalNotes: number;
+    urgentReminders: number;
+    strategicNotes: number;
+    lastNoteDate?: Date;
+  };
+}
+
 export class FiscalContextService {
   
   static async getUserFiscalProfile(userId: string): Promise<UserFiscalProfile> {
@@ -152,6 +189,9 @@ export class FiscalContextService {
     // Generate business insights
     const insights = this.generateBusinessInsights(invoices, clients, currentYear);
 
+    // Get Notion integration data
+    const notionData = await this.getNotionIntegrationData(userId);
+
     return {
       userId,
       userName: user.name || 'Utilisateur',
@@ -161,7 +201,8 @@ export class FiscalContextService {
       clients: clientAnalysis,
       invoicing: invoicingPatterns,
       compliance,
-      insights
+      insights,
+      notion: notionData
     };
   }
 
@@ -414,6 +455,98 @@ export class FiscalContextService {
   private static identifyRiskFactors(invoices: any[], clients: any[]): string[] {
     // Risk factor identification
     return [];
+  }
+
+  /**
+   * Get Notion integration data and enhanced insights
+   */
+  private static async getNotionIntegrationData(userId: string) {
+    try {
+      const notionService = getNotionService(userId);
+      const isInitialized = await notionService.initialize();
+
+      if (!isInitialized) {
+        return {
+          isConnected: false,
+          syncEnabled: false
+        };
+      }
+
+      // Get connection status
+      const status = await notionService.getConnectionStatus();
+      
+      if (!status.connected) {
+        return {
+          isConnected: false,
+          syncEnabled: false
+        };
+      }
+
+      // Try to sync fiscal data
+      let fiscalData = undefined;
+      let enhancedInsights = undefined;
+
+      try {
+        fiscalData = await notionService.syncFiscalData();
+        enhancedInsights = this.calculateNotionEnhancedInsights(fiscalData);
+      } catch (syncError) {
+        console.warn('Failed to sync Notion data:', syncError);
+      }
+
+      return {
+        isConnected: true,
+        workspaceName: status.workspace,
+        lastSyncAt: status.lastSync,
+        syncEnabled: true,
+        fiscalData,
+        enhancedInsights
+      };
+
+    } catch (error) {
+      console.error('Error getting Notion integration data:', error);
+      return {
+        isConnected: false,
+        syncEnabled: false
+      };
+    }
+  }
+
+  /**
+   * Calculate enhanced insights from Notion data
+   */
+  private static calculateNotionEnhancedInsights(fiscalData: NotionFiscalData): NotionEnhancedInsights {
+    const splitfactRevenue = 0; // Would be calculated from current data
+    const notionRevenue = fiscalData.revenues.reduce((sum, rev) => sum + rev.amount, 0);
+
+    return {
+      crossPlatformRevenue: {
+        splitfactTotal: splitfactRevenue,
+        notionTotal: notionRevenue,
+        discrepancies: Math.abs(splitfactRevenue - notionRevenue)
+      },
+      enhancedClientAnalysis: {
+        clientsWithNotionProjects: fiscalData.clients.filter(c => c.projects.length > 0).length,
+        totalProjectsTracked: fiscalData.clients.reduce((sum, c) => sum + c.projects.length, 0),
+        averageProjectValue: fiscalData.clients.length > 0 
+          ? fiscalData.clients.reduce((sum, c) => sum + c.totalRevenue, 0) / fiscalData.clients.length 
+          : 0
+      },
+      businessMetricsFromNotion: {
+        customMetrics: fiscalData.businessMetrics.map(metric => ({
+          name: metric.metric,
+          value: metric.value,
+          trend: 'stable' as const // Would need historical data to determine trend
+        }))
+      },
+      fiscalNotesInsights: {
+        totalNotes: fiscalData.fiscalNotes.length,
+        urgentReminders: fiscalData.fiscalNotes.filter(n => n.priority === 'urgent').length,
+        strategicNotes: fiscalData.fiscalNotes.filter(n => n.category === 'strategy').length,
+        lastNoteDate: fiscalData.fiscalNotes.length > 0 
+          ? new Date(Math.max(...fiscalData.fiscalNotes.map(n => new Date(n.date).getTime())))
+          : undefined
+      }
+    };
   }
 }
 
