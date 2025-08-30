@@ -4,7 +4,7 @@
 import { getUniversalAI } from "./ai-service";
 
 export interface QueryIntent {
-  category: 'SIMPLE' | 'MODERATE' | 'COMPLEX' | 'URGENT';
+  category: 'SIMPLE' | 'MODERATE' | 'COMPLEX' | 'URGENT' | 'WEB_RESEARCH' | 'MULTI_AGENT';
   domain: 'FISCAL' | 'COMPLIANCE' | 'STRATEGY' | 'CALCULATION' | 'GENERAL';
   confidence: number; // 0-1
   requiredAgents: string[];
@@ -28,7 +28,8 @@ export class EnhancedQueryClassifier {
     SIMPLE: 0.001,      // Single AI call
     MODERATE: 0.005,    // AI + Context
     COMPLEX: 0.025,     // Multi-agent workflow
-    URGENT: 0.015       // Priority single agent
+    URGENT: 0.015,      // Priority single agent
+    WEB_RESEARCH: 0.035 // AI + Web search + Content extraction
   };
 
   /**
