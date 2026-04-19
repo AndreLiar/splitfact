@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/domains/*": ["./src/domains/*"],
+      "@/types/*": ["./src/types/*"]
     },
     "types": ["jest", "node"]
   },
