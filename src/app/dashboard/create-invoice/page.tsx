@@ -21,13 +21,6 @@ interface UserProfile {
   microEntrepreneurType: "COMMERCANT" | "PRESTATAIRE" | "LIBERAL" | null;
 }
 
-interface Share {
-  userId: string;
-  shareType: 'percent' | 'fixed';
-  shareValue: number;
-  description?: string;
-}
-
 interface Client {
   id: string;
   name: string;
@@ -53,11 +46,9 @@ interface FormData {
     unitPrice: number;
     tvaRate: number;
   }>;
-  collectiveId: string;
   paymentTerms: string;
   latePenaltyRate: string;
   recoveryIndemnity: number;
-  shares: Share[];
   clientName?: string;
   clientAddress?: string;
   clientSiret?: string;
@@ -71,7 +62,7 @@ interface FormData {
 
 const invoiceSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
-  
+
   invoiceDate: z.string().min(1, 'Invoice date is required'),
   dueDate: z.string().min(1, 'Due date is required'),
   items: z.array(z.object({
@@ -82,7 +73,6 @@ const invoiceSchema = z.object({
   })).min(1, 'At least one item is required'),
   transactionType: z.enum(['B2B', 'B2C', 'B2G']).default('B2B'),
   deliveryAddress: z.string().optional(),
-  collectiveId: z.string().optional(),
   paymentTerms: z.string().optional(),
   latePenaltyRate: z.string().optional(),
   recoveryIndemnity: z.number().optional(),
@@ -95,12 +85,6 @@ const invoiceSchema = z.object({
   clientContactName: z.string().optional(),
   clientEmail: z.string().optional(),
   clientPhone: z.string().optional(),
-  shares: z.array(z.object({
-    userId: z.string().min(1, 'User is required'),
-    shareType: z.enum(['percent', 'fixed']),
-    shareValue: z.number().min(0, 'Share value cannot be negative'),
-    description: z.string().optional(), // New field for share description
-  })).optional(),
 });
 
 export default function CreateInvoicePage() {
@@ -108,21 +92,17 @@ export default function CreateInvoicePage() {
   const router = useRouter();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState<FormData>({
-    clientId: '',
-    invoiceDate: new Date().toISOString().split('T')[0],
-    dueDate: '',
-    transactionType: 'B2B',
-    deliveryAddress: '',
-    items: [{ description: '', quantity: 1, unitPrice: 0, tvaRate: 0 }],
-    collectiveId: '',
-    paymentTerms: 'Paiement à 30 jours fin de mois',
-    latePenaltyRate: '3 fois le taux d’intérêt légal',
+    clientId: ‘’,
+    invoiceDate: new Date().toISOString().split(‘T’)[0],
+    dueDate: ‘’,
+    transactionType: ‘B2B’,
+    deliveryAddress: ‘’,
+    items: [{ description: ‘’, quantity: 1, unitPrice: 0, tvaRate: 0 }],
+    paymentTerms: ‘Paiement à 30 jours fin de mois’,
+    latePenaltyRate: ‘3 fois le taux d’intérêt légal’,
     recoveryIndemnity: 40,
-    shares: [] as Share[], // Initialize shares as an empty array
   });
-  const [collectives, setCollectives] = useState<any[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [collectiveMembers, setCollectiveMembers] = useState<any[]>([]);
   const [errors, setErrors] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
@@ -208,17 +188,9 @@ export default function CreateInvoicePage() {
       router.push('/auth/signin');
     } else if (status === 'authenticated') {
       fetchUserProfile();
-      fetchCollectives();
       fetchClients();
     }
   }, [status, router]);
-
-  useEffect(() => {
-    if (formData.collectiveId) {
-      fetchCollectiveMembers(formData.collectiveId);
-    }
-    fetchClients(); // Fetch clients independently of collectiveId
-  }, [formData.collectiveId]);
 
   const fetchUserProfile = async () => {
     try {
@@ -241,19 +213,6 @@ export default function CreateInvoicePage() {
     }
   };
 
-  const fetchCollectives = async () => {
-    try {
-      const response = await fetch('/api/collectives');
-      if (!response.ok) {
-        throw new Error('Failed to fetch collectives');
-      }
-      const data = await response.json();
-      setCollectives(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   const fetchClients = async () => {
     try {
       const response = await fetch(`/api/clients`); // New endpoint
@@ -262,19 +221,6 @@ export default function CreateInvoicePage() {
       }
       const data = await response.json();
       setClients(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const fetchCollectiveMembers = async (collectiveId: string) => {
-    try {
-      const response = await fetch(`/api/collectives/${collectiveId}/members`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch collective members');
-      }
-      const data = await response.json();
-      setCollectiveMembers(data);
     } catch (error) {
       console.error(error);
     }
@@ -318,22 +264,6 @@ export default function CreateInvoicePage() {
     setFormData({ ...formData, items });
   };
 
-  const handleShareChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    const shares = [...formData.shares || []];
-    
-    if (name === 'shareValue') {
-      // Clean and parse numeric values properly
-      const cleanValue = String(value).replace(/[^\d.,\-]/g, '').replace(',', '.');
-      const numericValue = parseFloat(cleanValue) || 0;
-      shares[index] = { ...shares[index], [name]: numericValue };
-    } else {
-      shares[index] = { ...shares[index], [name]: value };
-    }
-    
-    setFormData({ ...formData, shares });
-  };
-
   const addItem = () => {
     setFormData({
       ...formData,
@@ -345,16 +275,6 @@ export default function CreateInvoicePage() {
     const items = [...formData.items];
     items.splice(index, 1);
     setFormData({ ...formData, items });
-  };
-
-  const addShare = () => {
-    setFormData({ ...formData, shares: [...formData.shares || [], { userId: '', shareType: 'percent', shareValue: 0 }] });
-  };
-
-  const removeShare = (index: number) => {
-    const shares = [...formData.shares || []];
-    shares.splice(index, 1);
-    setFormData({ ...formData, shares });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -375,10 +295,7 @@ export default function CreateInvoicePage() {
       const response = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...result.data,
-          collectiveId: result.data.collectiveId === '' ? null : result.data.collectiveId,
-        }),
+        body: JSON.stringify(result.data),
       });
 
       if (!response.ok) {
@@ -426,7 +343,7 @@ export default function CreateInvoicePage() {
   };
 
   const nextStep = () => {
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
@@ -438,11 +355,9 @@ export default function CreateInvoicePage() {
       case 1:
         return formData.clientId && formData.invoiceDate && formData.dueDate;
       case 2:
-        return formData.items.length > 0 && formData.items.every(item => 
+        return formData.items.length > 0 && formData.items.every(item =>
           item.description && item.quantity > 0 && item.unitPrice >= 0
         );
-      case 3:
-        return !formData.collectiveId || (formData.shares && formData.shares.length > 0);
       default:
         return true;
     }
@@ -453,7 +368,6 @@ export default function CreateInvoicePage() {
       '',
       'Informations générales',
       'Articles & Services',
-      'Répartition collective',
       'Vérification & Création'
     ];
     return titles[step];
@@ -518,10 +432,10 @@ export default function CreateInvoicePage() {
           
           {/* Progress Bar */}
           <div className="progress mb-4" style={{ height: '8px' }}>
-            <div 
-              className="progress-bar bg-primary" 
-              role="progressbar" 
-              style={{ width: `${(currentStep / 4) * 100}%` }}
+            <div
+              className="progress-bar bg-primary"
+              role="progressbar"
+              style={{ width: `${(currentStep / 3) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -705,31 +619,6 @@ export default function CreateInvoicePage() {
 
                   {/* Invoice Details */}
                   <div className="row g-3">
-                    <div className="col-lg-6 col-12 mobile-form-group">
-                      <label htmlFor="collectiveId" className="form-label fw-semibold mobile-form-label">
-                        <i className="bi bi-people me-1 text-primary"></i>
-                        Collectif (optionnel)
-                      </label>
-                      <select 
-                        className="form-select rounded-input mobile-form-control" 
-                        id="collectiveId" 
-                        name="collectiveId" 
-                        value={formData.collectiveId} 
-                        onChange={handleInputChange}
-                      >
-                        <option value="">Facture individuelle</option>
-                        {collectives.map((c: any) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
-                      {formData.collectiveId && (
-                        <small className="text-info">
-                          <i className="bi bi-info-circle me-1"></i>
-                          Cette facture utilisera la répartition définie pour ce collectif
-                        </small>
-                      )}
-                    </div>
-
                     <div className="col-lg-6 col-12 mobile-form-group">
                       <label htmlFor="clientId" className="form-label fw-semibold mobile-form-label">
                         <i className="bi bi-person-badge me-1 text-primary"></i>
@@ -972,124 +861,8 @@ export default function CreateInvoicePage() {
               </div>
             )}
 
-            {/* Step 3: Shares (only if collective) */}
+            {/* Step 3: Review */}
             {currentStep === 3 && (
-              <div className="card shadow-sm border-0 rounded-xl">
-                <div className="card-body p-4">
-                  <h5 className="card-title text-darkGray mb-4 d-flex align-items-center">
-                    <i className="bi bi-diagram-3 me-2 text-primary"></i>
-                    Répartition collective
-                  </h5>
-
-                  {!formData.collectiveId ? (
-                    <div className="text-center py-5">
-                      <i className="bi bi-person display-4 text-mediumGray mb-3"></i>
-                      <h6 className="text-darkGray">Facture individuelle</h6>
-                      <p className="text-mediumGray">Aucune répartition collective n'est appliquée à cette facture.</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="alert alert-info border-0 rounded-xl mb-4">
-                        <i className="bi bi-info-circle me-2"></i>
-                        Définissez comment le montant de cette facture est réparti entre les membres du collectif.
-                      </div>
-
-                      {formData.shares?.map((share, index) => (
-                        <div key={index} className="card bg-light border-0 rounded-xl mb-3">
-                          <div className="card-body p-3">
-                            <div className="d-flex justify-content-between align-items-center mb-3">
-                              <h6 className="mb-0 text-darkGray">Part {index + 1}</h6>
-                              <button 
-                                type="button" 
-                                className="btn btn-outline-danger btn-sm rounded-pill"
-                                onClick={() => removeShare(index)}
-                              >
-                                <i className="bi bi-trash me-1"></i>
-                                Supprimer
-                              </button>
-                            </div>
-
-                            <div className="row g-3">
-                              <div className="col-md-4">
-                                <label className="form-label fw-semibold">Membre *</label>
-                                <select 
-                                  className="form-select rounded-input" 
-                                  name="userId" 
-                                  value={share.userId} 
-                                  onChange={(e) => handleShareChange(index, e)}
-                                >
-                                  <option value="">Sélectionner un membre</option>
-                                  {collectiveMembers.map((member: any) => (
-                                    <option key={member.userId} value={member.userId}>
-                                      {member.user.name || member.user.email}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              <div className="col-md-3">
-                                <label className="form-label fw-semibold">Type de part</label>
-                                <select 
-                                  className="form-select rounded-input" 
-                                  name="shareType" 
-                                  value={share.shareType} 
-                                  onChange={(e) => handleShareChange(index, e)}
-                                >
-                                  <option value="percent">Pourcentage (%)</option>
-                                  <option value="fixed">Montant fixe (€)</option>
-                                </select>
-                              </div>
-
-                              <div className="col-md-3">
-                                <label className="form-label fw-semibold">Valeur</label>
-                                <div className="input-group">
-                                  <input 
-                                    type="number" 
-                                    className="form-control rounded-input" 
-                                    name="shareValue" 
-                                    value={isNaN(share.shareValue) ? '' : share.shareValue} 
-                                    onChange={(e) => handleShareChange(index, e)}
-                                    min="0"
-                                    step={share.shareType === 'percent' ? '1' : '0.01'}
-                                  />
-                                  <span className="input-group-text bg-light">
-                                    {share.shareType === 'percent' ? '%' : '€'}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="col-12">
-                                <label className="form-label fw-semibold">Description des services</label>
-                                <textarea 
-                                  className="form-control rounded-input" 
-                                  name="description" 
-                                  value={share.description || ''} 
-                                  onChange={(e) => handleShareChange(index, e)} 
-                                  rows={2}
-                                  placeholder="Décrivez les services fournis par ce membre..."
-                                ></textarea>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      <button 
-                        type="button" 
-                        className="btn btn-outline-primary rounded-pill" 
-                        onClick={addShare}
-                      >
-                        <i className="bi bi-plus-circle me-2"></i>
-                        Ajouter une part
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Review */}
-            {currentStep === 4 && (
               <div className="card shadow-sm border-0 rounded-xl">
                 <div className="card-body p-4">
                   <h5 className="card-title text-darkGray mb-4 d-flex align-items-center">
@@ -1110,12 +883,6 @@ export default function CreateInvoicePage() {
                           <small className="text-mediumGray">Date d'échéance</small>
                           <div className="fw-semibold">{new Date(formData.dueDate).toLocaleDateString('fr-FR')}</div>
                         </div>
-                        {formData.collectiveId && (
-                          <div>
-                            <small className="text-mediumGray">Collectif</small>
-                            <div className="fw-semibold">{collectives.find((c: any) => c.id === formData.collectiveId)?.name}</div>
-                          </div>
-                        )}
                       </div>
                     </div>
 
@@ -1227,10 +994,10 @@ export default function CreateInvoicePage() {
                     </button>
                   )}
 
-                  {currentStep < 4 ? (
-                    <button 
-                      type="button" 
-                      className="btn btn-primary" 
+                  {currentStep < 3 ? (
+                    <button
+                      type="button"
+                      className="btn btn-primary"
                       onClick={nextStep}
                       disabled={!canProceedToNextStep()}
                     >
@@ -1264,8 +1031,7 @@ export default function CreateInvoicePage() {
                     <i className="bi bi-lightbulb me-1"></i>
                     {currentStep === 1 && "Commencez par sélectionner votre client et définir les dates."}
                     {currentStep === 2 && "Ajoutez les articles ou services à facturer."}
-                    {currentStep === 3 && "Définissez la répartition si c'est une facture collective."}
-                    {currentStep === 4 && "Vérifiez tous les détails avant de créer la facture."}
+                    {currentStep === 3 && "Vérifiez tous les détails avant de créer la facture."}
                   </small>
                 </div>
               </div>

@@ -81,23 +81,9 @@ export async function GET(request: Request) {
       select: { totalAmount: true },
     });
 
-    const userSubInvoices = await prisma.subInvoice.findMany({
-      where: {
-        receiverId: userId, // Sub-invoices where the user is the receiver
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      select: { amount: true },
-    });
-
     let caTotal = 0;
     userInvoices.forEach((invoice) => {
       caTotal += parseFloat(invoice.totalAmount.toString());
-    });
-    userSubInvoices.forEach((subInvoice) => {
-      caTotal += parseFloat(subInvoice.amount.toString());
     });
 
     const cotisations = caTotal * urssafRate;

@@ -21,7 +21,6 @@ const steps = [
 
 const features = [
   { icon: "bi-cpu", label: "Agent IA fiscal", text: "Comprend le régime URSSAF, les seuils TVA, BNC, MicroBIC — répond en français." },
-  { icon: "bi-diagram-3", label: "Collectifs de revenus", text: "Partagez une facture entre plusieurs membres avec des règles de répartition configurables." },
   { icon: "bi-file-earmark-check", label: "Factur-X natif", text: "Génère des factures PDF/A-3 avec données XML embarquées — format EU e-invoicing 2026." },
   { icon: "bi-credit-card", label: "Stripe Connect", text: "Lien de paiement en un clic sur chaque facture. Encaissement directement sur votre compte." },
   { icon: "bi-bell-fill", label: "Relances automatiques", text: "Notifications intelligentes pour les factures en retard, les échéances à J-7, J-3, J+1." },

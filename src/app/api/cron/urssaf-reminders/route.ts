@@ -89,13 +89,6 @@ export async function GET(request: Request) {
             status: true,
           } 
         },
-        receivedSubInvoices: {
-          select: {
-            amount: true,
-            createdAt: true,
-            paymentStatus: true,
-          }
-        }
       },
     });
 
@@ -105,25 +98,13 @@ export async function GET(request: Request) {
     for (const user of users) {
       if (!user.microEntrepreneurType) continue;
 
-      // Calculate annual turnover from paid invoices
-      const paidInvoiceTurnover = user.invoices.reduce((sum, invoice) => {
+      const cumulativeTurnover = user.invoices.reduce((sum, invoice) => {
         const invoiceYear = new Date(invoice.invoiceDate).getFullYear();
         if (invoiceYear === currentYear && invoice.status === 'paid') {
           return sum + parseFloat(invoice.totalAmount.toString());
         }
         return sum;
       }, 0);
-
-      // Calculate annual turnover from paid sub-invoices
-      const paidSubInvoiceTurnover = user.receivedSubInvoices.reduce((sum, subInvoice) => {
-        const subInvoiceYear = new Date(subInvoice.createdAt).getFullYear();
-        if (subInvoiceYear === currentYear && subInvoice.paymentStatus === 'paid') {
-          return sum + parseFloat(subInvoice.amount.toString());
-        }
-        return sum;
-      }, 0);
-
-      const cumulativeTurnover = paidInvoiceTurnover + paidSubInvoiceTurnover;
       
       // Skip users with no turnover
       if (cumulativeTurnover === 0) continue;

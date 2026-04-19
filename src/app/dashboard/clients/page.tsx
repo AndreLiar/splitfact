@@ -267,7 +267,7 @@ function ClientManagementPageInner() {
     formData.append('file', selectedFile);
 
     try {
-      const response = await fetch(`/api/collectives/${session?.user?.id}/clients/import`, {
+      const response = await fetch(`/api/clients/import`, {
         method: 'POST',
         body: formData,
       });

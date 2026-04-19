@@ -36,13 +36,6 @@ interface ClientDashboardData {
     name: string;
     email?: string;
   };
-  collective: {
-    id: string;
-    name: string;
-    description?: string;
-    type?: string;
-    members: TeamMember[];
-  };
   projects: Project[];
   totalRevenue: number;
   totalPendingAmount: number;
@@ -186,7 +179,6 @@ export default function ClientDashboardPage() {
                 <div>
                   <h1 className="h4 text-dark mb-1">Tableau de bord projet</h1>
                   <p className="text-muted mb-0">
-                    Équipe: <span className="fw-semibold">{data.collective.name}</span> • 
                     Client: <span className="fw-semibold">{data.client.name}</span>
                   </p>
                 </div>
@@ -203,42 +195,6 @@ export default function ClientDashboardPage() {
       </div>
 
       <div className="container pb-5">
-        {/* Team Overview */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="card shadow-sm border-0">
-              <div className="card-body p-4">
-                <h5 className="card-title text-dark mb-3">
-                  <i className="bi bi-people me-2 text-primary"></i>
-                  Équipe {data.collective.name}
-                </h5>
-                {data.collective.description && (
-                  <p className="text-muted mb-3">{data.collective.description}</p>
-                )}
-                
-                <div className="row g-3">
-                  {data.collective.members.map((member, index) => (
-                    <div key={member.user.id} className="col-md-6 col-lg-4">
-                      <div className="d-flex align-items-center p-3 bg-light rounded">
-                        <div className="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" 
-                             style={{ width: '45px', height: '45px' }}>
-                          <span className="text-white fw-bold">
-                            {member.user.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="fw-semibold text-dark">{member.user.name}</div>
-                          <small className="text-muted">{member.role}</small>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Financial Overview */}
         <div className="row mb-4 g-3">
           <div className="col-md-4">

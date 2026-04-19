@@ -288,7 +288,7 @@ const InvoicePdf = ({ invoice }: any) => {
           <View>
             <Text style={styles.header}>FACTURE</Text>
             <Text style={styles.invoiceDate}>
-              {invoice.collective ? 'Facture collaborative' : 'Facture professionnelle'}
+              Facture professionnelle
             </Text>
           </View>
           <View style={styles.invoiceDetails}>
@@ -299,11 +299,6 @@ const InvoicePdf = ({ invoice }: any) => {
             <Text style={styles.invoiceDate}>
               Échéance : {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}
             </Text>
-            {invoice.collective && (
-              <Text style={styles.invoiceDate}>
-                Collectif : {invoice.collective.name}
-              </Text>
-            )}
           </View>
         </View>
 

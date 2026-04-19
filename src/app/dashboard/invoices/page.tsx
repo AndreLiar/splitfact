@@ -36,13 +36,9 @@ function InvoicesPageInner() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [workflowStatusFilter, setWorkflowStatusFilter] = useState('all');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
-  const [collectiveFilter, setCollectiveFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-
-  // Derived data for filters
-  const [availableCollectives, setAvailableCollectives] = useState<{id: string, name: string}[]>([]);
 
   useEffect(() => {
     const workflowParam = searchParams.get('workflow');
@@ -69,16 +65,6 @@ function InvoicesPageInner() {
       const data = await response.json();
       setInvoices(data);
       setFilteredInvoices(data);
-      
-      // Extract unique collectives for filter
-      const collectives = data.reduce((acc: {id: string, name: string}[], invoice: any) => {
-        const collective = invoice.collective;
-        if (collective && !acc.find(c => c.id === collective.id)) {
-          acc.push({ id: collective.id, name: collective.name });
-        }
-        return acc;
-      }, []);
-      setAvailableCollectives(collectives);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -89,23 +75,21 @@ function InvoicesPageInner() {
   // Filter invoices based on search and filters
   useEffect(() => {
     let filtered = invoices.filter((invoice: any) => {
-      const matchesSearch = 
+      const matchesSearch =
         invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (invoice.client?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (invoice.collective?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (invoice.issuerName || '').toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
       const matchesWorkflowStatus = workflowStatusFilter === 'all' || invoice.workflowStatus === workflowStatusFilter;
       const matchesPaymentStatus = paymentStatusFilter === 'all' || invoice.paymentStatus === paymentStatusFilter;
-      const matchesCollective = collectiveFilter === 'all' || invoice.collective?.id === collectiveFilter;
-      
+
       const matchesDate = dateFilter === 'all' || (() => {
         const invoiceDate = new Date(invoice.invoiceDate);
         const today = new Date();
         const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
         const ninetyDaysAgo = new Date(today.getTime() - (90 * 24 * 60 * 60 * 1000));
-        
+
         switch (dateFilter) {
           case 'recent': return invoiceDate >= thirtyDaysAgo;
           case 'older': return invoiceDate < thirtyDaysAgo && invoiceDate >= ninetyDaysAgo;
@@ -113,13 +97,13 @@ function InvoicesPageInner() {
           default: return true;
         }
       })();
-      
-      return matchesSearch && matchesStatus && matchesWorkflowStatus && matchesPaymentStatus && matchesCollective && matchesDate;
+
+      return matchesSearch && matchesStatus && matchesWorkflowStatus && matchesPaymentStatus && matchesDate;
     });
-    
+
     setFilteredInvoices(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [invoices, searchTerm, statusFilter, workflowStatusFilter, paymentStatusFilter, collectiveFilter, dateFilter]);
+  }, [invoices, searchTerm, statusFilter, workflowStatusFilter, paymentStatusFilter, dateFilter]);
 
   const handleGeneratePdf = async (invoiceId: string) => {
     setPdfGenerating(prev => ({ ...prev, [invoiceId]: true }));
@@ -278,7 +262,7 @@ function InvoicesPageInner() {
                 <input
                   type="text"
                   className="form-control border-start-0"
-                  placeholder="Numéro, client, collectif..."
+                  placeholder="Numéro, client..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -324,21 +308,6 @@ function InvoicesPageInner() {
                 <option key="workflow-issued" value="issued">Émises</option>
               </select>
             </div>
-            <div className="col-lg-2 col-md-6 col-sm-6 col-12">
-              <label className="form-label fw-semibold">Collectif</label>
-              <select
-                className="form-select"
-                value={collectiveFilter}
-                onChange={(e) => setCollectiveFilter(e.target.value)}
-              >
-                <option key="collective-all" value="all">Tous</option>
-                {availableCollectives.map((collective) => (
-                  <option key={collective.id} value={collective.id}>
-                    {collective.name}
-                  </option>
-                ))}
-              </select>
-            </div>
             <div className="col-lg-1 col-md-6 col-sm-6 col-12">
               <label className="form-label fw-semibold">Période</label>
               <select
@@ -360,7 +329,6 @@ function InvoicesPageInner() {
                   setStatusFilter('all');
                   setWorkflowStatusFilter('all');
                   setPaymentStatusFilter('all');
-                  setCollectiveFilter('all');
                   setDateFilter('all');
                 }}
                 title="Réinitialiser les filtres"
@@ -440,7 +408,6 @@ function InvoicesPageInner() {
                   <tr>
                     <th className="border-0 fw-semibold">Facture</th>
                     <th className="border-0 fw-semibold">Client</th>
-                    <th className="border-0 fw-semibold">Type</th>
                     <th className="border-0 fw-semibold">Montant</th>
                     <th className="border-0 fw-semibold">Statut</th>
                     <th className="border-0 fw-semibold">Workflow</th>
@@ -475,27 +442,6 @@ function InvoicesPageInner() {
                               {invoice.client?.email || 'N/A'}
                             </small>
                           </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          {invoice.collective ? (
-                            <>
-                              <i className="bi bi-people text-primary me-2"></i>
-                              <div>
-                                <div className="fw-semibold text-primary">Collectif</div>
-                                <small className="text-muted">{invoice.collective.name}</small>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <i className="bi bi-person text-muted me-2"></i>
-                              <div>
-                                <div className="fw-semibold">Individuelle</div>
-                                <small className="text-muted">Sans répartition collective</small>
-                              </div>
-                            </>
-                          )}
                         </div>
                       </td>
                       <td className="fw-semibold">
@@ -556,15 +502,6 @@ function InvoicesPageInner() {
                               )}
                             </button>
                           )}
-                          {invoice.collective && (
-                            <Link 
-                              href={`/dashboard/invoices/${invoice.id}/sub-invoices`} 
-                              className="btn btn-sm btn-outline-info"
-                              title="Voir les sous-factures"
-                            >
-                              <i className="bi bi-files"></i>
-                            </Link>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -572,7 +509,7 @@ function InvoicesPageInner() {
                 </tbody>
               </table>
             </div>
-            
+
             {/* Mobile Card Layout */}
             <div className="d-lg-none">
               {currentInvoices.map((invoice: any) => (
@@ -600,24 +537,6 @@ function InvoicesPageInner() {
                         <span className="fw-semibold">{invoice.client?.name || invoice.clientName || 'N/A'}</span>
                       </div>
                       <small className="text-muted ms-4">{invoice.client?.email || 'N/A'}</small>
-                    </div>
-                    
-                    {/* Type and Collective */}
-                    <div className="mb-3">
-                      {invoice.collective ? (
-                        <div className="d-flex align-items-center">
-                          <i className="bi bi-people text-primary me-2"></i>
-                          <div>
-                            <span className="fw-semibold text-primary">Collectif</span>
-                            <small className="text-muted d-block">{invoice.collective.name}</small>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="d-flex align-items-center">
-                          <i className="bi bi-person text-muted me-2"></i>
-                          <span className="fw-semibold">Individuelle</span>
-                        </div>
-                      )}
                     </div>
                     
                     {/* Status Badges */}
@@ -660,15 +579,6 @@ function InvoicesPageInner() {
                         <i className="bi bi-download me-1"></i>
                         PDF
                       </Link>
-                      {invoice.collective && (
-                        <Link 
-                          href={`/dashboard/invoices/${invoice.id}/sub-invoices`} 
-                          className="btn btn-sm btn-outline-info"
-                        >
-                          <i className="bi bi-files me-1"></i>
-                          Sous-factures
-                        </Link>
-                      )}
                     </div>
                   </div>
                 </div>

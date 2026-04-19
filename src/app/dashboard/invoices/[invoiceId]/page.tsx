@@ -20,7 +20,6 @@ type InvoiceDetail = {
   clientAddress?: string | null;
   clientSiret?: string | null;
   clientEmail?: string | null;
-  collective?: { name?: string | null } | null;
   client?: {
     name?: string | null;
     email?: string | null;
@@ -34,13 +33,6 @@ type InvoiceDetail = {
     quantity: number | string;
     unitPrice: number | string;
     tvaRate?: number | string;
-  }>;
-  shares?: Array<{
-    id: string;
-    shareType: string;
-    shareValue: number | string;
-    calculatedAmount: number | string;
-    user?: { name?: string | null; email?: string | null } | null;
   }>;
   paymentTerms?: string | null;
   latePenaltyRate?: string | null;
@@ -66,13 +58,6 @@ type InvoiceDetail = {
   issuerLegalStatus?: string | null;
   issuerShareCapital?: string | null;
   issuerApeCode?: string | null;
-};
-
-type SubInvoice = {
-  id: string;
-  amount: number | string;
-  status: string;
-  receiver?: { name?: string | null; email?: string | null } | null;
 };
 
 const formatCurrency = (value: unknown) => {
@@ -208,12 +193,10 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
   const { invoiceId } = params;
 
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
-  const [subInvoices, setSubInvoices] = useState<SubInvoice[]>([]);
   const [activityLogs, setActivityLogs] = useState<Array<{ id: string; action: string; createdAt: string; metadata?: any; user?: { name?: string | null; email?: string | null } }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
-  const [subInvoiceGenerating, setSubInvoiceGenerating] = useState(false);
   const [updatingPayment, setUpdatingPayment] = useState(false);
   const [issuingInvoice, setIssuingInvoice] = useState(false);
   const [submittingPpf, setSubmittingPpf] = useState(false);
@@ -239,9 +222,8 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
   const loadInvoice = async () => {
     try {
       setLoading(true);
-      const [invoiceResponse, subInvoicesResponse, activityResponse, userResponse] = await Promise.all([
+      const [invoiceResponse, activityResponse, userResponse] = await Promise.all([
         fetch(`/api/invoices/${invoiceId}`),
-        fetch(`/api/invoices/${invoiceId}/sub-invoices`),
         fetch(`/api/invoices/${invoiceId}/activity`),
         fetch('/api/users/me'),
       ]);
@@ -253,13 +235,6 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
 
       const invoiceData = await invoiceResponse.json();
       setInvoice(invoiceData);
-
-      if (subInvoicesResponse.ok) {
-        const subInvoicesData = await subInvoicesResponse.json();
-        setSubInvoices(subInvoicesData || []);
-      } else {
-        setSubInvoices([]);
-      }
 
       if (activityResponse.ok) {
         const activityData = await activityResponse.json();
@@ -293,23 +268,6 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
       setError(err.message);
     } finally {
       setPdfGenerating(false);
-    }
-  };
-
-  const handleGenerateSubInvoices = async () => {
-    setSubInvoiceGenerating(true);
-    try {
-      const response = await fetch(`/api/invoices/${invoiceId}/generate-subinvoice`, { method: 'POST' });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Impossible de générer les sous-factures.');
-      }
-
-      await loadInvoice();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSubInvoiceGenerating(false);
     }
   };
 
@@ -672,66 +630,6 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
             </div>
           </div>
 
-          {invoice.shares && invoice.shares.length > 0 && (
-            <div className="card border-0 shadow-sm rounded-xl p-4 mb-4">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="h5 mb-0">Répartition collective</h2>
-                <button className="btn btn-sm btn-outline-primary" onClick={handleGenerateSubInvoices} disabled={subInvoiceGenerating}>
-                  {subInvoiceGenerating ? 'Génération...' : 'Générer les sous-factures'}
-                </button>
-              </div>
-              <div className="table-responsive">
-                <table className="table align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>Membre</th>
-                      <th>Type</th>
-                      <th>Valeur</th>
-                      <th>Montant</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoice.shares.map((share) => (
-                      <tr key={share.id}>
-                        <td>{share.user?.name || share.user?.email || 'Membre inconnu'}</td>
-                        <td>{share.shareType}</td>
-                        <td>{share.shareType === 'percent' ? `${share.shareValue}%` : formatCurrency(share.shareValue)}</td>
-                        <td>{formatCurrency(share.calculatedAmount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {subInvoices.length > 0 && (
-            <div className="card border-0 shadow-sm rounded-xl p-4">
-              <h2 className="h5 mb-3">Sous-factures générées</h2>
-              <div className="table-responsive">
-                <table className="table align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Destinataire</th>
-                      <th>Montant</th>
-                      <th>Statut</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {subInvoices.map((subInvoice) => (
-                      <tr key={subInvoice.id}>
-                        <td><code>{subInvoice.id.slice(0, 8)}...</code></td>
-                        <td>{subInvoice.receiver?.name || subInvoice.receiver?.email || 'N/A'}</td>
-                        <td>{formatCurrency(subInvoice.amount)}</td>
-                        <td>{formatStatus(subInvoice.status)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="col-lg-4">
@@ -878,11 +776,9 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
           <div className="card border-0 shadow-sm rounded-xl p-4 mb-4">
             <h2 className="h5 mb-3">Émission</h2>
             <div className="text-muted small mb-2">Date d'émission</div>
-            <div className="mb-3">
+            <div>
               {invoice.issuedAt ? new Date(invoice.issuedAt).toLocaleDateString('fr-FR') : 'Non émise'}
             </div>
-            <div className="text-muted small mb-2">Collectif</div>
-            <div>{invoice.collective?.name || 'Aucun collectif'}</div>
           </div>
 
           <div className="card border-0 shadow-sm rounded-xl p-4 mb-4">

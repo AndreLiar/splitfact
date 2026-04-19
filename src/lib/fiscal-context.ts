@@ -149,26 +149,17 @@ export class FiscalContextService {
     const currentYear = new Date().getFullYear();
     
     // Fetch all user data in parallel for performance
-    const [user, invoices, clients, collectives] = await Promise.all([
+    const [user, invoices, clients] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId } }),
-      prisma.invoice.findMany({ 
+      prisma.invoice.findMany({
         where: { userId },
         include: { client: true },
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.client.findMany({ 
+      prisma.client.findMany({
         where: { userId },
         include: { invoices: true }
       }),
-      prisma.collective.findMany({
-        where: { 
-          members: { some: { userId } }
-        },
-        include: { 
-          invoices: { include: { client: true } },
-          members: { include: { user: true } }
-        }
-      })
     ]);
 
     if (!user) throw new Error('User not found');

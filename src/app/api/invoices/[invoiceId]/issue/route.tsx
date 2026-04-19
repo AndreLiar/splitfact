@@ -55,16 +55,7 @@ export async function POST(
   try {
     const invoice = await prisma.invoice.findFirst({
       where: { id: invoiceId, userId: session.user.id },
-      include: {
-        client: true,
-        collective: true,
-        items: true,
-        shares: {
-          include: {
-            user: { select: { name: true, email: true } },
-          },
-        },
-      },
+      include: { client: true, items: true },
     });
 
     if (!invoice) {
@@ -168,16 +159,7 @@ export async function POST(
           facturxStatus: 'validation_failed',
           facturxValidationErrors: facturx.validationErrors,
         },
-        include: {
-          client: true,
-          collective: true,
-          items: true,
-          shares: {
-            include: {
-              user: { select: { name: true, email: true } },
-            },
-          },
-        },
+        include: { client: true, items: true },
       });
 
       await logActivity({
@@ -232,16 +214,7 @@ export async function POST(
         facturxGeneratedAt: new Date(),
         facturxValidationErrors: [],
       },
-      include: {
-        client: true,
-        collective: true,
-        items: true,
-        shares: {
-          include: {
-            user: { select: { name: true, email: true } },
-          },
-        },
-      },
+      include: { client: true, items: true },
     });
 
     await logActivity({

@@ -21,13 +21,7 @@ export async function GET(
       where: { id: invoiceId, userId: session.user.id },
       include: {
         client: true,
-        collective: true,
         items: true,
-        shares: {
-          include: {
-            user: { select: { name: true, email: true } },
-          },
-        },
       },
     });
 
@@ -104,39 +98,9 @@ export async function PATCH(
       },
       include: {
         client: true,
-        collective: true,
         items: true,
-        shares: {
-          include: {
-            user: { select: { name: true, email: true } },
-          },
-        },
       },
     });
-
-    // If marking as paid, also update all related sub-invoices
-    if (body.paymentStatus === 'paid') {
-      const subInvoiceUpdate = await prisma.subInvoice.updateMany({
-        where: { parentInvoiceId: invoiceId },
-        data: { 
-          paymentStatus: 'paid',
-          status: 'paid'
-        },
-      });
-      console.log(`[Manual Payment] Updated ${subInvoiceUpdate.count} sub-invoices for invoice ${invoiceId} to paid status.`);
-    }
-
-    // If marking as pending (unpaid), also update all related sub-invoices
-    if (body.paymentStatus === 'pending') {
-      await prisma.subInvoice.updateMany({
-        where: { parentInvoiceId: invoiceId },
-        data: { 
-          paymentStatus: 'pending',
-          // Don't change status to pending, keep it as finalized if it was finalized
-        },
-      });
-      console.log(`[Manual Payment] Updated sub-invoices for invoice ${invoiceId} to pending status.`);
-    }
 
     return NextResponse.json(updatedInvoice);
   } catch (error) {

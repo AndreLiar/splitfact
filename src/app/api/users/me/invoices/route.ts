@@ -28,12 +28,6 @@ export async function GET(request: Request) {
         },
         include: {
           client: true,
-          collective: true,
-          shares: {
-            include: {
-              user: true,
-            },
-          },
         },
         orderBy: {
           createdAt: "desc",
@@ -46,16 +40,10 @@ export async function GET(request: Request) {
     const [invoices, totalCount] = await prisma.$transaction([
       prisma.invoice.findMany({
         where: {
-          userId: userId, // Fetch invoices created by the current user
+          userId: userId,
         },
         include: {
           client: true,
-          collective: true, // collective is now optional, but we still want to include it if present
-          shares: {
-            include: {
-              user: true,
-            },
-          },
         },
         orderBy: {
           createdAt: "desc",

@@ -131,27 +131,10 @@ export async function GET(request: Request) {
         select: { totalAmount: true },
       });
 
-      // Get revenue from received sub-invoices in the period  
-      const userSubInvoices = await prisma.subInvoice.findMany({
-        where: {
-          receiverId: user.id,
-          paymentStatus: 'paid',
-          // Use creation date for sub-invoices as they represent work completed
-          createdAt: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-        select: { amount: true },
-      });
-
       // Calculate total revenue
       let caTotal = 0;
       userInvoices.forEach((invoice) => {
         caTotal += parseFloat(invoice.totalAmount.toString());
-      });
-      userSubInvoices.forEach((subInvoice) => {
-        caTotal += parseFloat(subInvoice.amount.toString());
       });
 
       // Skip if no revenue for this period

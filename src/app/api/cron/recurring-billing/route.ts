@@ -51,7 +51,6 @@ export async function GET(req: NextRequest) {
         data: {
           userId: template.userId,
           clientId: template.clientId,
-          collectiveId: template.collectiveId,
           invoiceNumber: newInvoiceNumber,
           invoiceDate,
           dueDate,

@@ -7,16 +7,6 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import PWAInstallPrompt from "@/app/components/PWAInstallPrompt";
 
-interface Collective {
-  id: string;
-  name: string;
-}
-
-interface InvoiceShare {
-  calculatedAmount: number;
-  userId: string;
-}
-
 interface UserInvoice {
   id: string;
   invoiceNumber?: string;
@@ -26,25 +16,13 @@ interface UserInvoice {
   status: string;
   paymentStatus: string;
   client?: { name: string | null };
-  collective?: { name: string | null } | null;
-  shares?: InvoiceShare[];
-}
-
-interface SubInvoice {
-  id: string;
-  amount: number;
-  status: string;
-  issuer?: { name?: string | null };
-  parentInvoice?: { invoiceNumber?: string | null };
 }
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [collectives, setCollectives] = useState<Collective[]>([]);
   const [recentInvoices, setRecentInvoices] = useState<UserInvoice[]>([]);
   const [allInvoices, setAllInvoices] = useState<UserInvoice[]>([]);
-  const [subInvoices, setSubInvoices] = useState<SubInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,22 +40,18 @@ export default function DashboardPage() {
   const loadDashboard = async () => {
     try {
       setLoading(true);
-      const [collectivesResponse, recentInvoicesResponse, allInvoicesResponse, subInvoicesResponse, clientsResponse] = await Promise.all([
-        fetch("/api/collectives"),
+      const [recentInvoicesResponse, allInvoicesResponse, clientsResponse] = await Promise.all([
         fetch("/api/users/me/invoices?page=1&limit=6"),
         fetch("/api/users/me/invoices?all=true"),
-        fetch("/api/sub-invoices"),
         fetch("/api/clients"),
       ]);
 
-      if (!collectivesResponse.ok || !recentInvoicesResponse.ok || !allInvoicesResponse.ok || !subInvoicesResponse.ok) {
+      if (!recentInvoicesResponse.ok || !allInvoicesResponse.ok) {
         throw new Error("Impossible de charger le tableau de bord.");
       }
 
-      const collectivesData = await collectivesResponse.json();
       const recentInvoicesData = await recentInvoicesResponse.json();
       const allInvoicesData = await allInvoicesResponse.json();
-      const subInvoicesData = await subInvoicesResponse.json();
       const clientsData = clientsResponse.ok ? await clientsResponse.json() : [];
 
       const hasClients = Array.isArray(clientsData) ? clientsData.length > 0 : (clientsData?.clients?.length ?? 0) > 0;
@@ -88,10 +62,8 @@ export default function DashboardPage() {
         return;
       }
 
-      setCollectives(collectivesData);
       setRecentInvoices(recentInvoicesData.invoices || []);
       setAllInvoices(allInvoicesData.invoices || []);
-      setSubInvoices(subInvoicesData || []);
     } catch (err: any) {
       setError(err.message || "Une erreur est survenue.");
     } finally {
@@ -99,23 +71,14 @@ export default function DashboardPage() {
     }
   };
 
-  const invoiceAmountForUser = (invoice: UserInvoice) => {
-    if (invoice.collective && invoice.shares && invoice.shares.length > 0) {
-      const share = invoice.shares.find((item) => item.userId === session?.user?.id);
-      return Number(share?.calculatedAmount || 0);
-    }
-
-    return Number(invoice.totalAmount || 0);
-  };
-
   const metrics = useMemo(() => {
     const today = new Date();
     const inSevenDays = new Date();
     inSevenDays.setDate(today.getDate() + 7);
 
-    const totals = allInvoices.reduce(
+    return allInvoices.reduce(
       (acc, invoice) => {
-        const amount = invoiceAmountForUser(invoice);
+        const amount = Number(invoice.totalAmount || 0);
 
         acc.total += amount;
 
@@ -142,17 +105,7 @@ export default function DashboardPage() {
       },
       { total: 0, received: 0, pending: 0, drafts: 0, overdue: 0, dueSoon: 0 }
     );
-
-    const subInvoiceTotal = subInvoices.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-
-    return {
-      ...totals,
-      received: totals.received + subInvoiceTotal,
-      total: totals.total + subInvoiceTotal,
-      collectives: collectives.length,
-      subInvoices: subInvoices.length,
-    };
-  }, [allInvoices, collectives.length, subInvoices, session?.user?.id]);
+  }, [allInvoices]);
 
   if (status === "loading" || loading) {
     return (
@@ -217,8 +170,8 @@ export default function DashboardPage() {
         </div>
         <div className="col-lg-3 col-md-6">
           <div className="card h-100 p-4 stat-card-secondary">
-            <div className="section-label mb-2">Collectifs actifs</div>
-            <div className="metric-value">{metrics.collectives}</div>
+            <div className="section-label mb-2">Brouillons</div>
+            <div className="metric-value">{metrics.drafts}</div>
           </div>
         </div>
       </div>
@@ -324,7 +277,6 @@ export default function DashboardPage() {
                 <tr>
                   <th>Facture</th>
                   <th>Client</th>
-                  <th>Collectif</th>
                   <th>Montant</th>
                   <th>Statut</th>
                   <th></th>
@@ -332,7 +284,7 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {recentInvoices.map((invoice) => {
-                  const amount = invoiceAmountForUser(invoice);
+                  const amount = Number(invoice.totalAmount || 0);
                   const overdue = invoice.paymentStatus !== "paid" && new Date(invoice.dueDate) < new Date();
 
                   return (
@@ -342,7 +294,6 @@ export default function DashboardPage() {
                         <small className="text-muted">{new Date(invoice.invoiceDate).toLocaleDateString("fr-FR")}</small>
                       </td>
                       <td>{invoice.client?.name || "Client non renseigné"}</td>
-                      <td>{invoice.collective?.name || "Aucun collectif"}</td>
                       <td className="fw-semibold">{formatCurrency(amount)}</td>
                       <td>
                         <span className={`badge ${invoice.paymentStatus === "paid" ? "bg-success" : overdue ? "bg-danger" : "bg-warning text-dark"}`}>
