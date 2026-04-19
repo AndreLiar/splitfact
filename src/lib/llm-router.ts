@@ -23,7 +23,7 @@ function buildClient(provider: LLMProvider): OpenAI {
   if (provider === 'ollama') {
     return new OpenAI({
       apiKey: process.env.OLLAMA_API_KEY ?? 'ollama',
-      baseURL: process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434/v1',
+      baseURL: process.env.OLLAMA_BASE_URL ?? 'https://ollama.com/v1',
     });
   }
   // Groq — OpenAI-compatible API
@@ -36,13 +36,13 @@ function buildClient(provider: LLMProvider): OpenAI {
 // Vision model: image OCR (must support image_url)
 const VISION_MODELS: Record<LLMProvider, string> = {
   groq: process.env.GROQ_VISION_MODEL ?? 'meta-llama/llama-4-scout-17b-16e-instruct',
-  ollama: process.env.OLLAMA_VISION_MODEL ?? 'llava',
+  ollama: process.env.OLLAMA_VISION_MODEL ?? 'gemma3:27b',
 };
 
 // Text model: French invoice structuring, fiscal analysis
 const TEXT_MODELS: Record<LLMProvider, string> = {
   groq: process.env.GROQ_MODEL ?? 'mistral-saba-24b',
-  ollama: process.env.OLLAMA_MODEL ?? 'mistral',
+  ollama: process.env.OLLAMA_MODEL ?? 'ministral-3:8b',
 };
 
 /**
@@ -111,5 +111,5 @@ export async function extractFromText(
 export function isLLMConfigured(): boolean {
   const provider = getActiveProvider();
   if (provider === 'groq') return !!process.env.GROQ_API_KEY;
-  return !!(process.env.OLLAMA_BASE_URL || process.env.OLLAMA_API_KEY);
+  return !!process.env.OLLAMA_API_KEY;
 }
