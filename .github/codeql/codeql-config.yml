@@ -1,0 +1,29 @@
+name: "Splitfact Security Analysis"
+
+disable-default-queries: false
+
+queries:
+  - uses: security-and-quality
+  - uses: security-extended
+
+paths-ignore:
+  - "**/*.test.js"
+  - "**/*.test.ts"
+  - "**/*.spec.js"
+  - "**/*.spec.ts"
+  - "**/node_modules/**"
+  - "**/coverage/**"
+  - "**/.next/**"
+  - "**/dist/**"
+  - "**/build/**"
+
+paths:
+  - "src/"
+  - "pages/"
+  - "app/"
+  - "lib/"
+  - "utils/"
+  - "components/"
+  - "*.js"
+  - "*.ts"
+  - "*.tsx"

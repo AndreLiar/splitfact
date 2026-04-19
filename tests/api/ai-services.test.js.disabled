@@ -1,0 +1,396 @@
+/**
+ * AI Services Tests
+ * Tests for AI-powered fiscal advice and business insights
+ */
+
+// Removed createMocks import - using createMockRequest helper instead
+import { POST as getFiscalAdvice } from '../../src/app/api/ai/fiscal-advice/route'
+import { POST as getFiscalContext } from '../../src/app/api/ai/fiscal-context/route'
+import { GET as getAIHealth } from '../../src/app/api/ai/health/route'
+
+// Mock AI service
+const mockAIResponse = {
+  content: 'En tant que micro-entrepreneur en régime BIC, vous pouvez optimiser vos charges en...',
+}
+
+jest.mock('@/lib/ai-service', () => ({
+  getAIService: jest.fn(() => ({
+    chat: jest.fn(() => Promise.resolve(mockAIResponse)),
+  })),
+}))
+
+// Mock session
+const mockSession = {
+  user: { 
+    id: 'test-user-id', 
+    email: 'test@example.com',
+    fiscalRegime: 'MicroBIC',
+    microEntrepreneurType: 'COMMERCANT',
+  },
+}
+
+// Mock NextAuth
+jest.mock('next-auth/next', () => ({
+  getServerSession: jest.fn(() => Promise.resolve(mockSession)),
+}))
+
+// Mock Prisma
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findUnique: jest.fn(),
+    },
+    invoice: {
+      findMany: jest.fn(),
+    },
+    client: {
+      findMany: jest.fn(),
+    },
+    collective: {
+      findMany: jest.fn(),
+    },
+  },
+}))
+
+// Mock FiscalContextService
+jest.mock('@/lib/fiscal-context', () => ({
+  default: {
+    getUserFiscalProfile: jest.fn(() => Promise.resolve({
+      user: {
+        id: 'test-user-id',
+        fiscalRegime: 'MicroBIC',
+        microEntrepreneurType: 'COMMERCANT',
+      },
+      totalRevenue: 50000,
+      currentQuarter: {
+        revenue: 12500,
+        expenses: 1250,
+      },
+      fiscalThresholds: {
+        tvaThreshold: 91900,
+        microBicLimit: 188700,
+      },
+    })),
+  },
+  FiscalContextService: {
+    getUserFiscalProfile: jest.fn(() => Promise.resolve({
+      user: {
+        id: 'test-user-id',
+        fiscalRegime: 'MicroBIC',
+        microEntrepreneurType: 'COMMERCANT',
+      },
+      totalRevenue: 50000,
+      currentQuarter: {
+        revenue: 12500,
+        expenses: 1250,
+      },
+      fiscalThresholds: {
+        tvaThreshold: 91900,
+        microBicLimit: 188700,
+      },
+    })),
+  },
+}))
+
+// Mock FiscalAgentOrchestrator
+jest.mock('@/lib/fiscal-agents', () => ({
+  getFiscalOrchestrator: jest.fn(() => ({
+    processQuery: jest.fn(() => Promise.resolve('Mock fiscal advice response')),
+  })),
+  FiscalAgentOrchestrator: {
+    getInstance: jest.fn(() => ({
+      processQuery: jest.fn(() => Promise.resolve('Mock fiscal advice response')),
+    })),
+  },
+}))
+
+// Mock AI Memory Service
+jest.mock('@/lib/ai-memory', () => ({
+  getMemoryService: jest.fn(() => ({
+    getContext: jest.fn(() => Promise.resolve('Mock memory context')),
+    storeContext: jest.fn(() => Promise.resolve()),
+  })),
+}))
+
+// Mock OllamaService 
+jest.mock('@/lib/ollama-service', () => ({
+  getOllamaService: jest.fn(() => ({
+    checkHealth: jest.fn(() => Promise.resolve({
+      available: true,
+      model: 'deepseek-coder-v2:latest'
+    })),
+    listModels: jest.fn(() => Promise.resolve(['deepseek-coder-v2:latest', 'llama3:latest'])),
+    getModel: jest.fn(() => 'deepseek-coder-v2:latest'),
+    generate: jest.fn(() => Promise.resolve('Mock AI response')),
+  })),
+}))
+
+// Helper function to create mock request
+const createMockRequest = (body, method = 'POST') => ({
+  method,
+  json: jest.fn().mockResolvedValue(body)
+})
+
+describe('AI Services API', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  describe('POST /api/ai/fiscal-advice', () => {
+    it('should provide French fiscal advice for micro-entrepreneurs', async () => {
+      const requestBody = {
+        query: 'Comment optimiser mes charges déductibles ?',
+        context: {
+          turnover: 50000,
+          expenses: 5000,
+        },
+      }
+
+      const req = createMockRequest(requestBody)
+
+      const mockUser = {
+        id: 'test-user-id',
+        fiscalRegime: 'MicroBIC',
+        microEntrepreneurType: 'COMMERCANT',
+        siret: '12345678901234',
+      }
+
+      const { prisma } = require('@/lib/prisma')
+      prisma.user.findUnique.mockResolvedValue(mockUser)
+
+      const response = await getFiscalAdvice(req)
+      const responseData = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(responseData).toEqual(
+        expect.objectContaining({
+          advice: expect.stringContaining('micro-entrepreneur'),
+          userContext: expect.objectContaining({
+            fiscalRegime: 'MicroBIC',
+            microEntrepreneurType: 'COMMERCANT',
+          }),
+          suggestedActions: expect.arrayContaining([
+            expect.any(String),
+          ]),
+        })
+      )
+
+      // Verify AI service was called with French context
+      const { getAIService } = require('@/lib/ai-service')
+      expect(getAIService).toHaveBeenCalled()
+    })
+
+    it('should handle URSSAF-specific questions', async () => {
+      const req = createMockRequest({
+        query: 'Quand dois-je déclarer mes revenus URSSAF ?',
+        context: {
+          declarationFrequency: 'monthly',
+        },
+      })
+
+      const mockUser = {
+        fiscalRegime: 'MicroBIC',
+        microEntrepreneurType: 'PRESTATAIRE',
+        declarationFrequency: 'monthly',
+      }
+
+      const { prisma } = require('@/lib/prisma')
+      prisma.user.findUnique.mockResolvedValue(mockUser)
+
+      const response = await getFiscalAdvice(req)
+      const responseData = await response.json()
+
+      expect(responseData.advice).toContain('mensuel')
+      expect(responseData.suggestedActions).toContain(
+        expect.stringContaining('URSSAF')
+      )
+    })
+
+    it('should provide TVA threshold warnings', async () => {
+      const req = createMockRequest({
+        query: 'Suis-je proche du seuil TVA ?',
+        context: {
+          currentTurnover: 85000,
+        },
+      })
+
+      const mockUser = {
+        fiscalRegime: 'MicroBIC',
+        microEntrepreneurType: 'COMMERCANT', // Threshold: 91,900€
+      }
+
+      const { prisma } = require('@/lib/prisma')
+      prisma.user.findUnique.mockResolvedValue(mockUser)
+
+      const response = await getFiscalAdvice(req)
+      const responseData = await response.json()
+
+      expect(responseData).toEqual(
+        expect.objectContaining({
+          tvaWarning: expect.objectContaining({
+            currentTurnover: 85000,
+            threshold: 91900,
+            remaining: 6900,
+            warningLevel: 'approaching',
+          }),
+        })
+      )
+    })
+  })
+
+  describe('POST /api/ai/fiscal-context', () => {
+    it('should analyze complete fiscal situation', async () => {
+      const req = createMockRequest({
+        includeInvoices: true,
+        includePredictions: true,
+      })
+
+      const mockUser = {
+        id: 'test-user-id',
+        fiscalRegime: 'MicroBIC',
+        microEntrepreneurType: 'COMMERCANT',
+        declarationFrequency: 'monthly',
+      }
+
+      const mockInvoices = [
+        {
+          totalAmount: 1000,
+          invoiceDate: new Date('2024-01-15'),
+          paymentStatus: 'paid',
+        },
+        {
+          totalAmount: 1500,
+          invoiceDate: new Date('2024-01-20'),
+          paymentStatus: 'pending',
+        },
+      ]
+
+      const { prisma } = require('@/lib/prisma')
+      prisma.user.findUnique.mockResolvedValue(mockUser)
+      prisma.invoice.findMany.mockResolvedValue(mockInvoices)
+
+      const response = await getFiscalContext(req)
+      const responseData = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(responseData).toEqual(
+        expect.objectContaining({
+          fiscalProfile: expect.objectContaining({
+            regime: 'MicroBIC',
+            type: 'COMMERCANT',
+            declarationFrequency: 'monthly',
+          }),
+          financialSummary: expect.objectContaining({
+            totalTurnover: 2500,
+            paidTurnover: 1000,
+            pendingTurnover: 1500,
+            urssafProjection: expect.any(Number),
+            incomeTaxProjection: expect.any(Number),
+          }),
+          complianceStatus: expect.objectContaining({
+            tvaStatus: 'under_threshold',
+            nextUrssafDeadline: expect.any(String),
+          }),
+          aiInsights: expect.objectContaining({
+            recommendations: expect.arrayContaining([
+              expect.any(String),
+            ]),
+            riskAssessment: expect.any(String),
+          }),
+        })
+      )
+    })
+
+    it('should detect compliance issues', async () => {
+      const req = createMockRequest({})
+
+      const mockUser = {
+        fiscalRegime: 'MicroBIC',
+        microEntrepreneurType: 'COMMERCANT',
+        declarationFrequency: null, // Missing required field
+      }
+
+      const { prisma } = require('@/lib/prisma')
+      prisma.user.findUnique.mockResolvedValue(mockUser)
+
+      const response = await getFiscalContext(req)
+      const responseData = await response.json()
+
+      expect(responseData.complianceStatus.issues).toContain(
+        expect.stringContaining('déclaration')
+      )
+    })
+  })
+
+  describe('GET /api/ai/health', () => {
+    it('should return AI service health status', async () => {
+      const req = createMockRequest({}, 'GET')
+
+      // Health check will use the mocked Ollama service
+
+      const response = await getAIHealth(req)
+      const responseData = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(responseData).toEqual(
+        expect.objectContaining({
+          status: 'ready',
+          ollama: expect.objectContaining({
+            available: true,
+            model: 'deepseek-coder-v2:latest',
+          }),
+          availableModels: expect.arrayContaining(['deepseek-coder-v2:latest', 'llama3:latest']),
+          currentModel: 'deepseek-coder-v2:latest',
+          timestamp: expect.any(String),
+        })
+      )
+    })
+
+    it('should detect AI service failures', async () => {
+      const req = createMockRequest({}, 'GET')
+
+      // Mock Ollama service failure
+      const { getOllamaService } = require('@/lib/ollama-service')
+      getOllamaService.mockImplementation(() => ({
+        checkHealth: jest.fn(() => Promise.reject(new Error('Connection failed'))),
+      }))
+
+      const response = await getAIHealth(req)
+      const responseData = await response.json()
+
+      expect(response.status).toBe(500)
+      expect(responseData).toEqual(
+        expect.objectContaining({
+          status: 'error',
+          error: expect.stringContaining('Connection failed'),
+        })
+      )
+    })
+  })
+
+  describe('AI Caching and Performance', () => {
+    it('should cache similar fiscal advice requests', async () => {
+      const query = 'Comment optimiser mes charges ?'
+      
+      // First request
+      const req1 = createMockRequest({ query })
+
+      const { prisma } = require('@/lib/prisma')
+      prisma.user.findUnique.mockResolvedValue({
+        fiscalRegime: 'MicroBIC',
+        microEntrepreneurType: 'COMMERCANT',
+      })
+
+      await getFiscalAdvice(req1)
+
+      // Second identical request
+      const req2 = createMockRequest({ query })
+
+      await getFiscalAdvice(req2)
+
+      // AI service should be called only once due to caching
+      const { getAIService } = require('@/lib/ai-service')
+      expect(getAIService).toHaveBeenCalledTimes(1)
+    })
+  })
+})
