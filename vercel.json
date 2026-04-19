@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/ppf-retry",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/cron/e-reporting",
