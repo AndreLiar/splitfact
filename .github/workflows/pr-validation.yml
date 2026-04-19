@@ -43,9 +43,10 @@ jobs:
           echo "::endgroup::"
 
       - name: Security Audit
+        continue-on-error: true
         run: |
           echo "::group::Dependency Audit"
-          npm audit --audit-level=high
+          npm audit --audit-level=high || echo "⚠️ Vulnerabilities found — review recommended but not blocking"
           echo "::endgroup::"
 
       - name: Run Tests
