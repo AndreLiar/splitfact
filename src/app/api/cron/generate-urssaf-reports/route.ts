@@ -241,7 +241,7 @@ export async function GET(request: Request) {
           'TVA_THRESHOLD_EXCEEDED',
           '🚨 Seuil TVA dépassé !',
           `Votre CA annuel a dépassé ${tvaThreshold}€. Vous devez vous enregistrer à la TVA et mettre à jour votre profil.`,
-          '/dashboard/profile',
+          '/dashboard/settings',
           { threshold: tvaThreshold, currentCA: caTotal }
         );
       } else if (caTotal >= tvaThreshold * 0.8 && !user.tvaNumber) {

@@ -1,8 +1,7 @@
 'use client';
 
-import { Inter } from "next/font/google";
-import "./globals.css";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./globals.css";
 import SessionProvider from "@/app/components/SessionProvider";
 import Sidebar from "@/app/components/Sidebar";
 import Navbar from "@/app/components/Navbar";
@@ -16,8 +15,6 @@ import PWAUpdatePrompt from "@/app/components/PWAUpdatePrompt";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { GoogleAnalytics } from '@next/third-parties/google';
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
   useEffect(() => {
@@ -75,8 +72,8 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
     <html lang="fr">
       <head>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-        <title>Splitfact – La facturation collaborative</title>
-        <meta name="description" content="Générez des factures collectives conformes avec vos freelances." />
+        <title>Splitfact – L'IA du workflow de facturation électronique</title>
+        <meta name="description" content="Splitfact aide les agences françaises à automatiser le passage du travail validé à la facture conforme, prête pour la réforme e-invoicing 2026-2027." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         
         {/* Favicon configuration - Override Vercel default */}
@@ -88,13 +85,13 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
         
         {/* PWA Configuration */}
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#2563EB" />
+        <meta name="theme-color" content="#D4921A" />
         <meta name="application-name" content="Splitfact" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Splitfact" />
-        <meta name="msapplication-TileColor" content="#2563EB" />
+        <meta name="msapplication-TileColor" content="#D4921A" />
         <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
         
         {/* Apple Touch Icons */}
@@ -107,11 +104,11 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
         
         {/* Microsoft Edge/Windows */}
         <meta name="msapplication-starturl" content="/dashboard" />
-        <meta name="msapplication-navbutton-color" content="#2563EB" />
+        <meta name="msapplication-navbutton-color" content="#D4921A" />
         
         {/* Google Analytics integrated - Force deployment */}
       </head>
-      <body className={`${inter.variable} antialiased`} suppressHydrationWarning={true}>
+      <body className="antialiased" suppressHydrationWarning={true}>
         <SessionProvider>
           {isDashboardRoute ? (
             <ToastProvider>
@@ -167,10 +164,10 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
                 
                 <main 
                   style={{ 
-                    marginLeft: '260px', 
+                    marginLeft: '240px',
                     padding: '2rem',
                     minHeight: '100vh',
-                    backgroundColor: '#f8f9fa'
+                    backgroundColor: '#08090a'
                   }}
                 >
                   <div className="container-fluid" style={{ maxWidth: '1200px' }}>
@@ -222,7 +219,7 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
                     paddingTop: '80px', 
                     paddingBottom: '20px',
                     minHeight: '100vh',
-                    backgroundColor: '#f8f9fa'
+                    backgroundColor: '#0D1117'
                   }}
                 >
                   {children}

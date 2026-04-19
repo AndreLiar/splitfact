@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 
 const clientSchema = z.object({
@@ -17,9 +17,11 @@ const clientSchema = z.object({
   phone: z.string().optional().or(z.literal('')),
 });
 
-export default function ClientManagementPage() {
+function ClientManagementPageInner() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get('highlight');
   const [clients, setClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,7 @@ export default function ClientManagementPage() {
     phone: '',
   });
   const [formErrors, setFormErrors] = useState<any>({});
+  const [siretLookup, setSiretLookup] = useState<{ loading: boolean; result: any | null }>({ loading: false, result: null });
 
   // Filter and pagination states
   const [searchTerm, setSearchTerm] = useState('');
@@ -143,6 +146,7 @@ export default function ClientManagementPage() {
       phone: '',
     });
     setFormErrors({});
+    setSiretLookup({ loading: false, result: null });
     setShowModal(true);
   };
 
@@ -160,7 +164,30 @@ export default function ClientManagementPage() {
       phone: client.phone || '',
     });
     setFormErrors({});
+    setSiretLookup({
+      loading: false,
+      result: client.siretValidated ? { valid: true, active: true, companyName: client.name } : null,
+    });
     setShowModal(true);
+  };
+
+  const handleVerifySiret = async () => {
+    const siret = formData.siret?.replace(/\s/g, '');
+    if (!siret || siret.length < 14) return;
+    setSiretLookup({ loading: true, result: null });
+    try {
+      const res = await fetch(`/api/siret?siret=${siret}`);
+      const data = await res.json();
+      setSiretLookup({ loading: false, result: data });
+      if (data.valid && data.companyName && !formData.name) {
+        setFormData(prev => ({ ...prev, name: data.companyName }));
+      }
+      if (data.valid && data.address && !formData.address) {
+        setFormData(prev => ({ ...prev, address: data.address }));
+      }
+    } catch {
+      setSiretLookup({ loading: false, result: { valid: false, error: 'Erreur de connexion à SIRENE' } });
+    }
   };
 
   const handleDeleteClient = async (clientId: string) => {
@@ -240,7 +267,7 @@ export default function ClientManagementPage() {
     formData.append('file', selectedFile);
 
     try {
-      const response = await fetch(`/api/collectives/dummyCollectiveId/clients/import`, {
+      const response = await fetch(`/api/collectives/${session?.user?.id}/clients/import`, {
         method: 'POST',
         body: formData,
       });
@@ -306,9 +333,9 @@ export default function ClientManagementPage() {
       {/* Header */}
       <div className="mb-4">
         <div className="d-flex flex-column d-lg-none mb-3">
-          <h1 className="h4 mb-2 text-dark">Gestion des Clients</h1>
+          <h1 className="h4 mb-2 text-dark">Clients</h1>
           <p className="text-muted mb-3 small">
-            Gérez votre carnet d'adresses clients et importez des données
+            Centralisez les informations client utiles à la préparation des factures
           </p>
           <div className="d-flex gap-2 flex-wrap">
             <button 
@@ -327,9 +354,9 @@ export default function ClientManagementPage() {
         
         <div className="d-none d-lg-flex justify-content-between align-items-center">
           <div>
-            <h1 className="h3 mb-0 text-dark">Gestion des Clients</h1>
+            <h1 className="h3 mb-0 text-dark">Clients</h1>
             <p className="text-muted mb-0">
-              Gérez votre carnet d'adresses clients et importez des données
+              Gérez les données client qui conditionnent la qualité et la vitesse d'émission des factures
             </p>
           </div>
           <div className="d-flex gap-2">
@@ -568,7 +595,9 @@ export default function ClientManagementPage() {
                       const completeness = getClientCompleteness(client);
                       return (
                         <div key={client.id} className="col-xl-4 col-lg-6 col-md-6 col-12 mb-3 mb-lg-4">
-                          <div className="card h-100 shadow-sm border-0 hover-card client-card">
+                          <div className={`card h-100 shadow-sm border-0 hover-card client-card${highlightId === client.id ? ' border-warning border-2' : ''}`}
+                            ref={highlightId === client.id ? (el) => el?.scrollIntoView({ behavior: 'smooth', block: 'center' }) : undefined}
+                          >
                             <div className="card-header bg-transparent border-0 pb-2">
                               <div className="d-flex justify-content-between align-items-start">
                                 <div className="flex-grow-1">
@@ -751,9 +780,9 @@ export default function ClientManagementPage() {
               <div className="col-lg-8">
                 <div className="text-center mb-4">
                   <i className="bi bi-upload display-4 text-primary mb-3"></i>
-                  <h4>Importer des clients depuis un fichier CSV</h4>
+                  <h4>Importer des clients depuis un CSV</h4>
                   <p className="text-muted">
-                    Gagnez du temps en important plusieurs clients à la fois
+                    Importez rapidement vos clients pour éviter les ressaisies lors de la création des factures
                   </p>
                 </div>
 
@@ -867,7 +896,7 @@ export default function ClientManagementPage() {
                     {currentClient ? 'Modifier le client' : 'Nouveau client'}
                   </h5>
                   <small className="text-muted">
-                    {currentClient ? 'Modifiez les informations du client' : 'Ajoutez un nouveau client à votre carnet d\'adresses'}
+                    {currentClient ? 'Modifiez les informations utilisées dans vos factures' : 'Ajoutez un client avec les données utiles à votre workflow de facturation'}
                   </small>
                 </div>
                 <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
@@ -935,15 +964,53 @@ export default function ClientManagementPage() {
                       ></textarea>
                     </div>
                     <div className="col-md-6">
-                      <label htmlFor="siret" className="form-label fw-semibold">SIRET</label>
-                      <input 
-                        type="text" 
-                        className="form-control" 
-                        id="siret" 
-                        name="siret" 
-                        value={formData.siret} 
-                        onChange={handleInputChange} 
-                      />
+                      <label htmlFor="siret" className="form-label fw-semibold">
+                        SIRET
+                        {siretLookup.result?.valid && siretLookup.result?.active && (
+                          <span className="ms-2 badge bg-success" style={{ fontSize: '0.7rem' }}>
+                            <i className="bi bi-check-circle me-1"></i>Vérifié SIRENE
+                          </span>
+                        )}
+                      </label>
+                      <div className="input-group">
+                        <input
+                          type="text"
+                          className={`form-control ${siretLookup.result && !siretLookup.result.valid ? 'is-invalid' : siretLookup.result?.valid ? 'is-valid' : ''}`}
+                          id="siret"
+                          name="siret"
+                          value={formData.siret}
+                          onChange={e => { handleInputChange(e); setSiretLookup({ loading: false, result: null }); }}
+                          placeholder="14 chiffres"
+                          maxLength={14}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-outline-primary"
+                          onClick={handleVerifySiret}
+                          disabled={siretLookup.loading || !formData.siret || formData.siret.replace(/\s/g, '').length < 14}
+                          title="Vérifier dans le répertoire SIRENE (INSEE)"
+                        >
+                          {siretLookup.loading
+                            ? <span className="spinner-border spinner-border-sm" role="status" />
+                            : <i className="bi bi-search"></i>}
+                        </button>
+                      </div>
+                      {siretLookup.result && !siretLookup.result.valid && (
+                        <div className="text-danger small mt-1">
+                          <i className="bi bi-exclamation-circle me-1"></i>
+                          {siretLookup.result.error}
+                        </div>
+                      )}
+                      {siretLookup.result?.valid && siretLookup.result?.companyName && (
+                        <div className="text-success small mt-1">
+                          <i className="bi bi-building me-1"></i>
+                          {siretLookup.result.companyName}
+                          {!siretLookup.result.active && (
+                            <span className="text-warning ms-2">(établissement fermé)</span>
+                          )}
+                        </div>
+                      )}
+                      <div className="form-text">Requis pour la facturation électronique B2B</div>
                     </div>
                     <div className="col-md-6">
                       <label htmlFor="tvaNumber" className="form-label fw-semibold">Numéro de TVA</label>
@@ -1077,5 +1144,13 @@ export default function ClientManagementPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function ClientManagementPage() {
+  return (
+    <Suspense fallback={<div className="d-flex justify-content-center align-items-center vh-100">Chargement...</div>}>
+      <ClientManagementPageInner />
+    </Suspense>
   );
 }

@@ -146,7 +146,7 @@ export default function SimulateurAutoEntrepreneur({ onTvaStatusChange }: Simula
     return (
       <div className="alert alert-info">
         Le simulateur est disponible uniquement pour les Micro-Entrepreneurs (Micro-BIC ou BNC).
-        Veuillez mettre à jour votre <Link href="/dashboard/profile">profil</Link>.
+        Veuillez mettre à jour votre <Link href="/dashboard/settings">profil</Link>.
       </div>
     );
   }

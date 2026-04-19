@@ -65,6 +65,10 @@ model User {
   notifications     Notification[]
   notificationQueue NotificationQueue[] // Queue for notification retries
   collectivePayouts CollectivePayout[] // Payouts this user receives from collective invoices
+  activityLogs      ActivityLog[]
+  billingTriggers   BillingTrigger[]
+  eReportingPeriods EReportingPeriod[]
+  complianceEvents  ComplianceEvent[]
 }
 
 model VerificationToken {
@@ -78,12 +82,32 @@ model VerificationToken {
 model Collective {
   id          String             @id @default(cuid())
   name        String
+  description String?
+  type        String?            // Team type: 'dev', 'design', 'marketing', 'consulting'
   createdBy   User               @relation("CreatedBy", fields: [createdById], references: [id])
   createdById String
   createdAt   DateTime           @default(now())
   members     CollectiveMember[]
   invoices    Invoice[]
+  projects    Project[]
   collectiveClients CollectiveClient[]
+}
+
+model Project {
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  status       ProjectStatus @default(active)
+  startDate    DateTime   @default(now())
+  endDate      DateTime?
+  budget       Decimal?
+  collective   Collective @relation(fields: [collectiveId], references: [id])
+  collectiveId String
+  client       Client     @relation(fields: [clientId], references: [id])
+  clientId     String
+  invoices     Invoice[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 model CollectiveMember {
@@ -107,20 +131,23 @@ model CollectiveClient {
 }
 
 model Client {
-  id           String     @id @default(cuid())
-  name         String
-  email        String?
-  siret        String?
-  address      String?
-  tvaNumber    String?
-  legalStatus  String?
-  shareCapital String?
-  contactName  String?
-  phone        String?
-  userId       String     // Client is owned by a User
-  user         User       @relation(fields: [userId], references: [id])
-  invoices     Invoice[]
-  collectiveClients CollectiveClient[]
+  id                  String     @id @default(cuid())
+  name                String
+  email               String?
+  siret               String?
+  siretValidated      Boolean    @default(false)
+  siretValidatedAt    DateTime?
+  address             String?
+  tvaNumber           String?
+  legalStatus         String?
+  shareCapital        String?
+  contactName         String?
+  phone               String?
+  userId              String
+  user                User       @relation(fields: [userId], references: [id])
+  invoices            Invoice[]
+  projects            Project[]
+  collectiveClients   CollectiveClient[]
 }
 
 model Invoice {
@@ -131,13 +158,19 @@ model Invoice {
   totalAmount       Decimal
   status            InvoiceStatus @default(draft)
   paymentStatus     PaymentStatus @default(pending)
+  workflowStatus    WorkflowStatus @default(triggered)
+  transactionType   TransactionType @default(B2B)
+  deliveryAddress   Json?
   stripePaymentIntentId String?       @unique
   createdAt         DateTime      @default(now())
+  issuedAt          DateTime?
   collective        Collective?    @relation(fields: [collectiveId], references: [id])
   collectiveId      String?
+  project           Project?      @relation(fields: [projectId], references: [id])
+  projectId         String?
   client            Client        @relation(fields: [clientId], references: [id])
   clientId          String
-  userId            String // New field: Invoice is owned by a User
+  userId            String
   user              User   @relation(fields: [userId], references: [id])
 
   clientName        String?
@@ -171,6 +204,23 @@ model Invoice {
   payments          Payment[]
   collectivePayouts CollectivePayout[] // Payouts generated for this invoice
   pdfUrl            String?
+  facturxPdfUrl     String?
+  facturxXmlUrl     String?
+  facturxStatus     FacturxStatus @default(not_started)
+  facturxGeneratedAt DateTime?
+  facturxValidationErrors Json?
+  activityLogs      ActivityLog[]
+  billingTriggers   BillingTrigger[]
+
+  isRecurring         Boolean   @default(false)
+  recurringFrequency  String?
+  nextRecurringDate   DateTime?
+
+  ppfStatus           PpfStatus @default(not_submitted)
+  ppfTrackingId       String?
+  ppfSubmittedAt      DateTime?
+  ppfLastEventAt      DateTime?
+  ppfError            String?
 }
 
 model InvoiceItem {
@@ -259,6 +309,13 @@ enum InvoiceStatus {
   paid
 }
 
+enum ProjectStatus {
+  active
+  completed
+  cancelled
+  on_hold
+}
+
 enum PaymentStatus {
   pending
   paid
@@ -269,6 +326,22 @@ enum PaymentStatus {
 enum ShareType {
   percent
   fixed
+}
+
+enum WorkflowStatus {
+  triggered
+  collecting_data
+  blocked
+  ready_for_review
+  ready_to_issue
+  issued
+}
+
+enum FacturxStatus {
+  not_started
+  generating
+  generated
+  validation_failed
 }
 
 enum FiscalRegime {
@@ -314,6 +387,24 @@ enum NotificationStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+enum TransactionType {
+  B2B
+  B2C
+  B2G
+}
+
+enum PpfStatus {
+  not_submitted
+  pending_retry
+  deposee
+  en_cours_de_routage
+  recue
+  rejetee
+  refusee
+  approuvee
+  payee
 }
 
 model UrssafReport {
@@ -369,4 +460,94 @@ model NotificationQueue {
   
   @@index([status, nextRetryAt])
   @@index([userId, createdAt])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  action      String   // e.g. "issued", "blocked", "exception_resolved", "reminder_sent", "readiness_changed"
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([invoiceId, createdAt])
+}
+
+model BillingTrigger {
+  id                String   @id @default(cuid())
+  invoiceId         String?
+  invoice           Invoice? @relation(fields: [invoiceId], references: [id])
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  triggerType       String   // "manual" | "recurring" | "uploaded_doc"
+  sourceDescription String?
+  createdAt         DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model ComplianceEvent {
+  id            String              @id @default(cuid())
+  userId        String
+  user          User                @relation(fields: [userId], references: [id])
+  invoiceId     String?
+  type          ComplianceEventType
+  penaltyAmount Decimal             @default(0)
+  description   String
+  resolvedAt    DateTime?
+  createdAt     DateTime            @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, resolvedAt])
+}
+
+enum ComplianceEventType {
+  missing_einvoice      // invoice not submitted to PPF when required
+  late_submission       // submitted after deadline
+  e_reporting_missing   // e-reporting not filed on time
+  invalid_format        // Factur-X/UBL validation failure
+  siret_invalid         // unvalidated SIRET on issued invoice
+}
+
+model EReportingPeriod {
+  id               String            @id @default(cuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id])
+  period           String            // "YYYY-MM"
+  status           EReportingStatus  @default(draft)
+  transactionCount Int               @default(0)
+  totalHT          Decimal           @default(0)
+  totalTVA         Decimal           @default(0)
+  totalTTC         Decimal           @default(0)
+  taxBreakdown     Json?             // [{ rate: number, baseHT: number, tva: number }]
+  xmlPayload       String?           @db.Text
+  numeroFluxDepot  String?           // Chorus Pro tracking ID after submission
+  submittedAt      DateTime?
+  errorMessage     String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([userId, period])
+  @@index([userId, period])
+}
+
+enum EReportingStatus {
+  draft
+  ready
+  submitted
+  accepted
+  rejected
+}
+
+model SireneCache {
+  id          String   @id @default(cuid())
+  siret       String   @unique
+  data        Json
+  cachedAt    DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([siret])
+  @@index([expiresAt])
 }

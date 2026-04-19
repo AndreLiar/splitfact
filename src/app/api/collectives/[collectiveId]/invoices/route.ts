@@ -1,10 +1,9 @@
+import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const prisma = new PrismaClient();
 
 const invoiceSchema = z.object({
   clientId: z.string().min(1, "Client ID is required"),

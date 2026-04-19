@@ -233,7 +233,7 @@ export async function GET(request: Request) {
               'TVA_THRESHOLD_EXCEEDED',
               '🚨 URGENT: Seuil TVA dépassé !',
               `Votre CA annuel (${cumulativeTurnover.toFixed(2)}€) dépasse le seuil TVA (${tvaThreshold.toLocaleString()}€). Vous devez vous enregistrer à la TVA immédiatement.`,
-              '/dashboard/profile',
+              '/dashboard/settings',
               { 
                 threshold: tvaThreshold, 
                 currentCA: cumulativeTurnover,

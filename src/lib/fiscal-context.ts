@@ -1,10 +1,9 @@
+import prisma from '@/lib/prisma';
 // Comprehensive Fiscal Context System for AI Assistant
 // Read-only access to all user business data for intelligent context awareness
 
-import { PrismaClient } from '@prisma/client';
 import { getNotionService, NotionFiscalData } from './notion-service';
 
-const prisma = new PrismaClient();
 
 export interface UserFiscalProfile {
   // Basic Business Info

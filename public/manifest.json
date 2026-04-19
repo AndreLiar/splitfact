@@ -1,14 +1,14 @@
 {
-  "name": "Splitfact - Facturation Collaborative IA",
+  "name": "Splitfact - Agence Créative Premium",
   "short_name": "Splitfact",
-  "description": "Plateforme IA de facturation et gestion fiscale pour micro-entrepreneurs français",
+  "description": "Plateforme premium qui transforme les collectives créatives en agences professionnelles",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#F9FAFB",
   "theme_color": "#2563EB",
   "orientation": "portrait-primary",
   "scope": "/",
-  "categories": ["business", "finance", "productivity"],
+  "categories": ["business", "productivity", "design", "collaboration"],
   "lang": "fr",
   "dir": "ltr",
   "display_override": ["window-controls-overlay", "standalone"],
@@ -64,52 +64,52 @@
   ],
   "shortcuts": [
     {
-      "name": "Créer une facture",
-      "short_name": "Facture",
-      "description": "Créer une nouvelle facture rapidement",
-      "url": "/dashboard/create-invoice",
+      "name": "Projets Agence",
+      "short_name": "Projets",
+      "description": "Gérer les projets de l'agence",
+      "url": "/dashboard/projects",
       "icons": [
         {
-          "src": "/icons/shortcut-invoice.png",
+          "src": "/icons/shortcut-projects.png",
           "sizes": "192x192",
           "type": "image/png"
         }
       ]
     },
     {
-      "name": "Mes clients",
+      "name": "Analytics Agence",
+      "short_name": "Analytics",
+      "description": "Performance et insights agence",
+      "url": "/dashboard/analytics",
+      "icons": [
+        {
+          "src": "/icons/shortcut-analytics.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Équipes",
+      "short_name": "Équipes",
+      "description": "Gérer les équipes créatives",
+      "url": "/dashboard/collectives",
+      "icons": [
+        {
+          "src": "/icons/shortcut-teams.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Clients",
       "short_name": "Clients",
-      "description": "Gérer mes clients",
+      "description": "Gérer les clients de l'agence",
       "url": "/dashboard/clients",
       "icons": [
         {
           "src": "/icons/shortcut-clients.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Assistant IA",
-      "short_name": "IA Fiscal",
-      "description": "Conseils fiscaux personnalisés",
-      "url": "/dashboard/assistant",
-      "icons": [
-        {
-          "src": "/icons/shortcut-ai.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Rapports URSSAF",
-      "short_name": "URSSAF",
-      "description": "Voir mes déclarations URSSAF",
-      "url": "/dashboard/reports/urssaf",
-      "icons": [
-        {
-          "src": "/icons/shortcut-urssaf.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -122,14 +122,14 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Tableau de bord principal"
+      "label": "Dashboard agence créative"
     },
     {
       "src": "/screenshots/mobile-dashboard.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Dashboard mobile"
+      "label": "Mobile agence"
     }
   ],
   "related_applications": [],
@@ -145,7 +145,7 @@
   "protocol_handlers": [
     {
       "protocol": "web+splitfact",
-      "url": "/dashboard/create-invoice?via=%s"
+      "url": "/dashboard/projects/create?via=%s"
     }
   ]
 }

@@ -3,10 +3,40 @@
     {
       "path": "/api/cron/generate-urssaf-reports",
       "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/cron/recurring-billing",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/ppf-retry",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/e-reporting",
+      "schedule": "0 6 2 * *"
     }
   ],
   "functions": {
     "src/app/api/cron/generate-urssaf-reports/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/invoices/[invoiceId]/issue/route.tsx": {
+      "maxDuration": 60
+    },
+    "src/app/api/invoices/extract/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cron/recurring-billing/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cron/ppf-retry/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/invoices/[invoiceId]/submit-ppf/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cron/e-reporting/route.ts": {
       "maxDuration": 60
     }
   }

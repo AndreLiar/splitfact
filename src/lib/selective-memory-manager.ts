@@ -1,12 +1,11 @@
+import prisma from '@/lib/prisma';
 // Selective Memory Management System
 // Cost-efficient memory storage that only saves important conversations
 
 import { QueryIntent } from "./query-classifier";
 import { getUniversalAI } from "./ai-service";
 import { AIMemoryService, ConversationMemory } from "./ai-memory";
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 export interface MemoryDecision {
   shouldStore: boolean;

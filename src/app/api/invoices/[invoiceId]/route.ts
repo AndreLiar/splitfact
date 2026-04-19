@@ -1,9 +1,8 @@
+import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 
-const prisma = new PrismaClient();
 
 export async function GET(
   req: NextRequest,
@@ -18,7 +17,7 @@ export async function GET(
 
   try {
     // Check if the invoice exists and user has access in one query
-    const invoice = await prisma.invoice.findUnique({
+    const invoice = await prisma.invoice.findFirst({
       where: { id: invoiceId, userId: session.user.id },
       include: {
         client: true,
@@ -67,7 +66,7 @@ export async function PATCH(
 
   try {
     // First check if user owns this invoice
-    const existingInvoice = await prisma.invoice.findUnique({
+    const existingInvoice = await prisma.invoice.findFirst({
       where: { id: invoiceId, userId: session.user.id },
     });
 
@@ -75,10 +74,30 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
+    // Build update data — only include fields explicitly sent in body
+    const editableStatuses: string[] = ['triggered', 'collecting_data', 'blocked', 'ready_for_review'];
+    const isDraft = editableStatuses.includes(existingInvoice.workflowStatus);
+    const editableFields = isDraft ? {
+      ...(body.clientName !== undefined && { clientName: body.clientName }),
+      ...(body.clientAddress !== undefined && { clientAddress: body.clientAddress }),
+      ...(body.clientEmail !== undefined && { clientEmail: body.clientEmail }),
+      ...(body.clientSiret !== undefined && { clientSiret: body.clientSiret }),
+      ...(body.clientTvaNumber !== undefined && { clientTvaNumber: body.clientTvaNumber }),
+      ...(body.issuerName !== undefined && { issuerName: body.issuerName }),
+      ...(body.issuerAddress !== undefined && { issuerAddress: body.issuerAddress }),
+      ...(body.issuerSiret !== undefined && { issuerSiret: body.issuerSiret }),
+      ...(body.issuerTva !== undefined && { issuerTva: body.issuerTva }),
+      ...(body.legalMentions !== undefined && { legalMentions: body.legalMentions }),
+      ...(body.paymentTerms !== undefined && { paymentTerms: body.paymentTerms }),
+      ...(body.dueDate !== undefined && { dueDate: new Date(body.dueDate) }),
+      ...(body.invoiceDate !== undefined && { invoiceDate: new Date(body.invoiceDate) }),
+    } : {};
+
     // Update the invoice
     const updatedInvoice = await prisma.invoice.update({
       where: { id: invoiceId },
       data: {
+        ...editableFields,
         paymentStatus: body.paymentStatus,
         // If marking as paid, also update status
         ...(body.paymentStatus === 'paid' && { status: 'paid' }),

@@ -1,12 +1,12 @@
+import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { Resend } from 'resend';
 import { getLegalMentionsByFiscalRegime } from '@/lib/utils';
+import { evaluateInvoiceReadiness } from '@/lib/invoice-readiness';
 
-const prisma = new PrismaClient();
 const resend = new Resend(process.env.RESEND_API_KEY || 'fake-api-key-for-build');
 
 const invoiceSchema = z.object({
@@ -19,6 +19,8 @@ const invoiceSchema = z.object({
     unitPrice: z.number(),
     tvaRate: z.number(),
   })),
+  transactionType: z.enum(['B2B', 'B2C', 'B2G']).default('B2B'),
+  deliveryAddress: z.string().optional(),
   collectiveId: z.string().nullable().transform(e => e === "" ? null : e).optional(),
   paymentTerms: z.string().optional(),
   latePenaltyRate: z.string().optional(),
@@ -87,7 +89,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error.format() }, { status: 400 });
     }
 
-    const { clientId, invoiceDate, dueDate, items, collectiveId, paymentTerms, latePenaltyRate, recoveryIndemnity, shares, clientName, clientAddress, clientSiret, clientTvaNumber, clientLegalStatus, clientShareCapital, clientContactName, clientEmail, clientPhone } = validation.data;
+    const { clientId, invoiceDate, dueDate, transactionType, deliveryAddress, items, collectiveId, paymentTerms, latePenaltyRate, recoveryIndemnity, shares, clientName, clientAddress, clientSiret, clientTvaNumber, clientLegalStatus, clientShareCapital, clientContactName, clientEmail, clientPhone } = validation.data;
+
+    // Safe number parsing to prevent malformed currency values
+    const safeToNumber = (value: any) => {
+      if (value === null || value === undefined || value === '') return 0;
+      if (typeof value === 'string') {
+        const cleanValue = value.replace(/(\d+)\/(\d{3}),(\d{2})/g, '$1$2.$3')
+                                .replace(/(\d+)\/(\d{3})/g, '$1$2')
+                                .replace(',', '.')
+                                .replace(/[^0-9.-]/g, '');
+        const numValue = Number(cleanValue);
+        return isNaN(numValue) ? 0 : numValue;
+      }
+      const numValue = Number(value);
+      return isNaN(numValue) ? 0 : numValue;
+    };
 
     // Calculate total amount first for validation
     const totalAmount = items.reduce((acc, item) => {
@@ -166,21 +183,31 @@ export async function POST(req: NextRequest) {
 
     const invoiceNumber = `${prefix}-${year}${month}-${nextSequentialNumber.toString().padStart(4, '0')}`;
 
-    // Safe number parsing to prevent malformed currency values
-    const safeToNumber = (value: any) => {
-      if (value === null || value === undefined || value === '') return 0;
-      if (typeof value === 'string') {
-        // Clean any potential malformed string values like "5/000,00"
-        const cleanValue = value.replace(/(\d+)\/(\d{3}),(\d{2})/g, '$1$2.$3')
-                                .replace(/(\d+)\/(\d{3})/g, '$1$2')
-                                .replace(',', '.')
-                                .replace(/[^0-9.-]/g, '');
-        const numValue = Number(cleanValue);
-        return isNaN(numValue) ? 0 : numValue;
-      }
-      const numValue = Number(value);
-      return isNaN(numValue) ? 0 : numValue;
-    };
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { siretValidated: true },
+    });
+
+    const readiness = evaluateInvoiceReadiness({
+      clientName,
+      clientAddress,
+      clientSiret,
+      clientSiretValidated: client?.siretValidated ?? false,
+      transactionType,
+      invoiceDate,
+      dueDate,
+      issuerName: user.name,
+      issuerAddress: user.address,
+      issuerSiret: user.siret,
+      paymentTerms,
+      latePenaltyRate,
+      legalMentions,
+      items: items.map((item) => ({
+        description: item.description,
+        quantity: safeToNumber(item.quantity),
+        unitPrice: safeToNumber(item.unitPrice),
+      })),
+    });
 
     const newInvoice = await prisma.invoice.create({
       data: {
@@ -188,7 +215,10 @@ export async function POST(req: NextRequest) {
         invoiceDate: new Date(invoiceDate),
         dueDate: new Date(dueDate),
         totalAmount,
+        transactionType,
+        deliveryAddress: deliveryAddress ? { address: deliveryAddress } : undefined,
         status: 'draft',
+        workflowStatus: readiness.status === 'ready' ? 'ready_for_review' : 'blocked',
         userId: session.user.id,
         collectiveId,
         clientId,
@@ -315,7 +345,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json(newInvoice, { status: 201 });
+    return NextResponse.json({
+      ...newInvoice,
+      readiness,
+    }, { status: 201 });
   } catch (error: any) {
     
     return NextResponse.json({ error: error.message || JSON.stringify(error) }, { status: 500 });

@@ -1,10 +1,9 @@
+import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2025-06-30.basil",
 });
@@ -49,8 +48,8 @@ export async function POST(request: Request) {
     // Create an account link for onboarding
     const accountLink = await stripe.accountLinks.create({
       account: stripeAccountId,
-      refresh_url: `${process.env.NEXTAUTH_URL}/dashboard/profile?stripe_onboard=success&stripe_status=connected`,
-      return_url: `${process.env.NEXTAUTH_URL}/dashboard/profile?stripe_onboard=success&stripe_status=connected`,
+      refresh_url: `${process.env.NEXTAUTH_URL}/dashboard/settings?stripe_onboard=success&stripe_status=connected`,
+      return_url: `${process.env.NEXTAUTH_URL}/dashboard/settings?stripe_onboard=success&stripe_status=connected`,
       type: "account_onboarding",
     });
 

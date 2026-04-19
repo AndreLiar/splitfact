@@ -16,30 +16,21 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
-  console.log("NotificationsPage: Component rendering");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const [hasRestored, setHasRestored] = useState(false); // Prevent multiple restore attempts
   const router = useRouter();
 
-  // Fetch notifications
   const fetchNotifications = async () => {
-    console.log("NotificationsPage: fetchNotifications called");
     try {
       setLoading(true);
-      const url = filter === 'unread' ? '/api/notifications?unread=true&limit=100' : '/api/notifications?limit=100';
-      console.log(`NotificationsPage: Fetching from URL: ${url}`);
+      const url = filter === 'unread'
+        ? '/api/notifications?unread=true&limit=100'
+        : '/api/notifications?limit=100';
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setNotifications(data.notifications);
-
-        // If no notifications are found and we haven't tried restoring yet, restore them.
-        if (data.notifications.length === 0 && !hasRestored) {
-          setHasRestored(true); // Mark that we've attempted a restore
-          await restoreNotifications();
-        }
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -48,28 +39,7 @@ export default function NotificationsPage() {
     }
   };
 
-  // Restore notifications
-  const restoreNotifications = async () => {
-    try {
-      const response = await fetch('/api/notifications/restore', {
-        method: 'POST',
-      });
-      if (response.ok) {
-        // After restoring, fetch the notifications directly without recursion
-        const url = filter === 'unread' ? '/api/notifications?unread=true&limit=100' : '/api/notifications?limit=100';
-        const notificationResponse = await fetch(url);
-        if (notificationResponse.ok) {
-          const data = await notificationResponse.json();
-          setNotifications(data.notifications);
-        }
-      }
-    } catch (error) {
-      console.error('Error restoring notifications:', error);
-    }
-  };
-
   useEffect(() => {
-    console.log("NotificationsPage: useEffect triggered");
     fetchNotifications();
   }, [filter]);
 
@@ -166,6 +136,16 @@ export default function NotificationsPage() {
       case 'TVA_THRESHOLD_WARNING': return 'bg-warning';
       case 'TVA_THRESHOLD_EXCEEDED': return 'bg-danger';
       default: return 'bg-info';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'URSSAF_REMINDER': return 'URSSAF';
+      case 'TVA_THRESHOLD_WARNING': return 'TVA';
+      case 'TVA_THRESHOLD_EXCEEDED': return 'TVA URGENT';
+      case 'GENERAL': return 'Général';
+      default: return 'Info';
     }
   };
 
@@ -284,7 +264,7 @@ export default function NotificationsPage() {
                         </h6>
                         <div className="d-flex align-items-center gap-2">
                           <span className={`badge ${getBadgeColor(notification.type)} text-white`}>
-                            {notification.type.replace('_', ' ')}
+                            {getTypeLabel(notification.type)}
                           </span>
                           {!notification.isRead && (
                             <span className="badge bg-primary">Nouveau</span>

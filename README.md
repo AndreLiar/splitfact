@@ -134,6 +134,15 @@ EMAIL_FROM=your-email@domain.com
 CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=your-api-key
 CLOUDINARY_API_SECRET=your-api-secret
+
+# French e-invoicing — PISTE / PPF (Chorus Pro)
+PISTE_CLIENT_ID=your-piste-client-id
+PISTE_CLIENT_SECRET=your-piste-client-secret
+PISTE_ENV=sandbox                          # "sandbox" | "production"
+PISTE_WEBHOOK_SECRET=your-webhook-secret   # shared secret for /api/webhooks/ppf
+
+# INSEE SIRENE — SIRET validation
+SIRENE_API_KEY=your-sirene-api-key
 ```
 
 ### 4. **Database Setup**

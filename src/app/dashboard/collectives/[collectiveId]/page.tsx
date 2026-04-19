@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
+import { generateClientDashboardToken } from '@/lib/client-dashboard-tokens';
 
 export default function CollectiveDetailPage({ params }: { params: Promise<{ collectiveId: string }> }) {
   const { data: session, status } = useSession();
@@ -25,6 +26,7 @@ export default function CollectiveDetailPage({ params }: { params: Promise<{ col
   const [assignClientError, setAssignClientError] = useState<string | null>(null);
   const [assignClientSuccess, setAssignClientSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [generatedTokens, setGeneratedTokens] = useState<{[clientId: string]: string}>({});
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -194,6 +196,26 @@ export default function CollectiveDetailPage({ params }: { params: Promise<{ col
       case 'admin': return 'bg-primary';
       case 'owner': return 'bg-success';
       default: return 'bg-secondary';
+    }
+  };
+
+  const handleGenerateClientDashboard = async (clientId: string) => {
+    try {
+      const token = await generateClientDashboardToken(clientId, collectiveId);
+      const dashboardUrl = `${window.location.origin}/client-dashboard/${token}`;
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(dashboardUrl);
+      
+      // Store the token for display
+      setGeneratedTokens(prev => ({
+        ...prev,
+        [clientId]: dashboardUrl
+      }));
+      
+      alert('Lien du tableau de bord copié dans le presse-papiers !');
+    } catch (err) {
+      alert('Erreur lors de la génération du lien');
     }
   };
 
@@ -602,13 +624,31 @@ export default function CollectiveDetailPage({ params }: { params: Promise<{ col
                               <code className="small">{client.siret || 'N/A'}</code>
                             </td>
                             <td>
-                              <button 
-                                className="btn btn-sm btn-outline-danger" 
-                                onClick={() => handleUnassignClient(client.id)}
-                              >
-                                <i className="bi bi-x-circle me-1"></i>
-                                Désassigner
-                              </button>
+                              <div className="d-flex gap-2">
+                                <button 
+                                  className="btn btn-sm btn-outline-primary" 
+                                  onClick={() => handleGenerateClientDashboard(client.id)}
+                                  title="Générer un lien de tableau de bord pour ce client"
+                                >
+                                  <i className="bi bi-share me-1"></i>
+                                  Dashboard
+                                </button>
+                                <button 
+                                  className="btn btn-sm btn-outline-danger" 
+                                  onClick={() => handleUnassignClient(client.id)}
+                                >
+                                  <i className="bi bi-x-circle me-1"></i>
+                                  Désassigner
+                                </button>
+                              </div>
+                              {generatedTokens[client.id] && (
+                                <div className="mt-2">
+                                  <small className="text-success">
+                                    <i className="bi bi-check-circle me-1"></i>
+                                    Lien généré et copié !
+                                  </small>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         ))}

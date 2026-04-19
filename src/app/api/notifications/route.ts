@@ -17,11 +17,8 @@ export async function GET(request: Request) {
     });
 
     if (!user) {
-      console.log('[GET /api/notifications] User not found for email:', session.user.email);
       return new NextResponse('User not found', { status: 404 });
     }
-
-    console.log(`[GET /api/notifications] Fetching notifications for user ID: ${user.id}`);
 
     const { searchParams } = new URL(request.url);
     const onlyUnread = searchParams.get('unread') === 'true';
@@ -38,7 +35,6 @@ export async function GET(request: Request) {
       take: limit,
     });
 
-    console.log(`[GET /api/notifications] Found ${notifications.length} notifications for user ID: ${user.id}`);
 
     const unreadCount = await prisma.notification.count({
       where: {

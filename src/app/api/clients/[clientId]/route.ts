@@ -1,10 +1,10 @@
+import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from 'zod';
+import { evaluateInvoiceReadiness } from "@/lib/invoice-readiness";
 
-const prisma = new PrismaClient();
 
 const clientSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -66,10 +66,49 @@ export async function PUT(request: Request, { params }: { params: Promise<{ clie
     const updatedClient = await prisma.client.update({
       where: {
         id: clientId,
-        userId: session.user.id, // Ensure client belongs to the user
+        userId: session.user.id,
       },
       data: validation.data,
     });
+
+    // Re-evaluate readiness for all linked non-issued invoices
+    const linkedInvoices = await prisma.invoice.findMany({
+      where: { clientId, userId: session.user.id, workflowStatus: { not: 'issued' } },
+      include: { items: true },
+    });
+
+    await Promise.all(
+      linkedInvoices.map(async (inv) => {
+        const readiness = evaluateInvoiceReadiness({
+          clientName: inv.clientName || updatedClient.name,
+          clientAddress: inv.clientAddress || updatedClient.address,
+          invoiceDate: inv.invoiceDate,
+          dueDate: inv.dueDate,
+          issuerName: inv.issuerName,
+          issuerAddress: inv.issuerAddress,
+          legalMentions: inv.legalMentions,
+          items: inv.items.map((item) => ({
+            description: item.description,
+            quantity: Number(item.quantity),
+            unitPrice: Number(item.unitPrice),
+          })),
+        });
+
+        const newStatus = readiness.status === 'ready'
+          ? (inv.workflowStatus === 'blocked' ? 'collecting_data' : inv.workflowStatus)
+          : 'blocked';
+
+        if (newStatus !== inv.workflowStatus) {
+          await prisma.invoice.update({
+            where: { id: inv.id },
+            data: {
+              workflowStatus: newStatus as any,
+              facturxValidationErrors: readiness.status === 'blocked' ? (readiness.blockingReasons as any) : undefined,
+            },
+          });
+        }
+      })
+    );
 
     return NextResponse.json(updatedClient);
   } catch (error) {
