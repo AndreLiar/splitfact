@@ -1,11 +1,10 @@
+import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { renderToStream } from '@react-pdf/renderer';
 import UrssafReportPdf from '@/app/components/UrssafReportPdf';
 
-const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);

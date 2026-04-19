@@ -1,9 +1,8 @@
+import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 
-const prisma = new PrismaClient();
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { name } = await request.json();
+    const { name, description, type } = await request.json();
 
     if (!name) {
       return new NextResponse("Name is required", { status: 400 });
@@ -58,11 +57,20 @@ export async function POST(request: Request) {
     const newCollective = await prisma.collective.create({
       data: {
         name,
+        description,
+        type,
         createdById: session.user.id,
         members: {
           create: {
             userId: session.user.id,
             role: "owner",
+          },
+        },
+      },
+      include: {
+        members: {
+          include: {
+            user: true,
           },
         },
       },

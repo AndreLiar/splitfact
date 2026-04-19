@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { z } from 'zod';
 import { getLegalMentionsByFiscalRegime, formatCurrency } from '@/lib/utils'; // Import the utility function
+import { evaluateInvoiceReadiness } from '@/lib/invoice-readiness';
 
 interface UserProfile {
   name: string | null;
@@ -44,6 +45,8 @@ interface FormData {
   clientId: string;
   invoiceDate: string;
   dueDate: string;
+  transactionType: 'B2B' | 'B2C' | 'B2G';
+  deliveryAddress: string;
   items: Array<{
     description: string;
     quantity: number;
@@ -77,6 +80,8 @@ const invoiceSchema = z.object({
     unitPrice: z.number().min(0, 'Unit price cannot be negative'),
     tvaRate: z.number().min(0, 'TVA rate cannot be negative'),
   })).min(1, 'At least one item is required'),
+  transactionType: z.enum(['B2B', 'B2C', 'B2G']).default('B2B'),
+  deliveryAddress: z.string().optional(),
   collectiveId: z.string().optional(),
   paymentTerms: z.string().optional(),
   latePenaltyRate: z.string().optional(),
@@ -106,7 +111,9 @@ export default function CreateInvoicePage() {
     clientId: '',
     invoiceDate: new Date().toISOString().split('T')[0],
     dueDate: '',
-    items: [{ description: '', quantity: 1, unitPrice: 0, tvaRate: 0 }], // Will be set properly based on fiscal regime
+    transactionType: 'B2B',
+    deliveryAddress: '',
+    items: [{ description: '', quantity: 1, unitPrice: 0, tvaRate: 0 }],
     collectiveId: '',
     paymentTerms: 'Paiement à 30 jours fin de mois',
     latePenaltyRate: '3 fois le taux d’intérêt légal',
@@ -120,6 +127,81 @@ export default function CreateInvoicePage() {
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Document extraction state
+  const [showUploadZone, setShowUploadZone] = useState(true);
+  const [extracting, setExtracting] = useState(false);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
+  const [extractionSource, setExtractionSource] = useState<string | null>(null);
+  const [suggestNewClient, setSuggestNewClient] = useState<{ name: string; address?: string; email?: string; siret?: string } | null>(null);
+  const [creatingClient, setCreatingClient] = useState(false);
+
+  const handleDocumentUpload = async (file: File) => {
+    setExtracting(true);
+    setExtractionError(null);
+    const body = new FormData();
+    body.append('file', file);
+    try {
+      const res = await fetch('/api/invoices/extract', { method: 'POST', body });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Extraction échouée.');
+      const e = json.extracted as any;
+
+      // Map extracted fields into form
+      setFormData((prev) => ({
+        ...prev,
+        clientName: e.clientName ?? prev.clientName,
+        clientAddress: e.clientAddress ?? prev.clientAddress,
+        clientSiret: e.clientSiret ?? prev.clientSiret,
+        clientEmail: e.clientEmail ?? prev.clientEmail,
+        invoiceDate: e.invoiceDate ?? prev.invoiceDate,
+        dueDate: e.dueDate ?? prev.dueDate,
+        items: Array.isArray(e.items) && e.items.length > 0
+          ? e.items.map((item: any) => ({
+              description: item.description ?? '',
+              quantity: Number(item.quantity) || 1,
+              unitPrice: Number(item.unitPrice) || 0,
+              tvaRate: Number(item.tvaRate) || 0,
+            }))
+          : prev.items,
+      }));
+
+      // Auto-match client by name if found in client list
+      setClients((currentClients) => {
+        if (e.clientName) {
+          const match = currentClients.find(
+            (c) => c.name.toLowerCase() === (e.clientName as string).toLowerCase()
+          );
+          if (match) {
+            setFormData((prev) => ({
+              ...prev,
+              clientId: match.id,
+              clientName: match.name,
+              clientAddress: match.address || prev.clientAddress,
+              clientSiret: match.siret || prev.clientSiret,
+              clientEmail: match.email || prev.clientEmail,
+            }));
+            setSuggestNewClient(null);
+          } else {
+            setSuggestNewClient({
+              name: e.clientName,
+              address: e.clientAddress,
+              email: e.clientEmail,
+              siret: e.clientSiret,
+            });
+          }
+        }
+        return currentClients;
+      });
+
+      setExtractionSource(file.name);
+      setShowUploadZone(false);
+    } catch (err: any) {
+      setExtractionError(err.message);
+    } finally {
+      setExtracting(false);
+    }
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -294,9 +376,9 @@ export default function CreateInvoicePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-        ...result.data,
-        collectiveId: result.data.collectiveId === '' ? null : result.data.collectiveId,
-    }),
+          ...result.data,
+          collectiveId: result.data.collectiveId === '' ? null : result.data.collectiveId,
+        }),
       });
 
       if (!response.ok) {
@@ -305,7 +387,8 @@ export default function CreateInvoicePage() {
         throw new Error(errorData.error || 'Failed to create invoice');
       }
 
-      router.push('/dashboard');
+      const createdInvoice = await response.json();
+      router.push(`/dashboard/invoices/${createdInvoice.id}`);
     } catch (error: any) {
       console.error(error);
       setErrors({ form: error.message });
@@ -376,6 +459,25 @@ export default function CreateInvoicePage() {
     return titles[step];
   };
 
+  const readinessPreview = useMemo(() => {
+    if (!userProfile) return null;
+
+    return evaluateInvoiceReadiness({
+      clientName: formData.clientName,
+      clientAddress: formData.clientAddress,
+      invoiceDate: formData.invoiceDate,
+      dueDate: formData.dueDate,
+      issuerName: userProfile.name,
+      issuerAddress: userProfile.address,
+      legalMentions: getLegalMentionsByFiscalRegime(userProfile),
+      items: formData.items.map((item) => ({
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      })),
+    });
+  }, [formData, userProfile]);
+
   if (status === 'loading' || loading) {
     return <div className="d-flex justify-content-center align-items-center vh-100">Chargement...</div>;
   }
@@ -386,10 +488,10 @@ export default function CreateInvoicePage() {
       <div className="container mt-5">
         <div className="alert alert-warning text-center">
           <h4 className="alert-heading">Profil Incomplet</h4>
-          <p>Veuillez compléter vos informations fiscales, y compris votre nom, SIRET, adresse, statut juridique, Code APE, et Type d'activité Micro-Entrepreneur (si applicable) avant de créer une facture.</p>
+          <p>Veuillez compléter vos informations légales et de facturation avant de créer une facture.</p>
           <hr />
-          <Link href="/dashboard/profile" className="btn btn-primary">
-            Aller au Profil
+          <Link href="/dashboard/settings" className="btn btn-primary">
+            Compléter mon profil
           </Link>
         </div>
       </div>
@@ -403,8 +505,8 @@ export default function CreateInvoicePage() {
         <div className="col-12">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <div>
-              <h1 className="mb-1 text-darkGray">Créer une Facture</h1>
-              <p className="text-mediumGray mb-0">Étape {currentStep} sur 4 - {getStepTitle(currentStep)}</p>
+              <h1 className="mb-1 text-darkGray">Nouveau job de facturation</h1>
+              <p className="text-mediumGray mb-0">Déposez un document pour extraire les données automatiquement.</p>
             </div>
             <div className="d-flex gap-2">
               <Link href="/dashboard" className="btn btn-outline-secondary">
@@ -425,7 +527,148 @@ export default function CreateInvoicePage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      {/* ── Document upload zone ─────────────────────────── */}
+      {showUploadZone ? (
+        <div className="row mb-4">
+          <div className="col-lg-8">
+            <div
+              className="card border-2 border-dashed rounded-xl text-center p-5"
+              style={{ borderColor: '#d1d5db', cursor: 'pointer' }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const file = e.dataTransfer.files[0];
+                if (file) handleDocumentUpload(file);
+              }}
+            >
+              {extracting ? (
+                <>
+                  <div className="spinner-border text-primary mb-3" style={{ width: '2.5rem', height: '2.5rem' }}></div>
+                  <div className="fw-semibold">Extraction en cours…</div>
+                  <div className="text-muted small mt-1">L'IA analyse votre document et extrait les champs de facturation.</div>
+                </>
+              ) : (
+                <>
+                  <div className="mb-3" style={{ fontSize: '2.5rem' }}>
+                    <i className="bi bi-file-earmark-arrow-up text-primary"></i>
+                  </div>
+                  <div className="fw-semibold mb-1">Déposez votre devis, contrat ou bon de commande</div>
+                  <div className="text-muted small mb-3">PDF ou image — l'IA extrait le client, les lignes et les montants automatiquement</div>
+                  <label className="btn btn-primary mb-2">
+                    <i className="bi bi-upload me-2"></i>Choisir un fichier
+                    <input
+                      type="file"
+                      accept="application/pdf,image/*"
+                      className="d-none"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleDocumentUpload(file);
+                      }}
+                    />
+                  </label>
+                  {extractionError && (
+                    <div className="alert alert-danger small mt-2 mb-0">{extractionError}</div>
+                  )}
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      className="btn btn-link text-muted text-decoration-none small"
+                      onClick={() => setShowUploadZone(false)}
+                    >
+                      Saisir manuellement →
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="col-lg-4 d-none d-lg-flex flex-column justify-content-center gap-3 ps-4">
+            <div className="d-flex gap-3 align-items-start">
+              <i className="bi bi-magic text-primary mt-1"></i>
+              <div>
+                <div className="fw-medium small">Extraction automatique</div>
+                <div className="text-muted" style={{ fontSize: '0.8rem' }}>Client, lignes, montants, dates — en une seconde.</div>
+              </div>
+            </div>
+            <div className="d-flex gap-3 align-items-start">
+              <i className="bi bi-shield-check text-success mt-1"></i>
+              <div>
+                <div className="fw-medium small">Validation française</div>
+                <div className="text-muted" style={{ fontSize: '0.8rem' }}>Champs obligatoires vérifiés avant émission.</div>
+              </div>
+            </div>
+            <div className="d-flex gap-3 align-items-start">
+              <i className="bi bi-file-earmark-pdf text-danger mt-1"></i>
+              <div>
+                <div className="fw-medium small">Sortie Factur-X</div>
+                <div className="text-muted" style={{ fontSize: '0.8rem' }}>Facture hybride PDF/XML conforme EN 16931.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {extractionSource && (
+            <div className="alert alert-success d-flex align-items-center gap-2 mb-3">
+              <i className="bi bi-check-circle-fill"></i>
+              <div className="flex-grow-1">
+                <strong>Données extraites depuis «&nbsp;{extractionSource}&nbsp;»</strong>
+                <span className="ms-2 text-muted small">Vérifiez et corrigez si besoin avant de soumettre.</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-success"
+                onClick={() => { setShowUploadZone(true); setExtractionSource(null); setSuggestNewClient(null); }}
+              >
+                Changer de document
+              </button>
+            </div>
+          )}
+          {suggestNewClient && (
+            <div className="alert alert-warning d-flex align-items-center gap-2 mb-3">
+              <i className="bi bi-person-plus-fill"></i>
+              <div className="flex-grow-1">
+                <strong>Client «&nbsp;{suggestNewClient.name}&nbsp;» non trouvé.</strong>
+                <span className="ms-2 text-muted small">Créer ce client pour le retrouver plus facilement ?</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-warning"
+                disabled={creatingClient}
+                onClick={async () => {
+                  setCreatingClient(true);
+                  try {
+                    const res = await fetch('/api/clients', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(suggestNewClient),
+                    });
+                    if (res.ok) {
+                      const newClient = await res.json();
+                      setClients((prev) => [...prev, newClient]);
+                      setFormData((prev) => ({ ...prev, clientId: newClient.id }));
+                      setSuggestNewClient(null);
+                    }
+                  } finally {
+                    setCreatingClient(false);
+                  }
+                }}
+              >
+                {creatingClient ? 'Création...' : 'Créer le client'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => setSuggestNewClient(null)}
+              >
+                Ignorer
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      <form onSubmit={handleSubmit} className={showUploadZone ? 'd-none' : ''}>
         <div className="row">
           {/* Main Content */}
           <div className="col-lg-8">
@@ -482,7 +725,7 @@ export default function CreateInvoicePage() {
                       {formData.collectiveId && (
                         <small className="text-info">
                           <i className="bi bi-info-circle me-1"></i>
-                          Cette facture sera partagée entre les membres du collectif
+                          Cette facture utilisera la répartition définie pour ce collectif
                         </small>
                       )}
                     </div>
@@ -540,18 +783,55 @@ export default function CreateInvoicePage() {
                     </div>
 
                     <div className="col-md-4">
+                      <label htmlFor="transactionType" className="form-label fw-semibold">
+                        <i className="bi bi-arrow-left-right me-1 text-primary"></i>
+                        Type de transaction *
+                      </label>
+                      <select
+                        className="form-select rounded-input"
+                        id="transactionType"
+                        name="transactionType"
+                        value={formData.transactionType}
+                        onChange={handleInputChange}
+                      >
+                        <option value="B2B">B2B — Entreprise à entreprise</option>
+                        <option value="B2C">B2C — Entreprise à particulier</option>
+                        <option value="B2G">B2G — Entreprise à administration publique</option>
+                      </select>
+                      <div className="form-text">Requis pour la facturation électronique (EN 16931)</div>
+                    </div>
+
+                    <div className="col-md-4">
                       <label htmlFor="paymentTerms" className="form-label fw-semibold">
                         <i className="bi bi-credit-card me-1 text-primary"></i>
                         Conditions de paiement
                       </label>
-                      <input 
-                        type="text" 
-                        className="form-control rounded-input" 
-                        id="paymentTerms" 
-                        name="paymentTerms" 
-                        value={formData.paymentTerms} 
-                        onChange={handleInputChange} 
+                      <input
+                        type="text"
+                        className="form-control rounded-input"
+                        id="paymentTerms"
+                        name="paymentTerms"
+                        value={formData.paymentTerms}
+                        onChange={handleInputChange}
                       />
+                    </div>
+
+                    <div className="col-12">
+                      <label htmlFor="deliveryAddress" className="form-label fw-semibold">
+                        <i className="bi bi-geo-alt me-1 text-primary"></i>
+                        Adresse de livraison / prestation
+                        <span className="text-muted fw-normal ms-1">(si différente de l'adresse client)</span>
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control rounded-input"
+                        id="deliveryAddress"
+                        name="deliveryAddress"
+                        value={formData.deliveryAddress}
+                        onChange={handleInputChange}
+                        placeholder="ex: 12 rue de la Paix, 75001 Paris"
+                      />
+                      <div className="form-text">Champ <code>ram:ShipToTradeParty</code> dans Factur-X EXTENDED</div>
                     </div>
                   </div>
 
@@ -705,13 +985,13 @@ export default function CreateInvoicePage() {
                     <div className="text-center py-5">
                       <i className="bi bi-person display-4 text-mediumGray mb-3"></i>
                       <h6 className="text-darkGray">Facture individuelle</h6>
-                      <p className="text-mediumGray">Cette facture n'est pas associée à un collectif.</p>
+                      <p className="text-mediumGray">Aucune répartition collective n'est appliquée à cette facture.</p>
                     </div>
                   ) : (
                     <>
                       <div className="alert alert-info border-0 rounded-xl mb-4">
                         <i className="bi bi-info-circle me-2"></i>
-                        Définissez comment les revenus de cette facture seront répartis entre les membres du collectif.
+                        Définissez comment le montant de cette facture est réparti entre les membres du collectif.
                       </div>
 
                       {formData.shares?.map((share, index) => (
@@ -859,6 +1139,27 @@ export default function CreateInvoicePage() {
                     </div>
                   </div>
 
+                  {readinessPreview && (
+                    <div className={`mt-4 alert ${readinessPreview.status === 'ready' ? 'alert-success' : 'alert-warning'}`}>
+                      <div className="fw-semibold mb-2">
+                        {readinessPreview.status === 'ready'
+                          ? 'Cette facture sera créée prête pour revue'
+                          : 'Cette facture sera créée en brouillon bloqué'}
+                      </div>
+                      {readinessPreview.status === 'blocked' ? (
+                        <div className="small">
+                          {readinessPreview.blockingReasons.map((reason) => (
+                            <div key={reason.code}>• {reason.message}</div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="small">
+                          Les données minimales d’émission sont présentes. L’étape suivante pourra être l’émission et la génération Factur-X.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {errors.form && <div className="alert alert-danger mt-4">{errors.form}</div>}
                 </div>
               </div>
@@ -894,6 +1195,24 @@ export default function CreateInvoicePage() {
                     <span className="fw-bold text-primary">{formatCurrency(calculateInvoiceTotal())}</span>
                   </div>
                 </div>
+
+                {readinessPreview && (
+                  <div className="mb-4">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="text-mediumGray">Préparation à l'émission</span>
+                      <span className={`badge ${readinessPreview.status === 'ready' ? 'bg-success' : 'bg-warning text-dark'}`}>
+                        {readinessPreview.status === 'ready' ? 'Prête' : 'Bloquée'}
+                      </span>
+                    </div>
+                    {readinessPreview.status === 'blocked' && (
+                      <div className="small text-muted">
+                        {readinessPreview.blockingReasons.map((reason) => (
+                          <div key={reason.code}>• {reason.message}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Navigation Buttons */}
                 <div className="d-grid gap-2">
@@ -932,7 +1251,7 @@ export default function CreateInvoicePage() {
                       ) : (
                         <>
                           <i className="bi bi-check-circle me-1"></i>
-                          Créer la facture
+                          {readinessPreview?.status === 'ready' ? 'Créer la facture prête' : 'Créer le brouillon'}
                         </>
                       )}
                     </button>

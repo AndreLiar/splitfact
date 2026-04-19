@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function InvoicesPage() {
+function InvoicesPageInner() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   // Safe currency formatting function
   const formatCurrency = (value: any) => {
@@ -33,6 +34,7 @@ export default function InvoicesPage() {
   // Filter and pagination states
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [workflowStatusFilter, setWorkflowStatusFilter] = useState('all');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
   const [collectiveFilter, setCollectiveFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
@@ -41,6 +43,13 @@ export default function InvoicesPage() {
 
   // Derived data for filters
   const [availableCollectives, setAvailableCollectives] = useState<{id: string, name: string}[]>([]);
+
+  useEffect(() => {
+    const workflowParam = searchParams.get('workflow');
+    if (workflowParam) {
+      setWorkflowStatusFilter(workflowParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -87,6 +96,7 @@ export default function InvoicesPage() {
         (invoice.issuerName || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
+      const matchesWorkflowStatus = workflowStatusFilter === 'all' || invoice.workflowStatus === workflowStatusFilter;
       const matchesPaymentStatus = paymentStatusFilter === 'all' || invoice.paymentStatus === paymentStatusFilter;
       const matchesCollective = collectiveFilter === 'all' || invoice.collective?.id === collectiveFilter;
       
@@ -104,12 +114,12 @@ export default function InvoicesPage() {
         }
       })();
       
-      return matchesSearch && matchesStatus && matchesPaymentStatus && matchesCollective && matchesDate;
+      return matchesSearch && matchesStatus && matchesWorkflowStatus && matchesPaymentStatus && matchesCollective && matchesDate;
     });
     
     setFilteredInvoices(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [invoices, searchTerm, statusFilter, paymentStatusFilter, collectiveFilter, dateFilter]);
+  }, [invoices, searchTerm, statusFilter, workflowStatusFilter, paymentStatusFilter, collectiveFilter, dateFilter]);
 
   const handleGeneratePdf = async (invoiceId: string) => {
     setPdfGenerating(prev => ({ ...prev, [invoiceId]: true }));
@@ -142,10 +152,9 @@ export default function InvoicesPage() {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case 'finalized': return 'bg-success';
+      case 'paid': return 'bg-success';
       case 'draft': return 'bg-secondary';
       case 'sent': return 'bg-info';
-      case 'cancelled': return 'bg-danger';
       default: return 'bg-secondary';
     }
   };
@@ -161,11 +170,36 @@ export default function InvoicesPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'finalized': return 'Finalisée';
+      case 'paid': return 'Payée';
       case 'draft': return 'Brouillon';
       case 'sent': return 'Envoyée';
-      case 'cancelled': return 'Annulée';
       default: return status;
+    }
+  };
+
+  const getWorkflowBadgeClass = (workflowStatus: string) => {
+    switch (workflowStatus) {
+      case 'issued': return 'bg-success';
+      case 'blocked': return 'bg-danger';
+      case 'ready_for_review':
+      case 'ready_to_issue':
+        return 'bg-primary';
+      case 'collecting_data':
+      case 'triggered':
+      default:
+        return 'bg-secondary';
+    }
+  };
+
+  const getWorkflowStatusText = (workflowStatus: string) => {
+    switch (workflowStatus) {
+      case 'triggered': return 'Déclenchée';
+      case 'collecting_data': return 'Collecte';
+      case 'blocked': return 'Bloquée';
+      case 'ready_for_review': return 'Revue';
+      case 'ready_to_issue': return 'Prête';
+      case 'issued': return 'Émise';
+      default: return workflowStatus || 'Non défini';
     }
   };
 
@@ -204,16 +238,26 @@ export default function InvoicesPage() {
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h1 className="h3 mb-0 text-dark">Vos Factures</h1>
+          <h1 className="h3 mb-0 text-dark">Vos factures</h1>
           <p className="text-muted mb-0">
-            Gérez et suivez toutes vos factures principales et collectives
+            Gérez le statut, le paiement et les documents de votre flux de facturation
           </p>
         </div>
         <div className="d-flex gap-2">
-          <Link href="/dashboard/sub-invoices" className="btn btn-outline-primary">
-            <i className="bi bi-files me-2"></i>
-            Voir les Sous-Factures
-          </Link>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={async () => {
+              await fetch('/api/billing-triggers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ triggerType: 'manual', sourceDescription: 'Déclenchement manuel depuis la liste des factures' }),
+              });
+              window.location.href = '/dashboard/create-invoice';
+            }}
+          >
+            <i className="bi bi-lightning me-2"></i>
+            Nouveau job de facturation
+          </button>
           <Link href="/dashboard/create-invoice" className="btn btn-primary">
             <i className="bi bi-plus-circle me-2"></i>
             Nouvelle Facture
@@ -249,9 +293,8 @@ export default function InvoicesPage() {
               >
                 <option key="status-all" value="all">Tous</option>
                 <option key="status-draft" value="draft">Brouillon</option>
-                <option key="status-finalized" value="finalized">Finalisée</option>
                 <option key="status-sent" value="sent">Envoyée</option>
-                <option key="status-cancelled" value="cancelled">Annulée</option>
+                <option key="status-paid" value="paid">Payée</option>
               </select>
             </div>
             <div className="col-lg-2 col-md-6 col-sm-6 col-12">
@@ -265,6 +308,20 @@ export default function InvoicesPage() {
                 <option key="payment-pending" value="pending">En attente</option>
                 <option key="payment-paid" value="paid">Payées</option>
                 <option key="payment-overdue" value="overdue">En retard</option>
+              </select>
+            </div>
+            <div className="col-lg-2 col-md-6 col-sm-6 col-12">
+              <label className="form-label fw-semibold">Workflow</label>
+              <select
+                className="form-select"
+                value={workflowStatusFilter}
+                onChange={(e) => setWorkflowStatusFilter(e.target.value)}
+              >
+                <option key="workflow-all" value="all">Tous</option>
+                <option key="workflow-blocked" value="blocked">Bloquées</option>
+                <option key="workflow-review" value="ready_for_review">Revue</option>
+                <option key="workflow-ready" value="ready_to_issue">Prêtes</option>
+                <option key="workflow-issued" value="issued">Émises</option>
               </select>
             </div>
             <div className="col-lg-2 col-md-6 col-sm-6 col-12">
@@ -282,7 +339,7 @@ export default function InvoicesPage() {
                 ))}
               </select>
             </div>
-            <div className="col-lg-2 col-md-6 col-sm-6 col-12">
+            <div className="col-lg-1 col-md-6 col-sm-6 col-12">
               <label className="form-label fw-semibold">Période</label>
               <select
                 className="form-select"
@@ -301,6 +358,7 @@ export default function InvoicesPage() {
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('all');
+                  setWorkflowStatusFilter('all');
                   setPaymentStatusFilter('all');
                   setCollectiveFilter('all');
                   setDateFilter('all');
@@ -330,10 +388,16 @@ export default function InvoicesPage() {
                   {invoices.filter((inv: any) => inv.paymentStatus === 'overdue').length} En retard
                 </span>
                 <span className="badge bg-info">
-                  {invoices.filter((inv: any) => inv.status === 'finalized').length} Finalisées
+                  {invoices.filter((inv: any) => inv.status === 'sent').length} Envoyées
                 </span>
                 <span className="badge bg-secondary">
                   {invoices.filter((inv: any) => inv.status === 'draft').length} Brouillons
+                </span>
+                <span className="badge bg-danger">
+                  {invoices.filter((inv: any) => inv.workflowStatus === 'blocked').length} Bloquées
+                </span>
+                <span className="badge bg-success">
+                  {invoices.filter((inv: any) => inv.workflowStatus === 'issued').length} Émises
                 </span>
               </div>
             </div>
@@ -379,6 +443,7 @@ export default function InvoicesPage() {
                     <th className="border-0 fw-semibold">Type</th>
                     <th className="border-0 fw-semibold">Montant</th>
                     <th className="border-0 fw-semibold">Statut</th>
+                    <th className="border-0 fw-semibold">Workflow</th>
                     <th className="border-0 fw-semibold">Paiement</th>
                     <th className="border-0 fw-semibold">Échéance</th>
                     <th className="border-0 fw-semibold text-center">Actions</th>
@@ -418,7 +483,7 @@ export default function InvoicesPage() {
                             <>
                               <i className="bi bi-people text-primary me-2"></i>
                               <div>
-                                <div className="fw-semibold text-primary">Collective</div>
+                                <div className="fw-semibold text-primary">Collectif</div>
                                 <small className="text-muted">{invoice.collective.name}</small>
                               </div>
                             </>
@@ -427,7 +492,7 @@ export default function InvoicesPage() {
                               <i className="bi bi-person text-muted me-2"></i>
                               <div>
                                 <div className="fw-semibold">Individuelle</div>
-                                <small className="text-muted">Facture standard</small>
+                                <small className="text-muted">Sans répartition collective</small>
                               </div>
                             </>
                           )}
@@ -439,6 +504,11 @@ export default function InvoicesPage() {
                       <td>
                         <span className={`badge ${getStatusBadgeClass(invoice.status || 'draft')}`}>
                           {getStatusText(invoice.status || 'draft')}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge ${getWorkflowBadgeClass(invoice.workflowStatus || 'triggered')}`}>
+                          {getWorkflowStatusText(invoice.workflowStatus || 'triggered')}
                         </span>
                       </td>
                       <td>
@@ -538,7 +608,7 @@ export default function InvoicesPage() {
                         <div className="d-flex align-items-center">
                           <i className="bi bi-people text-primary me-2"></i>
                           <div>
-                            <span className="fw-semibold text-primary">Collective</span>
+                            <span className="fw-semibold text-primary">Collectif</span>
                             <small className="text-muted d-block">{invoice.collective.name}</small>
                           </div>
                         </div>
@@ -554,6 +624,9 @@ export default function InvoicesPage() {
                     <div className="d-flex gap-2 mb-3 flex-wrap">
                       <span className={`badge ${getStatusBadgeClass(invoice.status)}`}>
                         {getStatusText(invoice.status)}
+                      </span>
+                      <span className={`badge ${getWorkflowBadgeClass(invoice.workflowStatus || 'triggered')}`}>
+                        {getWorkflowStatusText(invoice.workflowStatus || 'triggered')}
                       </span>
                       <span className={`badge ${getPaymentStatusBadgeClass(invoice.paymentStatus)}`}>
                         {getPaymentStatusText(invoice.paymentStatus)}
@@ -666,5 +739,13 @@ export default function InvoicesPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function InvoicesPage() {
+  return (
+    <Suspense fallback={<div className="d-flex justify-content-center align-items-center vh-100">Chargement...</div>}>
+      <InvoicesPageInner />
+    </Suspense>
   );
 }

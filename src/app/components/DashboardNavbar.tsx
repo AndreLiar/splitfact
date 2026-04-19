@@ -1,107 +1,99 @@
 'use client';
 
-import { usePathname } from "next/navigation";
 import Link from "next/link";
 import NotificationCenter from "@/app/dashboard/components/NotificationCenter";
 import FeedbackButton from "./FeedbackButton";
 
 export default function DashboardNavbar() {
-  const pathname = usePathname();
-
   return (
-    <nav 
-      className="navbar navbar-expand-lg navbar-light bg-white d-lg-none border-bottom shadow-sm mobile-navbar" 
-      style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
+    <nav
+      className="d-lg-none"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
         zIndex: 1030,
-        backdropFilter: 'blur(10px)',
-        minHeight: '60px'
+        backgroundColor: 'rgba(8,9,10,0.92)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        height: '60px',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 16px',
       }}
     >
-      <div className="container-fluid px-3 py-2">
-        <button
-          className="navbar-toggler border-0 p-2 mobile-menu-btn"
-          type="button"
-          data-bs-toggle="offcanvas"
-          data-bs-target="#mobileSidebar"
-          aria-controls="mobileSidebar"
-          aria-expanded="false"
-          aria-label="Ouvrir le menu de navigation"
-          style={{
-            minWidth: '48px',
-            minHeight: '48px',
-            borderRadius: '12px',
-            transition: 'all 0.2s ease-in-out'
-          }}
-        >
-          <i className="bi bi-list fs-3" style={{ lineHeight: 1 }}></i>
-        </button>
-        <Link 
-          href="/dashboard" 
-          className="navbar-brand fw-bold text-primary mb-0 mobile-brand"
-          style={{
-            fontSize: '1.2rem',
-            textDecoration: 'none',
-            display: 'flex',
-            alignItems: 'center'
-          }}
-        >
-          <i className="bi bi-lightning-fill me-2" style={{ fontSize: '1.3rem' }}></i>
-          <span className="brand-text">Splitfact</span>
-        </Link>
-        <div className="d-flex align-items-center gap-2 mobile-nav-actions">
-          <FeedbackButton 
-            variant="link" 
-            size="sm" 
-            position="navbar" 
-            showText={false}
-            className="p-2"
-          />
-          <NotificationCenter />
+      {/* Hamburger */}
+      <button
+        type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#mobileSidebar"
+        aria-controls="mobileSidebar"
+        aria-label="Ouvrir le menu"
+        style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.09)',
+          borderRadius: '8px',
+          color: '#d0d6e0',
+          width: '40px',
+          height: '40px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          flexShrink: 0,
+        }}
+      >
+        <i className="bi bi-list" style={{ fontSize: '1.25rem', lineHeight: 1 }} />
+      </button>
+
+      {/* Brand — centered */}
+      <Link
+        href="/dashboard"
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          textDecoration: 'none',
+        }}
+      >
+        <div style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: '6px',
+          backgroundColor: '#D4921A',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <i className="bi bi-lightning-fill" style={{ color: '#08090a', fontSize: '0.75rem' }} />
         </div>
+        <span style={{
+          fontSize: '0.9375rem',
+          fontWeight: 590,
+          color: '#f7f8f8',
+          letterSpacing: '-0.01em',
+          fontFeatureSettings: '"cv01","ss03"',
+        }}>
+          InvoiceOps
+        </span>
+      </Link>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+        <FeedbackButton
+          variant="link"
+          size="sm"
+          position="navbar"
+          showText={false}
+          className="p-2"
+        />
+        <NotificationCenter />
       </div>
-      
-      <style jsx>{`
-        @media (max-width: 768px) {
-          .mobile-menu-btn:hover {
-            background-color: #f8f9fa;
-            transform: scale(1.05);
-          }
-          
-          .mobile-menu-btn:active {
-            background-color: #e9ecef;
-            transform: scale(0.98);
-          }
-          
-          .mobile-brand {
-            flex: 1;
-            justify-content: center;
-            margin: 0 16px;
-          }
-          
-          .mobile-nav-actions {
-            min-width: 48px;
-            justify-content: flex-end;
-          }
-        }
-        
-        @media (max-width: 375px) {
-          .brand-text {
-            font-size: 1.1rem;
-          }
-          
-          .mobile-navbar {
-            min-height: 56px;
-          }
-          
-          .container-fluid {
-            padding: 8px 16px;
-          }
-        }
-      `}</style>
     </nav>
   );
 }

@@ -1,114 +1,152 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-interface NotionStatus {
-  connected: boolean;
-  workspace?: string;
-  lastSync?: Date;
-  databases: number;
-  errors?: string[];
+interface UserProfile {
+  name: string;
+  siret: string;
+  address: string;
+  fiscalRegime: string;
+  microEntrepreneurType: string;
+  declarationFrequency: string;
+  tvaNumber: string;
+  legalStatus: string;
+  apeCode: string;
+  rcsNumber: string;
+  shareCapital: string;
 }
 
-export default function SettingsPage() {
-  const { data: session, status } = useSession();
+const COMPANY_STATUSES = ['SASU', 'EURL', 'SARL', 'SAS', 'EI', 'Micro-entreprise', 'Autre'];
+
+function SettingsPageInner() {
+  const { status } = useSession();
   const router = useRouter();
-  const [notionStatus, setNotionStatus] = useState<NotionStatus | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+
+  const [profile, setProfile] = useState<UserProfile>({
+    name: '', siret: '', address: '', fiscalRegime: '', microEntrepreneurType: '',
+    declarationFrequency: '', tvaNumber: '', legalStatus: '', apeCode: '',
+    rcsNumber: '', shareCapital: '',
+  });
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
+  const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
+  const [stripeConnecting, setStripeConnecting] = useState(false);
+  const [siretLookup, setSiretLookup] = useState<{ loading: boolean; result: string | null; error: string | null }>({ loading: false, result: null, error: null });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
     } else if (status === 'authenticated') {
-      fetchNotionStatus();
-      
-      // Check for OAuth callback messages
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('notion_connected') === 'true') {
-        setMessage('Notion account connected successfully!');
-        // Clean URL
-        window.history.replaceState({}, '', '/dashboard/settings');
-      } else if (params.get('notion_error')) {
-        setMessage(`Error: ${params.get('notion_error')}`);
-      }
+      fetchProfile();
     }
   }, [status, router]);
 
-  const fetchNotionStatus = async () => {
+  const fetchProfile = async () => {
     try {
-      const response = await fetch('/api/integrations/notion/auth?action=status');
-      if (response.ok) {
-        const status = await response.json();
-        setNotionStatus(status);
+      const res = await fetch('/api/users/me');
+      if (res.ok) {
+        const data = await res.json();
+        setProfile({
+          name: data.name ?? '',
+          siret: data.siret ?? '',
+          address: data.address ?? '',
+          fiscalRegime: data.fiscalRegime ?? '',
+          microEntrepreneurType: data.microEntrepreneurType ?? '',
+          declarationFrequency: data.declarationFrequency ?? '',
+          tvaNumber: data.tvaNumber ?? '',
+          legalStatus: data.legalStatus ?? '',
+          apeCode: data.apeCode ?? '',
+          rcsNumber: data.rcsNumber ?? '',
+          shareCapital: data.shareCapital ?? '',
+        });
+        setStripeAccountId(data.stripeAccountId ?? null);
       }
-    } catch (error) {
-      console.error('Failed to fetch Notion status:', error);
-    }
-  };
-
-  const handleConnectNotion = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/integrations/notion/auth?action=connect');
-      if (response.ok) {
-        const { authUrl } = await response.json();
-        window.location.href = authUrl;
-      } else {
-        setMessage('Failed to initiate Notion connection');
-      }
-    } catch (error) {
-      console.error('Error connecting to Notion:', error);
-      setMessage('Error connecting to Notion');
+    } catch {
+      // silently ignore fetch error — form will be empty
     } finally {
-      setLoading(false);
+      setProfileLoading(false);
     }
   };
 
-  const handleDisconnectNotion = async () => {
-    setLoading(true);
+  const handleStripeConnect = async () => {
+    setStripeConnecting(true);
     try {
-      const response = await fetch('/api/integrations/notion/auth?action=disconnect');
-      if (response.ok) {
-        setMessage('Notion account disconnected successfully');
-        await fetchNotionStatus();
+      const res = await fetch('/api/stripe/onboard', { method: 'POST' });
+      if (!res.ok) throw new Error('Impossible de démarrer la connexion Stripe.');
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (err: any) {
+      setProfileMessage({ type: 'error', text: err.message });
+      setStripeConnecting(false);
+    }
+  };
+
+  const stripeReturnSuccess = searchParams.get('stripe_onboard') === 'success';
+
+  const handleVerifySiret = useCallback(async () => {
+    if (!profile.siret || profile.siret.length !== 14) return;
+    setSiretLookup({ loading: true, result: null, error: null });
+    try {
+      const res = await fetch(`/api/siret?siret=${profile.siret}`);
+      const data = await res.json();
+      if (data.valid && data.companyName) {
+        setSiretLookup({ loading: false, result: data.companyName, error: null });
+        setProfile((p) => ({ ...p, name: p.name || data.companyName, address: p.address || data.address || '' }));
       } else {
-        setMessage('Failed to disconnect Notion account');
+        setSiretLookup({ loading: false, result: null, error: data.error ?? 'SIRET introuvable dans SIRENE' });
       }
-    } catch (error) {
-      console.error('Error disconnecting Notion:', error);
-      setMessage('Error disconnecting Notion');
-    } finally {
-      setLoading(false);
+    } catch {
+      setSiretLookup({ loading: false, result: null, error: 'Erreur de vérification SIRENE' });
     }
-  };
+  }, [profile.siret]);
 
-  const handleSyncNotion = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/integrations/notion/sync?action=sync');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setMessage('Notion data synced successfully!');
-          await fetchNotionStatus();
-        } else {
-          setMessage(`Sync failed: ${result.error}`);
+  const handleProfileSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileSaving(true);
+    setProfileErrors({});
+    setProfileMessage(null);
+
+    const res = await fetch('/api/users/me', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile),
+    });
+
+    if (res.ok) {
+      setProfileMessage({ type: 'success', text: 'Profil enregistré.' });
+    } else {
+      const body = await res.json().catch(() => ({}));
+      if (body.errors) {
+        const flat: Record<string, string> = {};
+        for (const [k, v] of Object.entries(body.errors as any)) {
+          if (k !== '_errors' && (v as any)._errors?.length) {
+            flat[k] = (v as any)._errors[0];
+          }
         }
+        setProfileErrors(flat);
+        setProfileMessage({ type: 'error', text: 'Veuillez corriger les erreurs ci-dessous.' });
       } else {
-        setMessage('Failed to sync Notion data');
+        setProfileMessage({ type: 'error', text: body.error ?? 'Erreur lors de la sauvegarde.' });
       }
-    } catch (error) {
-      console.error('Error syncing Notion:', error);
-      setMessage('Error syncing Notion data');
-    } finally {
-      setLoading(false);
     }
+    setProfileSaving(false);
   };
 
-  if (status === 'loading') {
+  const field = (key: keyof UserProfile) => ({
+    value: profile[key],
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      setProfile((p) => ({ ...p, [key]: e.target.value })),
+  });
+
+  const isMicro = ['MicroBIC', 'BNC'].includes(profile.fiscalRegime);
+  const isCompany = ['SASU', 'EURL', 'SARL', 'SAS'].includes(profile.legalStatus);
+
+  if (status === 'loading' || profileLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
         <div className="spinner-border text-primary" role="status">
@@ -120,211 +158,213 @@ export default function SettingsPage() {
 
   return (
     <div className="container-fluid mt-4">
-      <div className="row">
-        <div className="col-12">
+      <div className="row justify-content-center">
+        <div className="col-12 col-lg-8">
           <h1 className="h3 mb-4">
             <i className="bi bi-gear-fill me-2 text-primary"></i>
             Paramètres
           </h1>
 
-          {message && (
-            <div className={`alert ${message.includes('Error') || message.includes('failed') ? 'alert-danger' : 'alert-success'} alert-dismissible fade show`}>
-              {message}
-              <button 
-                type="button" 
-                className="btn-close" 
-                onClick={() => setMessage(null)}
-              ></button>
-            </div>
-          )}
-
-          {/* Notion Integration Section */}
-          <div className="card mb-4">
-            <div className="card-header">
-              <h5 className="mb-0">
-                <i className="bi bi-journal-text me-2"></i>
-                Intégration Notion
+          {/* ── Issuer Profile ────────────────────────────────── */}
+          <div className="card mb-4 shadow-sm">
+            <div className="card-header bg-white">
+              <h5 className="mb-0 fw-semibold">
+                <i className="bi bi-building me-2 text-primary"></i>
+                Profil émetteur
               </h5>
+              <small className="text-muted">Ces informations apparaissent automatiquement sur vos factures.</small>
             </div>
             <div className="card-body">
-              {notionStatus === null ? (
-                <div className="text-center">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
+              {profileMessage && (
+                <div className={`alert alert-${profileMessage.type === 'success' ? 'success' : 'danger'} alert-dismissible`}>
+                  {profileMessage.text}
+                  <button type="button" className="btn-close" onClick={() => setProfileMessage(null)}></button>
                 </div>
-              ) : (
-                <>
-                  <div className="row mb-3">
+              )}
+
+              <form onSubmit={handleProfileSave}>
+                <div className="row g-3">
+                  {/* Name */}
+                  <div className="col-12">
+                    <label className="form-label fw-medium">Nom / Raison sociale <span className="text-danger">*</span></label>
+                    <input className={`form-control ${profileErrors.name ? 'is-invalid' : ''}`} {...field('name')} placeholder="Jean Dupont ou Dupont Conseil" />
+                    {profileErrors.name && <div className="invalid-feedback">{profileErrors.name}</div>}
+                  </div>
+
+                  {/* SIRET */}
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">SIRET <span className="text-danger">*</span></label>
+                    <div className="input-group">
+                      <input className={`form-control font-monospace ${profileErrors.siret ? 'is-invalid' : ''}`} {...field('siret')} placeholder="12345678900012" maxLength={14} />
+                      <button type="button" className="btn btn-outline-secondary" onClick={handleVerifySiret} disabled={siretLookup.loading || profile.siret.length !== 14} title="Vérifier dans SIRENE">
+                        {siretLookup.loading ? <span className="spinner-border spinner-border-sm" /> : <i className="bi bi-search" />}
+                      </button>
+                      {profileErrors.siret && <div className="invalid-feedback">{profileErrors.siret}</div>}
+                    </div>
+                    {siretLookup.result && <small className="text-success"><i className="bi bi-check-circle me-1" />{siretLookup.result}</small>}
+                    {siretLookup.error && <small className="text-danger"><i className="bi bi-x-circle me-1" />{siretLookup.error}</small>}
+                  </div>
+
+                  {/* APE Code */}
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">Code APE <span className="text-danger">*</span></label>
+                    <input className={`form-control font-monospace ${profileErrors.apeCode ? 'is-invalid' : ''}`} {...field('apeCode')} placeholder="6202A" maxLength={5} />
+                    {profileErrors.apeCode && <div className="invalid-feedback">{profileErrors.apeCode}</div>}
+                  </div>
+
+                  {/* Address */}
+                  <div className="col-12">
+                    <label className="form-label fw-medium">Adresse professionnelle <span className="text-danger">*</span></label>
+                    <textarea className={`form-control ${profileErrors.address ? 'is-invalid' : ''}`} rows={2} {...field('address')} placeholder="12 rue de la Paix, 75001 Paris" />
+                    {profileErrors.address && <div className="invalid-feedback">{profileErrors.address}</div>}
+                  </div>
+
+                  {/* Fiscal regime */}
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">Régime fiscal <span className="text-danger">*</span></label>
+                    <select className={`form-select ${profileErrors.fiscalRegime ? 'is-invalid' : ''}`} {...field('fiscalRegime')}>
+                      <option value="">-- Choisir --</option>
+                      <option value="MicroBIC">Micro-BIC (commerçant)</option>
+                      <option value="BNC">BNC (libéral)</option>
+                      <option value="EI">EI (entreprise individuelle)</option>
+                      <option value="SASU">SASU / SAS</option>
+                      <option value="Other">Autre</option>
+                    </select>
+                    {profileErrors.fiscalRegime && <div className="invalid-feedback">{profileErrors.fiscalRegime}</div>}
+                  </div>
+
+                  {/* Legal status */}
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">Statut juridique <span className="text-danger">*</span></label>
+                    <select className={`form-select ${profileErrors.legalStatus ? 'is-invalid' : ''}`} {...field('legalStatus')}>
+                      <option value="">-- Choisir --</option>
+                      {COMPANY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    {profileErrors.legalStatus && <div className="invalid-feedback">{profileErrors.legalStatus}</div>}
+                  </div>
+
+                  {/* Micro-entrepreneur type — conditional */}
+                  {isMicro && (
                     <div className="col-md-6">
-                      <div className="d-flex align-items-center mb-2">
-                        <span className={`badge me-2 ${notionStatus.connected ? 'bg-success' : 'bg-secondary'}`}>
-                          {notionStatus.connected ? 'Connecté' : 'Non connecté'}
-                        </span>
-                        {notionStatus.workspace && (
-                          <small className="text-muted">Workspace: {notionStatus.workspace}</small>
-                        )}
-                      </div>
-                      
-                      {notionStatus.connected && (
-                        <div>
-                          <small className="text-muted d-block">
-                            Bases de données: {notionStatus.databases}
-                          </small>
-                          {notionStatus.lastSync && (
-                            <small className="text-muted d-block">
-                              Dernière sync: {new Date(notionStatus.lastSync).toLocaleString('fr-FR')}
-                            </small>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="col-md-6 text-end">
-                      {!notionStatus.connected ? (
-                        <button 
-                          className="btn btn-primary"
-                          onClick={handleConnectNotion}
-                          disabled={loading}
-                        >
-                          {loading ? (
-                            <>
-                              <span className="spinner-border spinner-border-sm me-2"></span>
-                              Connexion...
-                            </>
-                          ) : (
-                            <>
-                              <i className="bi bi-plus-circle me-2"></i>
-                              Connecter Notion
-                            </>
-                          )}
-                        </button>
-                      ) : (
-                        <div className="btn-group">
-                          <button 
-                            className="btn btn-outline-primary"
-                            onClick={handleSyncNotion}
-                            disabled={loading}
-                          >
-                            {loading ? (
-                              <span className="spinner-border spinner-border-sm"></span>
-                            ) : (
-                              <>
-                                <i className="bi bi-arrow-clockwise me-2"></i>
-                                Synchroniser
-                              </>
-                            )}
-                          </button>
-                          <button 
-                            className="btn btn-outline-danger"
-                            onClick={handleDisconnectNotion}
-                            disabled={loading}
-                          >
-                            <i className="bi bi-x-circle me-2"></i>
-                            Déconnecter
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <hr />
-
-                  <div className="row">
-                    <div className="col-12">
-                      <h6>Fonctionnalités disponibles avec Notion :</h6>
-                      <ul className="list-unstyled">
-                        <li className="mb-2">
-                          <i className="bi bi-check-circle text-success me-2"></i>
-                          Synchronisation bidirectionnelle des revenus et dépenses
-                        </li>
-                        <li className="mb-2">
-                          <i className="bi bi-check-circle text-success me-2"></i>
-                          Gestion centralisée des clients et projets
-                        </li>
-                        <li className="mb-2">
-                          <i className="bi bi-check-circle text-success me-2"></i>
-                          Notes fiscales et rappels personnalisés
-                        </li>
-                        <li className="mb-2">
-                          <i className="bi bi-check-circle text-success me-2"></i>
-                          Métriques business avancées
-                        </li>
-                        <li className="mb-2">
-                          <i className="bi bi-check-circle text-success me-2"></i>
-                          Assistant fiscal enrichi avec vos données Notion
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {notionStatus.errors && notionStatus.errors.length > 0 && (
-                    <div className="alert alert-warning mt-3">
-                      <i className="bi bi-exclamation-triangle me-2"></i>
-                      <strong>Avertissements:</strong>
-                      <ul className="mb-0 mt-2">
-                        {notionStatus.errors.map((error, index) => (
-                          <li key={index}>{error}</li>
-                        ))}
-                      </ul>
+                      <label className="form-label fw-medium">Type micro-entrepreneur <span className="text-danger">*</span></label>
+                      <select className={`form-select ${profileErrors.microEntrepreneurType ? 'is-invalid' : ''}`} {...field('microEntrepreneurType')}>
+                        <option value="">-- Choisir --</option>
+                        <option value="COMMERCANT">Commerçant</option>
+                        <option value="PRESTATAIRE">Prestataire de services</option>
+                        <option value="LIBERAL">Libéral</option>
+                      </select>
+                      {profileErrors.microEntrepreneurType && <div className="invalid-feedback">{profileErrors.microEntrepreneurType}</div>}
                     </div>
                   )}
-                </>
-              )}
+
+                  {/* Declaration frequency — conditional */}
+                  {isMicro && (
+                    <div className="col-md-6">
+                      <label className="form-label fw-medium">Fréquence de déclaration URSSAF <span className="text-danger">*</span></label>
+                      <select className={`form-select ${profileErrors.declarationFrequency ? 'is-invalid' : ''}`} {...field('declarationFrequency')}>
+                        <option value="">-- Choisir --</option>
+                        <option value="monthly">Mensuelle</option>
+                        <option value="quarterly">Trimestrielle</option>
+                      </select>
+                      {profileErrors.declarationFrequency && <div className="invalid-feedback">{profileErrors.declarationFrequency}</div>}
+                    </div>
+                  )}
+
+                  {/* TVA number — optional */}
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">Numéro TVA intracommunautaire</label>
+                    <input className={`form-control font-monospace ${profileErrors.tvaNumber ? 'is-invalid' : ''}`} {...field('tvaNumber')} placeholder="FR12345678901" />
+                    {profileErrors.tvaNumber
+                      ? <div className="invalid-feedback">{profileErrors.tvaNumber}</div>
+                      : <small className="text-muted">Optionnel — requis si vous facturez en TVA</small>}
+                  </div>
+
+                  {/* RCS + Share capital — conditional on company status */}
+                  {isCompany && (
+                    <>
+                      <div className="col-md-6">
+                        <label className="form-label fw-medium">Numéro RCS <span className="text-danger">*</span></label>
+                        <input className={`form-control ${profileErrors.rcsNumber ? 'is-invalid' : ''}`} {...field('rcsNumber')} placeholder="Paris 123 456 789" />
+                        {profileErrors.rcsNumber && <div className="invalid-feedback">{profileErrors.rcsNumber}</div>}
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label fw-medium">Capital social <span className="text-danger">*</span></label>
+                        <input className={`form-control ${profileErrors.shareCapital ? 'is-invalid' : ''}`} {...field('shareCapital')} placeholder="10 000 €" />
+                        {profileErrors.shareCapital && <div className="invalid-feedback">{profileErrors.shareCapital}</div>}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="mt-4 d-flex align-items-center gap-3">
+                  <button type="submit" className="btn btn-primary px-4" disabled={profileSaving}>
+                    {profileSaving
+                      ? <><span className="spinner-border spinner-border-sm me-2"></span>Enregistrement…</>
+                      : <><i className="bi bi-check-lg me-2"></i>Enregistrer le profil</>}
+                  </button>
+                  {profileMessage?.type === 'success' && (
+                    <span className="text-success small"><i className="bi bi-check-circle me-1"></i>{profileMessage.text}</span>
+                  )}
+                </div>
+              </form>
             </div>
           </div>
 
-          {/* Web Search Section */}
-          <div className="card mb-4">
-            <div className="card-header">
-              <h5 className="mb-0">
-                <i className="bi bi-search me-2"></i>
-                Recherche Web Intelligente
+          {/* ── Stripe Connect ────────────────────────────────── */}
+          <div className="card mb-4 shadow-sm">
+            <div className="card-header bg-white">
+              <h5 className="mb-0 fw-semibold">
+                <i className="bi bi-credit-card me-2 text-primary"></i>
+                Paiements en ligne
               </h5>
+              <small className="text-muted">Permettez à vos clients de payer directement via un lien sécurisé.</small>
             </div>
             <div className="card-body">
-              <div className="row">
-                <div className="col-md-8">
-                  <p className="mb-3">
-                    L'assistant fiscal peut maintenant accéder aux informations fiscales les plus récentes en temps réel.
-                  </p>
-                  
-                  <h6>Fonctionnalités :</h6>
-                  <ul className="list-unstyled">
-                    <li className="mb-2">
-                      <i className="bi bi-check-circle text-success me-2"></i>
-                      Accès aux dernières réglementations URSSAF
-                    </li>
-                    <li className="mb-2">
-                      <i className="bi bi-check-circle text-success me-2"></i>
-                      Seuils et taux de TVA à jour
-                    </li>
-                    <li className="mb-2">
-                      <i className="bi bi-check-circle text-success me-2"></i>
-                      Sources officielles prioritaires (.gouv.fr)
-                    </li>
-                    <li className="mb-2">
-                      <i className="bi bi-check-circle text-success me-2"></i>
-                      Validation automatique des informations
-                    </li>
-                  </ul>
+              {stripeReturnSuccess && (
+                <div className="alert alert-success d-flex align-items-center gap-2 mb-3">
+                  <i className="bi bi-check-circle-fill"></i>
+                  Votre compte Stripe est connecté. Les liens de paiement sont maintenant actifs.
                 </div>
-                <div className="col-md-4 text-center">
-                  <div className="badge bg-success fs-6 p-3">
-                    <i className="bi bi-check-circle-fill me-2"></i>
-                    Activé
+              )}
+              <div className="d-flex align-items-center justify-content-between py-2">
+                <div>
+                  <div className="fw-medium d-flex align-items-center gap-2">
+                    Stripe Connect
+                    {stripeAccountId
+                      ? <span className="badge bg-success"><i className="bi bi-check-lg me-1"></i>Connecté</span>
+                      : <span className="badge bg-secondary">Non connecté</span>}
                   </div>
-                  <div className="mt-2">
-                    <small className="text-muted">
-                      Recherche web active pour tous les conseils fiscaux
-                    </small>
-                  </div>
+                  <small className="text-muted">
+                    {stripeAccountId
+                      ? `Compte Stripe actif — les liens de paiement sur vos factures sont opérationnels.`
+                      : 'Connectez votre compte Stripe pour activer les liens de paiement sur vos factures émises.'}
+                  </small>
                 </div>
+                <button
+                  className={`btn btn-sm ${stripeAccountId ? 'btn-outline-secondary' : 'btn-primary'}`}
+                  onClick={handleStripeConnect}
+                  disabled={stripeConnecting}
+                >
+                  {stripeConnecting
+                    ? <><span className="spinner-border spinner-border-sm me-1"></span>Redirection…</>
+                    : stripeAccountId
+                      ? <><i className="bi bi-arrow-repeat me-1"></i>Reconfigurer</>
+                      : <><i className="bi bi-box-arrow-up-right me-1"></i>Connecter Stripe</>}
+                </button>
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="d-flex justify-content-center align-items-center vh-100">Chargement...</div>}>
+      <SettingsPageInner />
+    </Suspense>
   );
 }

@@ -1,12 +1,11 @@
+import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { renderToStream } from '@react-pdf/renderer';
 
 import cloudinary from '@/lib/cloudinary';
 
-const prisma = new PrismaClient();
 
 export async function POST(
   req: NextRequest,

@@ -1,16 +1,15 @@
+import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const prisma = new PrismaClient();
 
 const companyLegalStatuses = ["SASU", "EURL", "SARL", "SAS"];
 
 const userProfileSchema = z.object({
   name: z.string().min(1, "Name / Company Name is required."),
-  fiscalRegime: z.enum(["MicroBIC", "BNC"], { required_error: "Fiscal Regime is required." }),
+  fiscalRegime: z.enum(["MicroBIC", "BNC", "SASU", "EI", "Other"], { required_error: "Régime fiscal requis." }),
   microEntrepreneurType: z.enum(["COMMERCANT", "PRESTATAIRE", "LIBERAL"]).optional(), // New field
   declarationFrequency: z.enum(["monthly", "quarterly"]).optional(), // New field for URSSAF declarations
   siret: z.string().length(14, "SIRET must be 14 digits.").regex(/^\d+$/, "SIRET must contain only digits."),

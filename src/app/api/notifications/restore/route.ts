@@ -25,40 +25,39 @@ export async function POST(request: Request) {
       where: { userId: user.id }
     });
 
-    // If user has no notifications, create some sample ones (likely what they had before)
+    // Only seed if user has no notifications at all
     if (existingCount === 0) {
       const sampleNotifications = [
         {
           userId: user.id,
           type: 'URSSAF_REMINDER' as const,
           title: 'Rappel déclaration URSSAF',
-          message: 'Votre déclaration URSSAF mensuelle est due dans 5 jours. N\'oubliez pas de déclarer vos revenus.',
-          actionUrl: '/dashboard/reports/urssaf',
+          message: 'Votre prochaine déclaration URSSAF est à venir. Vérifiez vos revenus à déclarer et anticipez le montant dû.',
+          actionUrl: '/dashboard/invoices',
           metadata: {
-            deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+            deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
             type: 'monthly'
           }
         },
         {
           userId: user.id,
           type: 'TVA_THRESHOLD_WARNING' as const,
-          title: 'Seuil TVA approché',
-          message: 'Attention : vous approchez du seuil de TVA (85 700€). Préparez-vous aux obligations TVA.',
-          actionUrl: '/dashboard/assistant',
+          title: 'Surveiller le seuil de franchise TVA',
+          message: 'Pensez à surveiller votre chiffre d\'affaires annuel. Le seuil de franchise TVA est de 91 900 € (commercial) ou 36 800 € (services).',
+          actionUrl: '/dashboard/invoices',
           metadata: {
-            currentTurnover: 75000,
-            thresholdRemaining: 10700
+            thresholdCommercial: 91900,
+            thresholdServices: 36800,
           }
         },
         {
           userId: user.id,
           type: 'GENERAL' as const,
-          title: 'Optimisation fiscale disponible',
-          message: 'Découvrez comment optimiser vos charges déductibles et réduire vos cotisations sociales.',
-          actionUrl: '/dashboard/assistant',
+          title: 'Réforme e-invoicing 2026–2027',
+          message: 'La facturation électronique obligatoire entre en vigueur dès 2026 pour les grandes entreprises et 2027 pour les PME. Vos factures doivent être au format Factur-X.',
+          actionUrl: '/dashboard/invoices',
           metadata: {
-            potentialSavings: 1200,
-            category: 'optimization'
+            category: 'compliance'
           }
         }
       ];

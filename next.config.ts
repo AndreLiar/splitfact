@@ -6,7 +6,13 @@ const nextConfig: NextConfig = {
     if (!isServer) {
       config.resolve.fallback = { fs: false, net: false, tls: false, dns: false };
     } else {
-      config.externals.push('child_process', 'nodemailer');
+      config.externals.push(
+        'child_process',
+        'nodemailer',
+        'libxmljs',
+        'canvas',
+        '@stafyniaksacha/facturx',
+      );
     }
     return config;
   },
@@ -130,11 +136,7 @@ const pwaConfig = withPWA({
       }
     }
   ],
-  buildExcludes: [/middleware-manifest\.json$/],
-  fallbacks: {
-    // Fallback for API routes when offline
-    'api': '/offline'
-  }
+  buildExcludes: [/middleware-manifest\.json$/]
 });
 
 export default pwaConfig(nextConfig);

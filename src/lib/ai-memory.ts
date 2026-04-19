@@ -1,3 +1,4 @@
+import prisma from '@/lib/prisma';
 // Advanced AI Memory Management System
 // Persistent conversation memory with semantic search and user preference learning
 
@@ -6,10 +7,8 @@ import { ConversationSummaryBufferMemory } from "langchain/memory";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { Document } from "@langchain/core/documents";
-import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
-const prisma = new PrismaClient();
 
 export interface ConversationMemory {
   userId: string;
