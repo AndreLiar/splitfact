@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const userId = session.user.id;
     const costMonitor = getCostMonitor();
 
-    // Check budget for enhanced queries (higher cost due to web search + Notion)
+    // Check budget for enhanced queries (higher cost due to web search)
     const { allowed, reason, remainingBudget } = await costMonitor.canAffordQuery(userId, 0.08);
     
     if (!allowed) {
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      // Get comprehensive fiscal context (including Notion data)
+      // Get comprehensive fiscal context
       const fiscalContext = await FiscalContextService.getUserFiscalProfile(userId);
       
       // Enhance query with contextual information
@@ -74,16 +74,9 @@ export async function POST(request: Request) {
           processingTime: response.metadata.processingTime,
           remainingBudget: remainingBudget - response.metadata.cost,
           fiscalContext: {
-            hasNotionIntegration: fiscalContext.notion.isConnected,
-            notionWorkspace: fiscalContext.notion.workspaceName,
-            lastNotionSync: fiscalContext.notion.lastSyncAt,
             totalRevenue: fiscalContext.revenue.totalPaid,
             thresholdProgress: fiscalContext.compliance.bncThresholdProgress,
             clientsCount: fiscalContext.clients.total,
-            notionEnhancedData: fiscalContext.notion.enhancedInsights ? {
-              crossPlatformRevenue: fiscalContext.notion.enhancedInsights.crossPlatformRevenue,
-              notionNotes: fiscalContext.notion.enhancedInsights.fiscalNotesInsights
-            } : null
           }
         }
       });
@@ -148,25 +141,6 @@ function buildContextualQuery(originalQuery: string, fiscalContext: any): string
   // Add client context
   if (fiscalContext.clients.total > 0) {
     contextualInfo.push(`${fiscalContext.clients.total} clients actifs`);
-  }
-
-  // Add Notion context if available
-  if (fiscalContext.notion.isConnected && fiscalContext.notion.enhancedInsights) {
-    const notionInsights = fiscalContext.notion.enhancedInsights;
-    
-    if (notionInsights.crossPlatformRevenue.notionTotal > 0) {
-      contextualInfo.push(`Revenus Notion: ${notionInsights.crossPlatformRevenue.notionTotal.toLocaleString('fr-FR', { 
-        style: 'currency', currency: 'EUR' 
-      })}`);
-    }
-
-    if (notionInsights.fiscalNotesInsights.urgentReminders > 0) {
-      contextualInfo.push(`${notionInsights.fiscalNotesInsights.urgentReminders} rappels urgents dans Notion`);
-    }
-
-    if (notionInsights.enhancedClientAnalysis.totalProjectsTracked > 0) {
-      contextualInfo.push(`${notionInsights.enhancedClientAnalysis.totalProjectsTracked} projets suivis dans Notion`);
-    }
   }
 
   // Build enhanced query

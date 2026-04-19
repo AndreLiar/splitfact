@@ -1,7 +1,5 @@
 // Cross-Platform Fiscal Insights
-// Combines data from Splitfact, Notion, and external sources for comprehensive business intelligence
 
-import { getNotionService, NotionFiscalData } from './notion-service';
 import { getWebSearchService } from './web-search-service';
 import { getUniversalAI } from './ai-service';
 import FiscalContextService, { UserFiscalProfile } from './fiscal-context';
@@ -17,7 +15,6 @@ export interface CrossPlatformInsight {
   recommendations: string[];
   dataSource: {
     splitfact: boolean;
-    notion: boolean;
     external: boolean;
     confidence: number;
   };
@@ -146,33 +143,18 @@ export class CrossPlatformInsightsEngine {
    */
   private async collectCrossPlatformData(userId: string, timeframe: string): Promise<{
     splitfact: UserFiscalProfile;
-    notion?: NotionFiscalData;
     external: any;
     hasData: boolean;
   }> {
-    
     try {
-      // Get Splitfact data
       const splitfactData = await FiscalContextService.getUserFiscalProfile(userId);
-      
-      // Get Notion data if available
-      let notionData: NotionFiscalData | undefined;
-      try {
-        notionData = await getNotionService(userId).syncFiscalData();
-      } catch (error) {
-        console.log(`[CrossPlatformInsights] No Notion data available for user ${userId}`);
-      }
-
-      // Get external market data
       const externalData = await this.collectExternalData(splitfactData, timeframe);
 
       return {
         splitfact: splitfactData,
-        notion: notionData,
         external: externalData,
-        hasData: true // We always have Splitfact data at minimum
+        hasData: true
       };
-
     } catch (error) {
       console.error(`[CrossPlatformInsights] Data collection failed:`, error);
       return { splitfact: {} as any, external: {}, hasData: false };
@@ -225,12 +207,6 @@ export class CrossPlatformInsightsEngine {
       const clientInsight = await this.analyzeClientPerformance(userId, data, context);
       if (clientInsight) insights.push(clientInsight);
 
-      // Project efficiency analysis (if Notion data available)
-      if (data.notion) {
-        const projectInsight = await this.analyzeProjectEfficiency(userId, data, context);
-        if (projectInsight) insights.push(projectInsight);
-      }
-
     } catch (error) {
       console.warn(`[CrossPlatformInsights] Performance insight generation failed:`, error);
     }
@@ -266,11 +242,6 @@ DONNÉES:
 - Progression seuils: ${fiscalProfile.compliance.bncThresholdProgress.toFixed(1)}%
 - Clients actifs: ${fiscalProfile.clients.total}
 - Délai moyen paiement: ${fiscalProfile.clients.averagePaymentDelay} jours
-
-${data.notion ? `DONNÉES NOTION:
-- Projets actifs: ${data.notion.projects.length}
-- Pipeline: ${data.notion.clients.filter((c: any) => c.status === 'Negotiating').length} négociations
-` : ''}
 
 Génère des insights sur:
 1. Performance vs objectifs
@@ -334,7 +305,6 @@ Format: insights concis et actionnables.`;
         recommendations: this.extractRecommendations(aiAnalysis),
         dataSource: {
           splitfact: true,
-          notion: !!data.notion,
           external: true,
           confidence: 0.9
         },

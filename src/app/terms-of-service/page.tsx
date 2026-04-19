@@ -49,7 +49,6 @@ export default function TermsOfServicePage() {
 
                 <h3 className="h5 mb-2">2.2 Fonctionnalites Avancees</h3>
                 <ul className="mb-3">
-                  <li>Integration avec Notion (synchronisation bidirectionnelle)</li>
                   <li>Recherche web intelligente pour conseils fiscaux</li>
                   <li>Alertes automatiques et notifications</li>
                   <li>Rapports multi-sources et benchmarking</li>
@@ -60,34 +59,9 @@ export default function TermsOfServicePage() {
               <div className="mb-5">
                 <h2 className="h4 mb-3">3. Integrations et Services Tiers</h2>
                 
-                <h3 className="h5 mb-2">3.1 Integration Notion</h3>
-                
-                <h4 className="h6 mb-2">Connexion et Autorisation</h4>
-                <ul className="mb-3">
-                  <li>L&apos;integration Notion utilise le protocole OAuth 2.0 securise</li>
-                  <li>Vous autorisez Splitfact a acceder a votre workspace Notion</li>
-                  <li>L&apos;acces est limite aux bases de donnees que vous selectionnez</li>
-                  <li>Vous pouvez revoquer l&apos;acces a tout moment depuis vos parametres</li>
-                </ul>
-
-                <h4 className="h6 mb-2">Synchronisation des Donnees</h4>
-                <ul className="mb-3">
-                  <li>Synchronisation bidirectionnelle entre Splitfact et Notion</li>
-                  <li>Respect de la structure de vos bases de donnees existantes</li>
-                  <li>Creation automatique de nouveaux elements si autorisee</li>
-                  <li>Sauvegarde de l&apos;historique des synchronisations</li>
-                </ul>
-
-                <h4 className="h6 mb-2">Responsabilites</h4>
-                <ul className="mb-3">
-                  <li><strong>Splitfact :</strong> Securite des tokens, respect des permissions</li>
-                  <li><strong>Utilisateur :</strong> Configuration appropriee, sauvegarde des donnees Notion</li>
-                  <li><strong>Notion :</strong> Disponibilite de l&apos;API, securite de la plateforme</li>
-                </ul>
-
                 <div className="alert alert-warning">
                   <i className="bi bi-exclamation-triangle me-2"></i>
-                  <strong>Important :</strong> Les services tiers ont leurs propres conditions d&apos;utilisation. 
+                  <strong>Important :</strong> Les services tiers ont leurs propres conditions d&apos;utilisation.
                   Nous ne sommes pas responsables de leur disponibilite ou de leurs modifications.
                 </div>
               </div>

@@ -4,13 +4,11 @@
 import FiscalContextService, { UserFiscalProfile } from './fiscal-context';
 import { SearchResult } from './web-search-service';
 import { ExtractedContent } from './web-content-extractor';
-import { NotionFiscalData } from './notion-service';
-
 export interface PromptContext {
   userProfile: UserFiscalProfile;
   webSources?: SearchResult[];
   extractedContent?: ExtractedContent[];
-  queryType: 'general' | 'compliance' | 'strategy' | 'calculation' | 'urgent' | 'research' | 'notion';
+  queryType: 'general' | 'compliance' | 'strategy' | 'calculation' | 'urgent' | 'research';
   specificContext?: {
     timeframe?: string;
     clientId?: string;
@@ -26,7 +24,6 @@ export interface EnhancedPrompt {
   metadata: {
     dataFreshness: Date;
     includesWebData: boolean;
-    includesNotionData: boolean;
     confidenceFactors: string[];
     riskAlerts: string[];
   };
@@ -73,12 +70,7 @@ export class EnhancedPromptSystem {
     if (context.webSources && context.webSources.length > 0) {
       systemPrompt += this.addWebSearchCapabilities();
     }
-    
-    // Add Notion integration awareness if available
-    if (context.userProfile.notion.isConnected) {
-      systemPrompt += this.addNotionIntegrationAwareness(context.userProfile.notion);
-    }
-    
+
     // Add specific instructions based on query type
     systemPrompt += this.addQueryTypeInstructions(context.queryType);
     
@@ -105,12 +97,6 @@ export class EnhancedPromptSystem {
     if (context.webSources && context.webSources.length > 0) {
       enhancedQuery += '\n\n--- INFORMATIONS WEB RÉCENTES ---\n';
       enhancedQuery += this.buildWebContextSection(context.webSources, context.extractedContent);
-    }
-    
-    // Add Notion workspace data if available
-    if (context.userProfile.notion.isConnected && context.userProfile.notion.fiscalData) {
-      enhancedQuery += '\n\n--- DONNÉES NOTION WORKSPACE ---\n';
-      enhancedQuery += this.buildNotionContextSection(context.userProfile.notion.fiscalData);
     }
     
     // Add specific context if provided
@@ -145,7 +131,6 @@ export class EnhancedPromptSystem {
       
       research: `Tu es un AGENT DE RECHERCHE FISCAL avec accès aux informations web les plus récentes. Tu combines recherche réglementaire et contexte personnel de l'utilisateur.`,
       
-      notion: `Tu es un ANALYSTE DE WORKSPACE NOTION spécialisé dans l'analyse croisée des données fiscales. Tu combines les données Notion avec le contexte Splitfact de l'utilisateur.`
     };
 
     return basePrompts[queryType as keyof typeof basePrompts] || basePrompts.general;
@@ -189,24 +174,6 @@ export class EnhancedPromptSystem {
   }
 
   /**
-   * Add Notion integration awareness
-   */
-  private addNotionIntegrationAwareness(notionContext: any): string {
-    let context = `\n\n📝 **INTÉGRATION NOTION ACTIVE:**\n`;
-    context += `• Workspace: ${notionContext.workspaceName || 'Connecté'}\n`;
-    
-    if (notionContext.lastSyncAt) {
-      const daysSinceSync = Math.floor((Date.now() - new Date(notionContext.lastSyncAt).getTime()) / (1000 * 60 * 60 * 24));
-      context += `• Dernière sync: il y a ${daysSinceSync} jour${daysSinceSync > 1 ? 's' : ''}\n`;
-    }
-    
-    context += `• Données disponibles: revenus, clients, projets, notes fiscales, métriques\n`;
-    context += `• Analyse croisée Splitfact ↔ Notion activée\n`;
-
-    return context;
-  }
-
-  /**
    * Add query type specific instructions
    */
   private addQueryTypeInstructions(queryType: string): string {
@@ -215,7 +182,7 @@ export class EnhancedPromptSystem {
       
       compliance: `\n\n⚖️ **FOCUS CONFORMITÉ:**\n• Vérifie les obligations actuelles selon le CA\n• Identifie les risques de non-conformité\n• Propose un plan d'action avec échéances\n`,
       
-      strategy: `\n\n💡 **ANALYSE STRATÉGIQUE:**\n• Évalue les opportunités fiscales personnalisées\n• Analyse l'impact des projets Notion sur la fiscalité\n• Propose des optimisations selon la progression des seuils\n`,
+      strategy: `\n\n💡 **ANALYSE STRATÉGIQUE:**\n• Évalue les opportunités fiscales personnalisées\n• Propose des optimisations selon la progression des seuils\n`,
       
       calculation: `\n\n🧮 **CALCULS PRÉCIS:**\n• Utilise les montants exacts du profil utilisateur\n• Calcule les impacts réels sur les seuils\n• Fournis des projections chiffrées\n`,
       
@@ -223,7 +190,6 @@ export class EnhancedPromptSystem {
       
       research: `\n\n🔍 **RECHERCHE AVANCÉE:**\n• Combine informations web et contexte personnel\n• Cite tes sources officielles\n• Signale les nouveautés réglementaires\n`,
       
-      notion: `\n\n📊 **ANALYSE NOTION:**\n• Compare les données Splitfact et Notion\n• Identifie les opportunités dans les projets\n• Signale les incohérences importantes\n`
     };
 
     return instructions[queryType as keyof typeof instructions] || instructions.general;
@@ -326,38 +292,6 @@ export class EnhancedPromptSystem {
   }
 
   /**
-   * Build Notion context section
-   */
-  private buildNotionContextSection(notionData: NotionFiscalData): string {
-    let context = '';
-    
-    // Revenue comparison
-    const notionRevenue = notionData.revenues.reduce((sum, r) => sum + r.amount, 0);
-    context += `💼 DONNÉES NOTION:\n`;
-    context += `• Revenus tracés: ${notionRevenue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}\n`;
-    context += `• Clients avec projets: ${notionData.clients.filter(c => c.projects.length > 0).length}\n`;
-    context += `• Notes fiscales: ${notionData.fiscalNotes.length} (${notionData.fiscalNotes.filter(n => n.priority === 'urgent').length} urgentes)\n`;
-    context += `• Métriques business: ${notionData.businessMetrics.length}\n`;
-    
-    // Project pipeline
-    const totalProjects = notionData.clients.reduce((sum, c) => sum + c.projects.length, 0);
-    if (totalProjects > 0) {
-      context += `• Pipeline: ${totalProjects} projets actifs\n`;
-    }
-    
-    // Recent urgent notes
-    const urgentNotes = notionData.fiscalNotes.filter(n => n.priority === 'urgent');
-    if (urgentNotes.length > 0) {
-      context += `\n🚨 NOTES URGENTES:\n`;
-      urgentNotes.slice(0, 3).forEach(note => {
-        context += `• ${note.title}\n`;
-      });
-    }
-
-    return context;
-  }
-
-  /**
    * Build specific context section
    */
   private buildSpecificContextSection(specificContext: any): string {
@@ -407,17 +341,6 @@ export class EnhancedPromptSystem {
       }
     }
     
-    // Notion data integration
-    if (context.userProfile.notion.isConnected) {
-      confidenceFactors.push('Données Notion intégrées');
-      if (context.userProfile.notion.lastSyncAt) {
-        const daysSinceSync = Math.floor((Date.now() - new Date(context.userProfile.notion.lastSyncAt).getTime()) / (1000 * 60 * 60 * 24));
-        if (daysSinceSync > 7) {
-          riskAlerts.push(`Sync Notion ancienne (${daysSinceSync} jours)`);
-        }
-      }
-    }
-    
     // Risk detection
     if (context.userProfile.compliance.bncThresholdProgress > 85) {
       riskAlerts.push('Risque dépassement seuil BNC');
@@ -430,7 +353,6 @@ export class EnhancedPromptSystem {
     return {
       dataFreshness: new Date(),
       includesWebData: !!(context.webSources && context.webSources.length > 0),
-      includesNotionData: context.userProfile.notion.isConnected,
       confidenceFactors,
       riskAlerts
     };
@@ -441,7 +363,7 @@ export class EnhancedPromptSystem {
    */
   async createAgentSpecificPrompt(
     query: string,
-    agentType: 'research' | 'notion' | 'general',
+    agentType: 'research' | 'general',
     userId: string,
     additionalContext?: any
   ): Promise<EnhancedPrompt> {
@@ -469,7 +391,6 @@ export class EnhancedPromptSystem {
       clientAnalysis: "Analyse mes clients et identifie les risques et opportunités",
       complianceCheck: "Vérifie ma conformité fiscale et identifie les actions nécessaires",
       strategyOptimization: "Propose des optimisations fiscales adaptées à ma situation",
-      projectImpact: "Analyse l'impact fiscal de mes projets Notion sur ma situation",
       urgentAlert: "Identifie les actions fiscales urgentes à prendre immédiatement"
     };
   }

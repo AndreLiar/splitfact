@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
         generatedAt: new Date(),
         dataSourcesUsed: {
           splitfact: true,
-          notion: report.dataSource.notion !== undefined,
+          notion: false,
           external: report.dataSource.external.length > 0
         },
         processingTime: Date.now() - Date.now() // This would be calculated properly

@@ -50,15 +50,7 @@ export default function PrivacyPolicyPage() {
                   <li>Declarations fiscales</li>
                 </ul>
 
-                <h3 className="h5 mb-2">2.3 Integration Notion</h3>
-                <ul className="mb-3">
-                  <li>Token d&apos;acces Notion (chiffre)</li>
-                  <li>Donnees synchronisees depuis votre workspace Notion</li>
-                  <li>Metadonnees des bases de donnees connectees</li>
-                  <li>Historique des synchronisations</li>
-                </ul>
-
-                <h3 className="h5 mb-2">2.4 Donnees Techniques</h3>
+                <h3 className="h5 mb-2">2.3 Donnees Techniques</h3>
                 <ul>
                   <li>Adresse IP et donnees de connexion</li>
                   <li>Donnees d&apos;utilisation et de navigation</li>
@@ -73,7 +65,7 @@ export default function PrivacyPolicyPage() {
                 <ul>
                   <li><strong>Fourniture du service :</strong> Gestion comptable, generation de rapports, conseils fiscaux</li>
                   <li><strong>Assistant IA :</strong> Analyse de vos donnees pour fournir des conseils personnalises</li>
-                  <li><strong>Integrations :</strong> Synchronisation avec Notion et autres services tiers</li>
+                  <li><strong>Integrations :</strong> Connexion avec services tiers autorisés</li>
                   <li><strong>Amelioration :</strong> Analyse d&apos;usage pour ameliorer la plateforme</li>
                   <li><strong>Communication :</strong> Notifications importantes et support client</li>
                   <li><strong>Securite :</strong> Detection de fraudes et protection des comptes</li>
@@ -82,34 +74,7 @@ export default function PrivacyPolicyPage() {
               </div>
 
               <div className="mb-5">
-                <h2 className="h4 mb-3">4. Integration Notion - Traitement Specifique</h2>
-                
-                <h3 className="h5 mb-2">4.1 Donnees Notion Collectees</h3>
-                <p>Lorsque vous connectez votre workspace Notion :</p>
-                <ul className="mb-3">
-                  <li>Nous accedons uniquement aux bases de donnees que vous autorisez</li>
-                  <li>Les donnees sont synchronisees de maniere bidirectionnelle</li>
-                  <li>Nous stockons un token d&apos;acces chiffre pour maintenir la connexion</li>
-                  <li>Aucun acces aux autres pages ou bases de donnees de votre workspace</li>
-                </ul>
-
-                <h3 className="h5 mb-2">4.2 Securite de l&apos;Integration</h3>
-                <ul className="mb-3">
-                  <li>Utilisation du protocole OAuth 2.0 securise</li>
-                  <li>Chiffrement end-to-end des tokens d&apos;acces</li>
-                  <li>Possibilite de revoquer l&apos;acces a tout moment</li>
-                  <li>Audit regulier des acces et permissions</li>
-                </ul>
-
-                <h3 className="h5 mb-2">4.3 Deconnexion</h3>
-                <p>
-                  Vous pouvez deconnecter Notion a tout moment depuis vos parametres. 
-                  Cela revoque immediatement tous les acces et supprime les tokens stockes.
-                </p>
-              </div>
-
-              <div className="mb-5">
-                <h2 className="h4 mb-3">5. Vos Droits (RGPD)</h2>
+                <h2 className="h4 mb-3">4. Vos Droits (RGPD)</h2>
                 <p>Conformement au Reglement General sur la Protection des Donnees, vous disposez des droits suivants :</p>
                 
                 <div className="row">

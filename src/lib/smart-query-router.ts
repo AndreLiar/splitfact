@@ -485,7 +485,6 @@ Réponds de manière complète et à jour en français.`;
           urgency: intent.priority === 'CRITICAL' ? 'high' : 
                    intent.priority === 'HIGH' ? 'medium' : 'low',
           requiresRealTimeData: intent.needsContext,
-          requiresNotionData: intent.domain === 'STRATEGY' || intent.category === 'COMPLEX'
         }
       };
 
@@ -559,7 +558,7 @@ Réponds de manière complète et à jour en français.`;
         confidence: 0.7,
         requiredAgents: route === 'COMPLEX' ? ['analyst', 'expert'] : 
                        route === 'WEB_RESEARCH' ? ['web-researcher', 'fiscal-analyst'] :
-                       route === 'MULTI_AGENT' ? ['research-agent', 'notion-agent', 'orchestrator'] : ['basic'],
+                       route === 'MULTI_AGENT' ? ['research-agent', 'orchestrator'] : ['basic'],
         estimatedCost: costEstimates[route],
         priority: route === 'URGENT' ? 'CRITICAL' : 'MEDIUM',
         needsContext: route !== 'SIMPLE',

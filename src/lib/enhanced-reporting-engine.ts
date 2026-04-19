@@ -1,7 +1,5 @@
 // Enhanced Reporting Engine with External Data Integration
-// Generates comprehensive reports combining Splitfact, Notion, and external data sources
 
-import { getNotionService, NotionFiscalData } from './notion-service';
 import { getWebSearchService } from './web-search-service';
 import { getWebContentExtractor } from './web-content-extractor';
 import { getUniversalAI } from './ai-service';
@@ -18,7 +16,6 @@ export interface EnhancedReport {
   sections: ReportSection[];
   dataSource: {
     splitfact: DataSourceInfo;
-    notion?: DataSourceInfo;
     external: ExternalDataSource[];
     generatedAt: Date;
     validUntil: Date;
@@ -136,11 +133,6 @@ export class EnhancedReportingEngine {
             recordsCount: dataCollection.splitfact.invoicing.totalInvoices,
             confidence: 1.0
           },
-          notion: dataCollection.notion ? {
-            lastSync: new Date(),
-            recordsCount: dataCollection.notion.clients.length,
-            confidence: 0.9
-          } : undefined,
           external: dataCollection.external.sources || [],
           generatedAt: new Date(),
           validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -185,11 +177,6 @@ export class EnhancedReportingEngine {
             recordsCount: dataCollection.splitfact.invoicing.totalInvoices,
             confidence: 1.0
           },
-          notion: dataCollection.notion ? {
-            lastSync: new Date(),
-            recordsCount: dataCollection.notion.clients.length,
-            confidence: 0.9
-          } : undefined,
           external: dataCollection.external.sources || [],
           generatedAt: new Date(),
           validUntil: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
@@ -237,11 +224,6 @@ export class EnhancedReportingEngine {
             recordsCount: dataCollection.splitfact.invoicing.totalInvoices,
             confidence: 1.0
           },
-          notion: dataCollection.notion ? {
-            lastSync: new Date(),
-            recordsCount: dataCollection.notion.clients.length,
-            confidence: 0.9
-          } : undefined,
           external: dataCollection.external.sources || [],
           generatedAt: new Date(),
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Market data valid longer
@@ -264,19 +246,15 @@ export class EnhancedReportingEngine {
    */
   private async collectComprehensiveData(userId: string): Promise<{
     splitfact: UserFiscalProfile;
-    notion?: NotionFiscalData;
     external: any;
   }> {
-    
-    const [splitfactData, notionData, externalData] = await Promise.allSettled([
+    const [splitfactData, externalData] = await Promise.allSettled([
       FiscalContextService.getUserFiscalProfile(userId),
-      getNotionService(userId).syncFiscalData().catch(() => null),
       this.collectExternalFiscalData()
     ]);
 
     return {
       splitfact: splitfactData.status === 'fulfilled' ? splitfactData.value : {} as UserFiscalProfile,
-      notion: notionData.status === 'fulfilled' && notionData.value ? notionData.value : undefined,
       external: externalData.status === 'fulfilled' ? externalData.value : {}
     };
   }
@@ -379,19 +357,16 @@ export class EnhancedReportingEngine {
         insights: await this.generateComplianceInsights(dataCollection)
       });
 
-      // Client Portfolio Analysis (if Notion data available)
-      if (dataCollection.notion) {
-        sections.push({
-          id: 'client_portfolio',
-          title: 'Analyse du Portefeuille Client',
-          content: await this.generateClientPortfolioAnalysis(dataCollection),
-          data: {
-            splitfact: dataCollection.splitfact.clients,
-            notion: dataCollection.notion.clients
-          },
-          charts: this.createClientCharts(dataCollection)
-        });
-      }
+      // Client Portfolio Analysis
+      sections.push({
+        id: 'client_portfolio',
+        title: 'Analyse du Portefeuille Client',
+        content: await this.generateClientPortfolioAnalysis(dataCollection),
+        data: {
+          splitfact: dataCollection.splitfact.clients,
+        },
+        charts: this.createClientCharts(dataCollection)
+      });
 
       // External Benchmarking section
       if (dataCollection.external.insights) {
@@ -423,12 +398,6 @@ DONNÉES CLÉS:
 - Croissance: ${dataCollection.splitfact.revenue?.yearOverYear?.toFixed(1) || 0}%
 - Clients: ${dataCollection.splitfact.clients?.total || 0}
 - Seuils: ${dataCollection.splitfact.compliance?.bncThresholdProgress?.toFixed(1) || 0}%
-
-${dataCollection.notion ? `
-DONNÉES NOTION:
-- Projets actifs: ${dataCollection.notion.clients.filter((c: any) => c.projects.length > 0).length}
-- Pipeline: ${dataCollection.notion.clients.filter((c: any) => c.status === 'Active').length}
-` : ''}
 
 BENCHMARKS SECTORIELS:
 - CA moyen secteur: ${dataCollection.external.insights?.benchmarks?.averageMicroEntrepreneurRevenue?.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) || '35 000€'}
@@ -707,18 +676,13 @@ Ton: Expert-comptable, précis, 3-4 phrases.`;
   private async generateClientPortfolioAnalysis(dataCollection: any): Promise<string> {
     try {
       const splitfactClients = dataCollection.splitfact.clients || {};
-      const notionClients = dataCollection.notion?.clients || [];
-      
+
       const prompt = `Analyse ce portefeuille client:
 
 SPLITFACT:
 - Total clients: ${splitfactClients.total || 0}
 - Délai paiement moyen: ${splitfactClients.averagePaymentDelay || 0} jours
 - Récurrence: ${splitfactClients.recurringClients || 0}%
-
-NOTION:
-- Projets actifs: ${notionClients.filter((c: any) => c.status === 'Active').length}
-- Pipeline prospects: ${notionClients.filter((c: any) => c.status === 'Prospect').length}
 
 Analyse:
 1. Diversification du portefeuille
@@ -730,7 +694,7 @@ Style: Consultant business, 3-4 phrases.`;
 
       return await this.aiService.chat('Consultant client', prompt, { temperature: 0.3 });
     } catch (error) {
-      return 'Analyse du portefeuille client combinant les données Splitfact et Notion pour une vue d\'ensemble complète.';
+      return 'Analyse du portefeuille client pour une vue d\'ensemble complète.';
     }
   }
 
@@ -867,7 +831,6 @@ Ton: Analyste marché, 4-5 phrases.`;
       title: 'Efficacité Opérationnelle',
       content: await this.generateEfficiencyAnalysis(dataCollection),
       data: {
-        averageProjectDuration: dataCollection.notion?.clients.reduce((sum: number, c: any) => sum + (c.projects.length * 30), 0) / (dataCollection.notion?.clients.length || 1),
         clientSatisfaction: dataCollection.splitfact.clients.satisfactionScore || 8.5
       }
     });

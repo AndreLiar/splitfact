@@ -1,8 +1,6 @@
 // Multi-Agent Orchestrator - Intelligent coordination system for specialized AI agents
-// Routes queries between Research Agent, Notion Agent, and fiscal agents based on complexity and data sources
 
 import { getResearchAgent, ResearchQuery, ResearchResult } from './agents/research-agent';
-import { getNotionAgent, NotionQuery, NotionAnalysisResult } from './agents/notion-agent';
 import { getEnhancedPromptSystem, PromptContext } from './enhanced-prompt-system';
 import FiscalContextService, { UserFiscalProfile } from './fiscal-context';
 import { getUniversalAI } from './ai-service';
@@ -16,7 +14,6 @@ export interface OrchestrationQuery {
     businessType?: string;
     urgency?: 'low' | 'medium' | 'high';
     requiresRealTimeData?: boolean;
-    requiresNotionData?: boolean;
   };
 }
 
@@ -24,7 +21,7 @@ export interface OrchestrationResult {
   answer: string;
   confidence: number;
   sources: Array<{
-    type: 'web' | 'notion' | 'splitfact' | 'ai';
+    type: 'web' | 'splitfact' | 'ai';
     title: string;
     url?: string;
     reliability: number;
@@ -43,13 +40,11 @@ export interface QueryIntent {
   category: 'fiscal_regulation' | 'business_analysis' | 'compliance' | 'planning' | 'general';
   complexity: 'simple' | 'medium' | 'complex';
   requiresWebSearch: boolean;
-  requiresNotionData: boolean;
   requiresCrossReference: boolean;
 }
 
 export class MultiAgentOrchestrator {
   private researchAgent = getResearchAgent();
-  private notionAgent = getNotionAgent();
   private promptSystem = getEnhancedPromptSystem();
   private aiService = getUniversalAI();
 
@@ -112,7 +107,6 @@ Réponds UNIQUEMENT au format JSON:
   "category": "fiscal_regulation|business_analysis|compliance|planning|general",
   "complexity": "simple|medium|complex",
   "requiresWebSearch": boolean,
-  "requiresNotionData": boolean,
   "requiresCrossReference": boolean
 }
 
@@ -128,7 +122,6 @@ CRITÈRES:
 - complex: Nécessite recherche multi-sources et analyse croisée
 
 - requiresWebSearch: true si réglementations récentes ou actualités fiscales
-- requiresNotionData: true si analyse de données business ou projets
 - requiresCrossReference: true si synthèse multi-sources nécessaire`;
 
     try {
@@ -164,10 +157,6 @@ CRITÈRES:
       agentsToUse.push('research_agent');
     }
 
-    if (intent.requiresNotionData || intent.category === 'business_analysis') {
-      agentsToUse.push('notion_agent');
-    }
-
     // Adjust execution mode based on complexity
     if (intent.complexity === 'complex' || intent.requiresCrossReference) {
       executionMode = 'hybrid'; // Sequential for dependencies, parallel where possible
@@ -184,13 +173,12 @@ CRITÈRES:
    * Execute the multi-agent workflow
    */
   private async executeWorkflow(
-    query: OrchestrationQuery, 
-    intent: QueryIntent, 
+    query: OrchestrationQuery,
+    intent: QueryIntent,
     strategy: ReturnType<typeof this.determineExecutionStrategy>
   ): Promise<{
     researchResults?: ResearchResult;
-    notionResults?: NotionAnalysisResult;
-    allSources: Array<{ type: 'web' | 'notion' | 'splitfact' | 'ai'; title: string; url?: string; reliability: number; }>;
+    allSources: Array<{ type: 'web' | 'splitfact' | 'ai'; title: string; url?: string; reliability: number; }>;
     dataSourcesUsed: string[];
     fallbackUsed: boolean;
   }> {
@@ -206,10 +194,6 @@ CRITÈRES:
 
         if (strategy.agentsToUse.includes('research_agent')) {
           promises.push(this.executeResearchAgent(query, intent));
-        }
-
-        if (strategy.agentsToUse.includes('notion_agent') && query.userId) {
-          promises.push(this.executeNotionAgent(query, intent));
         }
 
         const parallelResults = await Promise.allSettled(promises);
@@ -236,15 +220,6 @@ CRITÈRES:
           }
         }
 
-        if (strategy.agentsToUse.includes('notion_agent') && query.userId) {
-          try {
-            results.notion_agent = await this.executeNotionAgent(query, intent);
-            dataSourcesUsed.push('notion');
-          } catch (error) {
-            console.warn('Notion agent failed:', error);
-            fallbackUsed = true;
-          }
-        }
       }
 
       // Collect all sources
@@ -259,20 +234,8 @@ CRITÈRES:
         });
       }
 
-      if (results.notion_agent) {
-        results.notion_agent.sources.forEach((source: any) => {
-          allSources.push({
-            type: 'notion',
-            title: source.title,
-            url: source.url,
-            reliability: source.reliability
-          });
-        });
-      }
-
       return {
         researchResults: results.research_agent,
-        notionResults: results.notion_agent,
         allSources,
         dataSourcesUsed,
         fallbackUsed
@@ -311,24 +274,6 @@ CRITÈRES:
   }
 
   /**
-   * Execute notion agent with proper query formatting
-   */
-  private async executeNotionAgent(query: OrchestrationQuery, intent: QueryIntent): Promise<NotionAnalysisResult> {
-    const notionQuery: NotionQuery = {
-      query: query.originalQuery,
-      context: {
-        userId: query.userId!,
-        includeProjects: intent.category === 'business_analysis',
-        includeNotes: true,
-        includeMetrics: true
-      },
-      analysisType: intent.category === 'business_analysis' ? 'predictive' : 'descriptive'
-    };
-
-    return await this.notionAgent.analyzeWorkspace(notionQuery);
-  }
-
-  /**
    * Synthesize final response from all agent results
    */
   private async synthesizeResponse(
@@ -347,12 +292,6 @@ CRITÈRES:
     if (results.researchResults) {
       synthesisContext += `=== RECHERCHE WEB ===\n${results.researchResults.answer}\n\n`;
       synthesisContext += `Points clés:\n${results.researchResults.keyFindings.map((f: string) => `• ${f}`).join('\n')}\n\n`;
-    }
-
-    // Add notion results
-    if (results.notionResults) {
-      synthesisContext += `=== ANALYSE NOTION ===\n${results.notionResults.summary}\n\n`;
-      synthesisContext += `Insights:\n${results.notionResults.insights.map((i: string) => `• ${i}`).join('\n')}\n\n`;
     }
 
     // Get user fiscal profile if available
@@ -395,15 +334,11 @@ CRITÈRES:
     // Calculate overall confidence
     let confidence = 0.7; // Base confidence
     if (results.researchResults) confidence += results.researchResults.confidence * 0.2;
-    if (results.notionResults) confidence += results.notionResults.confidence * 0.1;
 
     // Gather all recommendations
     const recommendations: string[] = [];
     if (results.researchResults?.recommendations) {
       recommendations.push(...results.researchResults.recommendations);
-    }
-    if (results.notionResults?.recommendations) {
-      recommendations.push(...results.notionResults.recommendations);
     }
 
     return {
@@ -416,7 +351,7 @@ CRITÈRES:
   /**
    * Map orchestration category to prompt type
    */
-  private mapCategoryToPromptType(category: string): 'strategy' | 'notion' | 'compliance' | 'general' | 'calculation' | 'urgent' | 'research' {
+  private mapCategoryToPromptType(category: string): 'strategy' | 'compliance' | 'general' | 'calculation' | 'urgent' | 'research' {
     switch (category) {
       case 'fiscal_regulation':
       case 'compliance':
@@ -484,7 +419,6 @@ CRITÈRES:
       category,
       complexity: lowerQuery.length > 100 ? 'complex' : 'medium',
       requiresWebSearch: lowerQuery.includes('nouveau') || lowerQuery.includes('2025') || lowerQuery.includes('récent'),
-      requiresNotionData: lowerQuery.includes('projet') || lowerQuery.includes('analyse'),
       requiresCrossReference: category !== 'general'
     };
   }
@@ -513,7 +447,6 @@ CRITÈRES:
       ],
       agentTypes: [
         'Research Agent (web search)',
-        'Notion Agent (workspace integration)',
         'Base AI (fallback)',
         'Prompt Enhancement System'
       ]
