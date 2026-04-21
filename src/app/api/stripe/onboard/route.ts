@@ -4,11 +4,10 @@ import { authOptions } from "@/lib/auth-options";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2025-06-30.basil",
-});
-
 export async function POST(request: Request) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+    apiVersion: "2025-06-30.basil",
+  });
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user || !session.user.id) {
