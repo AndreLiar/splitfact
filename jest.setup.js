@@ -98,13 +98,6 @@ jest.mock('@/lib/prisma', () => ({
   },
 }))
 
-// Mock AI services
-jest.mock('@/lib/ai-service', () => ({
-  getAIService: jest.fn(() => ({
-    chat: jest.fn(() => ({ content: 'Mock AI response' })),
-  })),
-}))
-
 // Global test utilities
 global.testUtils = {
   createMockUser: () => ({
