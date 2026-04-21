@@ -114,7 +114,7 @@ export default function PrivacyPolicyPage() {
                   </div>
                   <div className="col-md-6">
                     <p><strong>DPO :</strong> dpo@splitfact.com</p>
-                    <p><strong>Adresse :</strong> [Votre adresse legale]</p>
+                    <p><strong>Adresse :</strong> —</p>
                   </div>
                 </div>
               </div>

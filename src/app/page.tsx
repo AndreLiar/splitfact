@@ -1022,7 +1022,7 @@ export default function LandingPage() {
                 }}>
                   <i className="bi bi-lightning-fill" style={{ color: "#08090a", fontSize: "0.75rem" }} />
                 </div>
-                <span style={{ fontSize: "0.9375rem", fontWeight: 590, color: "#f7f8f8" }}>InvoiceOps</span>
+                <span style={{ fontSize: "0.9375rem", fontWeight: 590, color: "#f7f8f8" }}>Splitfact</span>
               </div>
               <p style={{ fontSize: "0.8125rem", color: "#62666d", lineHeight: 1.7, maxWidth: "240px", marginBottom: "1.25rem" }}>
                 Back-office de facturation IA pour les agences et sociétés de services françaises.
@@ -1108,7 +1108,7 @@ export default function LandingPage() {
             gap: "0.75rem",
           }}>
             <div style={{ fontSize: "0.75rem", color: "#62666d" }}>
-              © {new Date().getFullYear()} InvoiceOps. Tous droits réservés.
+              © {new Date().getFullYear()} Splitfact. Tous droits réservés.
             </div>
             <div style={{ display: "flex", gap: "1.5rem" }}>
               {[

@@ -18,9 +18,17 @@ npm run lint                    # ESLint
 npx jest tests/lib/ubl-serializer.test.ts   # single test file
 npx jest --testNamePattern "score"           # single test by name
 npm test                                     # all unit tests
+npm run test:watch                           # Jest in watch mode
+npm run test:coverage                        # Jest with coverage report
 npm run test:api                             # API tests in tests/api/
 npm run test:integration                     # DB integration tests
 npm run test:e2e                             # Playwright
+
+# Database utilities
+npm run db:health        # check DB connectivity
+npm run db:backup        # dump DB to file
+npm run db:restore       # restore from dump
+npm run db:maintenance   # vacuum/reindex
 
 # Database — must use Node 20 for Prisma CLI (Node 22 crashes prisma binary)
 nvm use 20 && npx prisma db push     # apply schema changes
@@ -89,10 +97,16 @@ Path aliases: `@/` → `src/`, `@/domains/*` → `src/domains/*`, `@/types/*` �
 ### Invoice Readiness & Workflow
 - `src/domains/invoices/invoice-readiness.ts` — `evaluateInvoiceReadiness()`: validates all EN 16931 mandatory fields before issue. Returns blocking reasons + warnings.
 - `src/domains/invoices/activity-log.ts` — audit trail for all invoice lifecycle events
-- Workflow statuses: `draft` → `issued`. PPF statuses tracked separately on `invoice.ppfStatus`.
+- Two separate status fields on `Invoice`: `status` (InvoiceStatus enum: `draft/sent/paid`) and `workflowStatus` (WorkflowStatus enum: `triggered → collecting_data → blocked → ready_for_review → ready_to_issue → issued`). PPF submission state is tracked separately on `invoice.ppfStatus`.
 
 ### Notifications
 - `src/domains/notifications/notification-service.ts` — `NotificationService` class with queue, exponential backoff retry (1min → 5min → 15min → 1h → 2h), and duplicate prevention within the same day.
+
+### Test Utilities
+`jest.setup.js` exposes `global.testUtils` with factory functions for use in any test file:
+- `createMockUser()`, `createMockInvoice()`, `createMockNotification()`
+- Environment variables (NEXTAUTH_SECRET, DATABASE_URL, etc.) are pre-mocked via `jest.setup.js`
+- Prisma, `next/navigation`, and `next-auth/react` are auto-mocked globally
 
 ### Key Patterns
 - Sidebar nav: `src/app/components/Sidebar.tsx` — add new routes to the `NAV` object at the top
@@ -129,7 +143,6 @@ Path aliases: `@/` → `src/`, `@/domains/*` → `src/domains/*`, `@/types/*` �
 - `main` → production (auto-deploy Vercel project `splitfact-6xo8`)
 - `staging` → pre-production
 - `dev` → active development
-- `refactor/domain-structure` — current working branch (pending merge to main)
 
 Schema changes: run `nvm use 20 && npx prisma db push` after editing `prisma/schema.prisma`.
 
@@ -137,13 +150,3 @@ Schema changes: run `nvm use 20 && npx prisma db push` after editing `prisma/sch
 - **App / Jest / Next.js**: Node 22 required (`libxmljs` native module won't build on Node 20 on macOS arm64)
 - **Prisma CLI** (`db push`, `db seed`): Node 20 required (`@prisma/engines` crashes on Node 22 with `ERR_INVALID_PACKAGE_CONFIG`)
 - Use `nvm use 22` for day-to-day dev; only switch to 20 for Prisma CLI commands
-
-## Git Workflow Note
-The local git repo is corrupted. All git operations (commit, push, branch) must be performed from `/tmp/splitfact-fresh` (a clean clone). Sync local changes first:
-```bash
-rsync -a --checksum --delete \
-  --exclude='.git' --exclude='node_modules' --exclude='.next' --exclude='coverage' \
-  /Users/andreyvanlaurelkanmegnetabouguie/Desktop/Business/Splitfact/splitfact-app/ \
-  /tmp/splitfact-fresh/
-cd /tmp/splitfact-fresh && git add -A && git commit -m "..." && git push
-```
