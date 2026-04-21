@@ -25,7 +25,7 @@ export async function logActivity(params: {
       invoiceId: params.invoiceId,
       userId: params.userId,
       action: params.action,
-      metadata: (params.metadata ?? {}) as Record<string, unknown>,
+      metadata: (params.metadata ?? {}) as object,
     },
   });
 }

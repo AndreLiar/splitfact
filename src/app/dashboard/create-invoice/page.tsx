@@ -92,14 +92,14 @@ export default function CreateInvoicePage() {
   const router = useRouter();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState<FormData>({
-    clientId: ‘’,
-    invoiceDate: new Date().toISOString().split(‘T’)[0],
-    dueDate: ‘’,
-    transactionType: ‘B2B’,
-    deliveryAddress: ‘’,
-    items: [{ description: ‘’, quantity: 1, unitPrice: 0, tvaRate: 0 }],
-    paymentTerms: ‘Paiement à 30 jours fin de mois’,
-    latePenaltyRate: ‘3 fois le taux d’intérêt légal’,
+    clientId: '',
+    invoiceDate: new Date().toISOString().split('T')[0],
+    dueDate: '',
+    transactionType: 'B2B',
+    deliveryAddress: '',
+    items: [{ description: '', quantity: 1, unitPrice: 0, tvaRate: 0 }],
+    paymentTerms: 'Paiement à 30 jours fin de mois',
+    latePenaltyRate: "3 fois le taux d'intérêt légal",
     recoveryIndemnity: 40,
   });
   const [clients, setClients] = useState<Client[]>([]);
@@ -921,7 +921,7 @@ export default function CreateInvoicePage() {
                         </div>
                       ) : (
                         <div className="small">
-                          Les données minimales d’émission sont présentes. L’étape suivante pourra être l’émission et la génération Factur-X.
+                          Les données minimales d'émission sont présentes. L'étape suivante pourra être l'émission et la génération Factur-X.
                         </div>
                       )}
                     </div>

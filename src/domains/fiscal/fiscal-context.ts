@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import type { Decimal } from '@prisma/client/runtime/library';
 import type {
   UserFiscalProfile,
   MonthlyRevenue,
@@ -57,25 +58,25 @@ export class FiscalContextService {
 
     const totalPaid = currentYearInvoices
       .filter(inv => inv.paymentStatus === 'paid')
-      .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0);
+      .reduce((sum, inv) => sum + parseFloat(String(inv.totalAmount ?? 0)), 0);
 
     const totalPending = currentYearInvoices
       .filter(inv => inv.paymentStatus === 'pending')
-      .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0);
+      .reduce((sum, inv) => sum + parseFloat(String(inv.totalAmount ?? 0)), 0);
 
     const totalOverdue = currentYearInvoices
       .filter(inv => {
         const dueDate = new Date(inv.dueDate || inv.invoiceDate);
         return inv.paymentStatus !== 'paid' && dueDate < new Date();
       })
-      .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0);
+      .reduce((sum, inv) => sum + parseFloat(String(inv.totalAmount ?? 0)), 0);
 
     const monthlyTrend = this.calculateMonthlyTrend(currentYearInvoices);
 
     const lastYearRevenue = invoices
       .filter(inv => new Date(inv.invoiceDate).getFullYear() === currentYear - 1)
       .filter(inv => inv.paymentStatus === 'paid')
-      .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0);
+      .reduce((sum, inv) => sum + parseFloat(String(inv.totalAmount ?? 0)), 0);
 
     const yearOverYear = lastYearRevenue > 0
       ? ((totalPaid - lastYearRevenue) / lastYearRevenue) * 100
@@ -101,7 +102,7 @@ export class FiscalContextService {
         };
       }
 
-      const amount = parseFloat(invoice.totalAmount || '0');
+      const amount = parseFloat(String(invoice.totalAmount ?? 0));
       if (invoice.paymentStatus === 'paid') {
         monthlyData[key].paid += amount;
       } else {
@@ -121,7 +122,7 @@ export class FiscalContextService {
 
       const totalRevenue = clientInvoices
         .filter(inv => inv.paymentStatus === 'paid')
-        .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0);
+        .reduce((sum, inv) => sum + parseFloat(String(inv.totalAmount ?? 0)), 0);
 
       const averagePaymentDelay = this.calculateAveragePaymentDelay(clientInvoices);
       const riskScore = this.assessClientRisk(client, clientInvoices);
@@ -132,7 +133,7 @@ export class FiscalContextService {
         totalRevenue,
         invoiceCount: clientInvoices.length,
         averagePaymentDelay,
-        lastInvoiceDate: clientInvoices[0]?.invoiceDate || new Date(),
+        lastInvoiceDate: clientInvoices[0]?.invoiceDate ? new Date(clientInvoices[0].invoiceDate) : new Date(),
         riskScore
       };
     }).sort((a, b) => b.totalRevenue - a.totalRevenue);
@@ -156,7 +157,7 @@ export class FiscalContextService {
 
     const totalInvoices = currentYearInvoices.length;
     const totalAmount = currentYearInvoices.reduce((sum, inv) =>
-      sum + parseFloat(inv.totalAmount || '0'), 0
+      sum + parseFloat(String(inv.totalAmount ?? 0)), 0
     );
 
     const paymentStatusBreakdown = {
@@ -164,13 +165,13 @@ export class FiscalContextService {
         count: currentYearInvoices.filter(inv => inv.paymentStatus === 'paid').length,
         amount: currentYearInvoices
           .filter(inv => inv.paymentStatus === 'paid')
-          .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0)
+          .reduce((sum, inv) => sum + parseFloat(String(inv.totalAmount ?? 0)), 0)
       },
       pending: {
         count: currentYearInvoices.filter(inv => inv.paymentStatus === 'pending').length,
         amount: currentYearInvoices
           .filter(inv => inv.paymentStatus === 'pending')
-          .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0)
+          .reduce((sum, inv) => sum + parseFloat(String(inv.totalAmount ?? 0)), 0)
       },
       overdue: {
         count: currentYearInvoices.filter(inv => {
@@ -182,7 +183,7 @@ export class FiscalContextService {
             const dueDate = new Date(inv.dueDate || inv.invoiceDate);
             return inv.paymentStatus !== 'paid' && dueDate < new Date();
           })
-          .reduce((sum, inv) => sum + parseFloat(inv.totalAmount || '0'), 0)
+          .reduce((sum, inv) => sum + parseFloat(String(inv.totalAmount ?? 0)), 0)
       }
     };
 
@@ -285,7 +286,7 @@ interface InvoiceRecord {
   invoiceDate: Date | string;
   dueDate?: Date | string | null;
   paymentStatus: string | null;
-  totalAmount: string | null;
+  totalAmount: Decimal | string | null;
   clientId: string | null;
 }
 

@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Conditions Generales d\'Utilisation - Splitfact',
-  description: 'Conditions generales d\'utilisation de la plateforme Splitfact pour micro-entrepreneurs',
+  title: 'Conditions Generales d\'Utilisation - InvoiceOps',
+  description: 'Conditions generales d\'utilisation de la plateforme InvoiceOps pour micro-entrepreneurs',
 };
 
 export default function TermsOfServicePage() {
@@ -26,7 +26,7 @@ export default function TermsOfServicePage() {
                 <h2 className="h4 mb-3">1. Objet et Acceptation</h2>
                 <p>
                   Les presentes Conditions Generales d&apos;Utilisation (CGU) regissent l&apos;utilisation de la plateforme 
-                  Splitfact, service de gestion fiscale et comptable destine aux micro-entrepreneurs francais.
+                  InvoiceOps, service de gestion fiscale et comptable destine aux micro-entrepreneurs francais.
                 </p>
                 <p>
                   L&apos;utilisation de la plateforme implique l&apos;acceptation pleine et entiere des presentes CGU. 
@@ -125,7 +125,7 @@ export default function TermsOfServicePage() {
               <div className="mb-5">
                 <h2 className="h4 mb-3">7. Limitation de Responsabilite</h2>
                 <div className="alert alert-info">
-                  <p><strong>Important :</strong> Splitfact est un outil d&apos;aide a la gestion fiscale. 
+                  <p><strong>Important :</strong> InvoiceOps est un outil d&apos;aide a la gestion fiscale. 
                   Vous restez seul responsable de :</p>
                   <ul className="mb-0">
                     <li>L&apos;exactitude de vos declarations fiscales</li>
@@ -160,7 +160,7 @@ export default function TermsOfServicePage() {
               <div className="alert alert-success">
                 <h4 className="h5 mb-2">
                   <i className="bi bi-check-circle me-2"></i>
-                  Engagement Splitfact
+                  Engagement InvoiceOps
                 </h4>
                 <p className="mb-0">
                   Nous nous engageons a fournir un service de qualite, respectueux de vos donnees 
@@ -171,7 +171,7 @@ export default function TermsOfServicePage() {
 
               <div className="text-center mt-5 pt-4 border-top">
                 <p className="text-muted mb-3">
-                  En utilisant Splitfact, vous acceptez l&apos;ensemble de ces conditions.
+                  En utilisant InvoiceOps, vous acceptez l&apos;ensemble de ces conditions.
                 </p>
                 <Link href="/" className="btn btn-primary me-3">
                   <i className="bi bi-house me-2"></i>

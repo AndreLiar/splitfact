@@ -1111,15 +1111,19 @@ export default function LandingPage() {
               © {new Date().getFullYear()} InvoiceOps. Tous droits réservés.
             </div>
             <div style={{ display: "flex", gap: "1.5rem" }}>
-              {["Confidentialité", "CGU", "Mentions légales"].map(t => (
-                <Link key={t} href="#" style={{
+              {[
+                { label: "Confidentialité", href: "/privacy-policy" },
+                { label: "CGU", href: "/terms-of-service" },
+                { label: "Mentions légales", href: "/terms-of-service" },
+              ].map(({ label, href }) => (
+                <Link key={label} href={href} style={{
                   fontSize: "0.75rem", color: "#62666d", textDecoration: "none",
                   transition: "color 120ms ease",
                 }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#8a8f98"}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#62666d"}
                 >
-                  {t}
+                  {label}
                 </Link>
               ))}
             </div>

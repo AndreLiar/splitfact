@@ -47,7 +47,7 @@ export class NotificationService {
           title: data.title,
           message: data.message,
           actionUrl: data.actionUrl,
-          metadata: data.metadata as Record<string, unknown>,
+          metadata: data.metadata as object,
           maxAttempts: data.maxAttempts || this.DEFAULT_MAX_ATTEMPTS,
           status: 'PENDING',
           nextRetryAt: new Date()
@@ -120,7 +120,7 @@ export class NotificationService {
             title: queueItem.title,
             message: queueItem.message,
             actionUrl: queueItem.actionUrl,
-            metadata: queueItem.metadata as Record<string, unknown>
+            metadata: queueItem.metadata as object
           }
         });
 
