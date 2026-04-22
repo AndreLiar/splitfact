@@ -8,9 +8,10 @@ import { FeedbackMenuItem } from "./FeedbackButton";
 const NAV = {
   main:       [{ name: "Tableau de bord", href: "/dashboard", icon: "bi-grid" }],
   invoicing:  [
-    { name: "Factures",         href: "/dashboard/invoices",       icon: "bi-receipt" },
-    { name: "Exceptions",       href: "/dashboard/exceptions",     icon: "bi-exclamation-diamond" },
-    { name: "Nouvelle facture", href: "/dashboard/create-invoice", icon: "bi-file-earmark-plus" },
+    { name: "Factures",         href: "/dashboard/invoices",           icon: "bi-receipt" },
+    { name: "Factures reçues",  href: "/dashboard/received-invoices",  icon: "bi-inbox" },
+    { name: "Exceptions",       href: "/dashboard/exceptions",         icon: "bi-exclamation-diamond" },
+    { name: "Nouvelle facture", href: "/dashboard/create-invoice",     icon: "bi-file-earmark-plus" },
   ],
   operations: [
     { name: "Clients",       href: "/dashboard/clients",       icon: "bi-person-vcard" },

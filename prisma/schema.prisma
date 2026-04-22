@@ -63,6 +63,7 @@ model User {
   billingTriggers       BillingTrigger[]
   eReportingPeriods     EReportingPeriod[]
   complianceEvents      ComplianceEvent[]
+  receivedInvoices      ReceivedInvoice[]
 }
 
 model VerificationToken {
@@ -243,6 +244,7 @@ enum NotificationType {
   FISCAL_INSIGHT
   DEADLINE
   CASH_FLOW
+  INVOICE_RECEIVED
 }
 
 
@@ -404,6 +406,29 @@ enum EReportingStatus {
   submitted
   accepted
   rejected
+}
+
+model ReceivedInvoice {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  cppId           String    @unique  // identifiantFactureCPP from Chorus Pro
+  invoiceNumber   String
+  supplierName    String
+  supplierSiret   String?
+  buyerSiret      String?
+  totalAmountTTC  Decimal   @default(0)
+  currency        String    @default("EUR")
+  invoiceDate     DateTime?
+  depositedAt     DateTime?
+  ppfStatus       String    @default("RECUE")
+  rawXml          String?   @db.Text
+  isRead          Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([cppId])
 }
 
 model SireneCache {
