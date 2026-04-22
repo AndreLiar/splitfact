@@ -2,22 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import prisma from '@/lib/prisma';
-import OpenAI from 'openai';
+import { extractFromImage, extractFromText, isLLMConfigured } from '@/lib/llm-router';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const EXTRACTION_PROMPT = `Tu es un extracteur de données de facturation pour une plateforme de facturation française.
 
-const EXTRACTION_PROMPT = `You are an invoice data extractor for a French invoicing platform.
+Extrais les champs suivants du document fourni. Retourne UNIQUEMENT du JSON valide — pas de markdown, pas d'explication.
 
-Extract the following fields from the document provided. Return ONLY valid JSON — no markdown, no explanation.
-
-Required output shape:
+Format de sortie requis :
 {
-  "clientName": string or null,
-  "clientAddress": string or null,
-  "clientSiret": string or null,
-  "clientEmail": string or null,
-  "invoiceDate": "YYYY-MM-DD" or null,
-  "dueDate": "YYYY-MM-DD" or null,
+  "clientName": string ou null,
+  "clientAddress": string ou null,
+  "clientSiret": string ou null,
+  "clientEmail": string ou null,
+  "invoiceDate": "YYYY-MM-DD" ou null,
+  "dueDate": "YYYY-MM-DD" ou null,
   "items": [
     {
       "description": string,
@@ -27,18 +25,18 @@ Required output shape:
     }
   ],
   "currency": "EUR",
-  "notes": string or null
+  "notes": string ou null
 }
 
-Rules:
-- items is always an array, even if there is only one line item
-- unitPrice is the price EXCLUDING tax (HT)
-- tvaRate is the TVA percentage (e.g. 20 for 20%, 0 for micro-entrepreneur)
-- If a field is not present in the document, set it to null
-- Dates must be in YYYY-MM-DD format
-- If you see a total TTC and a TVA rate but no HT price, calculate HT = TTC / (1 + rate/100)
-- clientSiret: 14-digit number only, no spaces
-- Extract from: quotes, proposals, contracts, invoices, emails, timesheets`;
+Règles :
+- items est toujours un tableau, même s'il n'y a qu'une seule ligne
+- unitPrice est le prix HORS TAXE (HT)
+- tvaRate est le pourcentage de TVA (ex. 20 pour 20%, 0 pour micro-entrepreneur)
+- Si un champ est absent du document, mettre null
+- Les dates doivent être au format YYYY-MM-DD
+- Si tu vois un total TTC et un taux de TVA mais pas de prix HT, calculer HT = TTC / (1 + taux/100)
+- clientSiret : nombre de 14 chiffres uniquement, sans espaces
+- Extraire depuis : devis, propositions, contrats, factures, emails, feuilles de temps`;
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -46,7 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!isLLMConfigured()) {
     return NextResponse.json({ error: 'AI extraction not configured' }, { status: 503 });
   }
 
@@ -73,11 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File too large (max 20 MB)' }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const base64 = buffer.toString('base64');
     const mimeType = file.type || 'application/pdf';
-
-    // Use GPT-4o vision for image/PDF extraction
     const isImage = mimeType.startsWith('image/');
     const isPdf = mimeType === 'application/pdf';
 
@@ -88,47 +82,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let response;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    let raw: string;
 
     if (isImage) {
-      response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        max_tokens: 1500,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: EXTRACTION_PROMPT },
-              {
-                type: 'image_url',
-                image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'high' },
-              },
-            ],
-          },
-        ],
-      });
+      // Vision model — direct image understanding
+      const base64 = buffer.toString('base64');
+      raw = await extractFromImage(base64, mimeType, EXTRACTION_PROMPT);
     } else {
-      // PDF: send as file input via the files API
-      // GPT-4o supports PDF via base64 image_url with mime application/pdf
-      response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        max_tokens: 1500,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: EXTRACTION_PROMPT },
-              {
-                type: 'image_url',
-                image_url: { url: `data:application/pdf;base64,${base64}`, detail: 'high' },
-              },
-            ],
-          },
-        ],
-      });
-    }
+      // PDF — extract text first, then use Mistral (French text model)
+      const pdfParse = (await import('pdf-parse')).default;
+      const pdfData = await pdfParse(buffer);
+      const pdfText = pdfData.text?.trim();
 
-    const raw = response.choices[0]?.message?.content ?? '';
+      if (!pdfText || pdfText.length < 20) {
+        return NextResponse.json(
+          { error: 'Le PDF ne contient pas de texte lisible. Essayez une image scannée.' },
+          { status: 422 }
+        );
+      }
+
+      raw = await extractFromText(pdfText, EXTRACTION_PROMPT);
+    }
 
     // Strip markdown fences if model wraps in ```json
     const cleaned = raw.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
@@ -137,9 +112,9 @@ export async function POST(req: NextRequest) {
     try {
       extracted = JSON.parse(cleaned);
     } catch {
-      console.error('AI extraction: could not parse JSON', raw);
+      console.error('LLM extraction: could not parse JSON', raw);
       return NextResponse.json(
-        { error: 'Extraction failed — document may not contain invoice data.' },
+        { error: 'Extraction échouée — le document ne contient peut-être pas de données de facturation.' },
         { status: 422 }
       );
     }
@@ -150,11 +125,9 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ extracted });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error';
     console.error('Extraction error:', err);
-    return NextResponse.json(
-      { error: err.message ?? 'Internal Server Error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

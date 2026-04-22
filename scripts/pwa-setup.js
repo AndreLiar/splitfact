@@ -100,7 +100,7 @@ function validateDependencies() {
   const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
 
-  const requiredDeps = ['next-pwa', 'workbox-webpack-plugin', 'idb'];
+  const requiredDeps = ['next-pwa', 'workbox-webpack-plugin'];
   const foundDeps = [];
   const missingDeps = [];
 

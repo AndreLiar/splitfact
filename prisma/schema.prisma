@@ -416,3 +416,4 @@ model SireneCache {
   @@index([siret])
   @@index([expiresAt])
 }
+

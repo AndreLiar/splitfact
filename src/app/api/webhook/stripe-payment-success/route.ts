@@ -2,11 +2,10 @@ import prisma from '@/lib/prisma';
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2025-06-30.basil",
-});
-
 export async function POST(req: Request) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+    apiVersion: "2025-06-30.basil",
+  });
   const body = await req.text();
   const signature = req.headers.get("stripe-signature") as string;
 
@@ -38,7 +37,7 @@ export async function POST(req: Request) {
           });
           console.log(`[Webhook] Invoice ${invoiceId} updated to paid.`);
         } catch (dbError: any) {
-          console.error(`[Webhook] Database update error for invoice ${invoiceId}:`, dbError.message || dbError);
+          console.error("[Webhook] Database update error for invoice", invoiceId, dbError.message || dbError);
           return new NextResponse("Database update error", { status: 500 });
         }
       }

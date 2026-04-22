@@ -31,10 +31,13 @@ describe('invoice readiness', () => {
     const result = evaluateInvoiceReadiness({
       clientName: 'Client Test',
       clientAddress: '10 rue de Paris',
+      clientSiret: '98765432109876',
       invoiceDate: '2026-04-19',
       dueDate: '2026-05-19',
+      transactionType: 'B2B',
       issuerName: 'Splitfact',
       issuerAddress: '20 avenue de Lyon',
+      issuerSiret: '12345678901234',
       legalMentions: 'TVA non applicable, art. 293 B du CGI',
       items: [
         {
