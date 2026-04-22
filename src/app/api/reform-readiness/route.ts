@@ -18,14 +18,14 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { siret: true, siretValidated: true },
+    select: { siret: true },
   });
 
   const hasCproCredentials =
     !!(process.env.CPRO_TECH_LOGIN && process.env.CPRO_TECH_PASSWORD);
   const hasPisteCredentials =
     !!(process.env.PISTE_CLIENT_ID && process.env.PISTE_CLIENT_SECRET);
-  const hasSiret = !!(user?.siret && user.siretValidated);
+  const hasSiret = !!user?.siret;
 
   return NextResponse.json({
     receive: {

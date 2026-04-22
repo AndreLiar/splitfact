@@ -102,7 +102,7 @@ function DeadlineBlock({ label, data }: { label: string; data: ReadinessCheck })
           const labels: Record<string, string> = {
             cproCredentials: 'Compte technique Chorus Pro',
             pisteCredentials: 'Credentials PISTE API',
-            siretValidated: 'SIRET validé',
+            siretValidated: 'SIRET renseigné',
           };
           return <CheckRow key={key} label={labels[key] ?? key} ok={ok} />;
         })}
