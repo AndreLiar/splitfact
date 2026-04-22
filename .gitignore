@@ -1,7 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # Claude Code guidance (local only)
-CLAUDE.md
 AGENTS.md
 
 # dependencies
@@ -45,3 +44,5 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+.env.local
+.env*.local

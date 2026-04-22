@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Politique de Confidentialite - Splitfact',
-  description: 'Politique de confidentialite et protection des donnees personnelles de Splitfact',
+  title: 'Politique de Confidentialite - InvoiceOps',
+  description: 'Politique de confidentialite et protection des donnees personnelles de InvoiceOps',
 };
 
 export default function PrivacyPolicyPage() {
@@ -25,7 +25,7 @@ export default function PrivacyPolicyPage() {
               <div className="mb-5">
                 <h2 className="h4 mb-3">1. Introduction</h2>
                 <p>
-                  Splitfact s&apos;engage a proteger votre vie privee et vos donnees personnelles. Cette politique de confidentialite 
+                  InvoiceOps s&apos;engage a proteger votre vie privee et vos donnees personnelles. Cette politique de confidentialite 
                   explique comment nous collectons, utilisons, stockons et protegeons vos informations lorsque vous utilisez 
                   notre plateforme de gestion fiscale pour micro-entrepreneurs.
                 </p>
@@ -114,7 +114,7 @@ export default function PrivacyPolicyPage() {
                   </div>
                   <div className="col-md-6">
                     <p><strong>DPO :</strong> dpo@splitfact.com</p>
-                    <p><strong>Adresse :</strong> [Votre adresse legale]</p>
+                    <p><strong>Adresse :</strong> —</p>
                   </div>
                 </div>
               </div>
