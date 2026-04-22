@@ -144,6 +144,12 @@ Path aliases: `@/` → `src/`, `@/domains/*` → `src/domains/*`, `@/types/*` �
 - `staging` → pre-production
 - `dev` → active development
 
+**Workflow for every feature, fix, or chore:**
+1. Branch off `dev`: `git checkout dev && git pull && git checkout -b feat/my-feature`
+2. Open PR → `dev` when ready
+3. Once merged into `dev`, promote: `dev → staging → main` (each as a separate PR)
+4. Delete the feature branch after it is merged — never leave stale branches
+
 Schema changes: run `nvm use 20 && npx prisma db push` after editing `prisma/schema.prisma`.
 
 ## Node Version Gotchas
