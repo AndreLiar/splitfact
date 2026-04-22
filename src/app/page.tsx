@@ -19,11 +19,20 @@ const steps = [
   { n: "04", title: "Émission avec confiance", text: "Facture conforme, traçable, prête pour la plateforme de dématérialisation partenaire 2026.", icon: "bi-send-check" },
 ];
 
+const icpTypes = [
+  { icon: "bi-palette", label: "Agences créatives" },
+  { icon: "bi-briefcase", label: "Cabinets de conseil" },
+  { icon: "bi-code-square", label: "Dev shops" },
+  { icon: "bi-people", label: "Sociétés de staffing" },
+  { icon: "bi-lightbulb", label: "Boutiques d'expertise" },
+];
+
 const features = [
-  { icon: "bi-cpu", label: "Agent IA fiscal", text: "Comprend le régime URSSAF, les seuils TVA, BNC, MicroBIC — répond en français." },
+  { icon: "bi-clipboard2-check", label: "Moteur de conformité", text: "Chaque facture reçoit un état clair : prête ou bloquée. Les champs manquants sont listés avant l'émission." },
+  { icon: "bi-funnel", label: "Inbox des exceptions", text: "Les factures bloquées apparaissent dans une file centralisée. Votre équipe n'intervient que sur les cas ambigus." },
   { icon: "bi-file-earmark-check", label: "Factur-X natif", text: "Génère des factures PDF/A-3 avec données XML embarquées — format EU e-invoicing 2026." },
   { icon: "bi-credit-card", label: "Stripe Connect", text: "Lien de paiement en un clic sur chaque facture. Encaissement directement sur votre compte." },
-  { icon: "bi-bell-fill", label: "Relances automatiques", text: "Notifications intelligentes pour les factures en retard, les échéances à J-7, J-3, J+1." },
+  { icon: "bi-bell-fill", label: "Relances automatiques", text: "Notifications intelligentes pour les factures en retard, les échéances fiscales et les statuts de livraison." },
   { icon: "bi-graph-up-arrow", label: "Tableau de bord", text: "Volume facturé, encaissements, exceptions, délais — vue temps réel sur votre trésorerie." },
 ];
 
@@ -437,6 +446,51 @@ export default function LandingPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════
+          ICP — FOR WHOM
+      ══════════════════════════════════════════════════════ */}
+      <section style={{ padding: "4rem 0" }} aria-labelledby="pour-qui-title" data-testid="pour-qui-section">
+        <div className="main-container">
+          <FadeUp>
+            <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+              <SectionLabel>Pour qui</SectionLabel>
+              <h2 id="pour-qui-title" data-testid="pour-qui-heading" style={{
+                fontSize: "clamp(1.5rem, 2.5vw, 2rem)",
+                fontWeight: 590,
+                letterSpacing: "-0.03em",
+                color: "#f7f8f8",
+                marginBottom: "0.75rem",
+              }}>
+                Agences et sociétés de services françaises, 5–50 personnes.
+              </h2>
+              <p data-testid="pour-qui-description" style={{ fontSize: "0.9375rem", color: "#8a8f98", maxWidth: "520px", margin: "0 auto" }}>
+                Celles qui facturent souvent, gèrent des données client éparpillées, et n'ont pas de DAF interne pour absorber la réforme 2026-2027.
+              </p>
+            </div>
+
+            <div data-testid="pour-qui-tags" style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+              {icpTypes.map(t => (
+                <span key={t.label} className="icp-pill" style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "7px",
+                  padding: "8px 16px",
+                  backgroundColor: "rgba(255,255,255,0.02)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  borderRadius: "9999px",
+                  fontSize: "0.8125rem",
+                  color: "#d0d6e0",
+                  transition: "border-color 150ms ease",
+                }}>
+                  <i className={`bi ${t.icon}`} style={{ color: "#D4921A", fontSize: "0.875rem" }} />
+                  {t.label}
+                </span>
+              ))}
+            </div>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
           PROBLEM
       ══════════════════════════════════════════════════════ */}
       <section id="problem" style={{ padding: "6rem 0" }}>
@@ -455,9 +509,19 @@ export default function LandingPage() {
                 }}>
                   Votre équipe ne manque pas d'un outil de plus. Elle manque d'un système.
                 </h2>
-                <p style={{ fontSize: "1rem", color: "#8a8f98", lineHeight: 1.7, maxWidth: "420px" }}>
+                <p style={{ fontSize: "1rem", color: "#8a8f98", lineHeight: 1.7, maxWidth: "420px", marginBottom: "1.5rem" }}>
                   Chaque agence a déjà un CRM, un logiciel de facturation et une boîte mail. Le problème, c'est que rien ne relie ces sources au moment d'émettre.
                 </p>
+                <div style={{
+                  padding: "1.25rem 1.5rem",
+                  borderLeft: "2px solid #D4921A",
+                  backgroundColor: "rgba(212,146,26,0.04)",
+                  borderRadius: "0 8px 8px 0",
+                }}>
+                  <p style={{ fontSize: "0.9375rem", color: "#d0d6e0", lineHeight: 1.65, fontStyle: "italic", margin: 0 }}>
+                    "La vraie douleur n'est pas de créer la facture. C'est de finir le processus sans aller-retour."
+                  </p>
+                </div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
                 {painPoints.map((p, i) => (
@@ -568,10 +632,10 @@ export default function LandingPage() {
               color: "#f7f8f8",
               marginBottom: "0.75rem",
             }}>
-              Tout ce dont une agence française a besoin pour facturer sans friction.
+              Un workflow complet, pas un outil de plus.
             </h2>
-            <p style={{ fontSize: "1rem", color: "#8a8f98", marginBottom: "3rem", maxWidth: "500px" }}>
-              Pas un énième logiciel de compta. Un back-office de billing conçu pour vos contraintes réelles.
+            <p style={{ fontSize: "1rem", color: "#8a8f98", marginBottom: "3rem", maxWidth: "520px" }}>
+              Du déclencheur à la facture émise : conformité, exceptions centralisées, et suivi opérationnel — tout dans un seul système.
             </p>
           </FadeUp>
 
@@ -1136,6 +1200,11 @@ export default function LandingPage() {
         @keyframes shimmer {
           0%   { background-position: 0% center; }
           100% { background-position: 200% center; }
+        }
+        .icp-pill:hover,
+        .icp-pill:focus-visible {
+          border-color: rgba(212, 146, 26, 0.3) !important;
+          outline: none;
         }
         @media (max-width: 991px) {
           .hero-grid, .two-col-grid { grid-template-columns: 1fr !important; gap: 2.5rem !important; }
