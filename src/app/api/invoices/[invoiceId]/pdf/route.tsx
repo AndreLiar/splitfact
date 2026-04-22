@@ -4,7 +4,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { renderToStream } from '@react-pdf/renderer';
 import InvoicePdf from '@/app/components/InvoicePdf';
-import cloudinary from '@/lib/cloudinary';
 
 
 export async function POST(
