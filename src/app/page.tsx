@@ -13,7 +13,7 @@ const painPoints = [
 ];
 
 const steps = [
-  { n: "01", title: "Déclencheur capturé", text: "Devis signé, jalon validé, récurrence mensuelle ou timesheet approuvé — Splitfact reçoit le signal.", icon: "bi-lightning-charge" },
+  { n: "01", title: "Déclencheur capturé", text: "Devis signé, jalon validé, récurrence mensuelle ou timesheet approuvé — InvoiceOps reçoit le signal.", icon: "bi-lightning-charge" },
   { n: "02", title: "Agent collecte les données", text: "L'IA enrichit la facture : SIRET, TVA, mentions légales, adresse. Elle détecte les champs manquants.", icon: "bi-robot" },
   { n: "03", title: "Exceptions remontées", text: "Seuls les cas ambigus apparaissent dans l'inbox. Le reste s'écoule automatiquement vers l'émission.", icon: "bi-funnel" },
   { n: "04", title: "Émission avec confiance", text: "Facture conforme, traçable, prête pour la plateforme de dématérialisation partenaire 2026.", icon: "bi-send-check" },
@@ -219,7 +219,7 @@ export default function LandingPage() {
                 marginBottom: "2rem",
                 maxWidth: "480px",
               }}>
-                Splitfact automatise le chemin entre devis signé, données client incomplètes et facture prête à émettre. Votre équipe ne traite plus que les exceptions.
+                InvoiceOps automatise le chemin entre devis signé, données client incomplètes et facture prête à émettre. Votre équipe ne traite plus que les exceptions.
               </p>
 
               {/* CTAs */}
@@ -697,7 +697,7 @@ export default function LandingPage() {
                 2026-2027 arrive. Préparez votre workflow maintenant.
               </h2>
               <p style={{ fontSize: "1rem", color: "#8a8f98", lineHeight: 1.7 }}>
-                La réforme impose le passage à la facturation électronique pour toutes les entreprises françaises assujetties à la TVA. Splitfact génère des factures Factur-X (PDF/A-3 + XML) prêtes pour les plateformes partenaires.
+                La réforme impose le passage à la facturation électronique pour toutes les entreprises françaises assujetties à la TVA. InvoiceOps génère des factures Factur-X (PDF/A-3 + XML) prêtes pour les plateformes partenaires.
               </p>
             </FadeUp>
 
@@ -752,7 +752,7 @@ export default function LandingPage() {
               }}>
                 <i className="bi bi-shield-check" style={{ color: "#D4921A", fontSize: "1.125rem", flexShrink: 0 }} />
                 <div style={{ fontSize: "0.8125rem", color: "#8a8f98" }}>
-                  Splitfact génère des factures <strong style={{ color: "#d0d6e0" }}>Factur-X conformes</strong> — PDF/A-3 avec XML embarqué, compatible PDP.
+                  InvoiceOps génère des factures <strong style={{ color: "#d0d6e0" }}>Factur-X conformes</strong> — PDF/A-3 avec XML embarqué, compatible PDP.
                 </div>
               </div>
             </div>
@@ -1086,7 +1086,7 @@ export default function LandingPage() {
                 }}>
                   <i className="bi bi-lightning-fill" style={{ color: "#08090a", fontSize: "0.75rem" }} />
                 </div>
-                <span style={{ fontSize: "0.9375rem", fontWeight: 590, color: "#f7f8f8" }}>Splitfact</span>
+                <span style={{ fontSize: "0.9375rem", fontWeight: 590, color: "#f7f8f8" }}>InvoiceOps</span>
               </div>
               <p style={{ fontSize: "0.8125rem", color: "#62666d", lineHeight: 1.7, maxWidth: "240px", marginBottom: "1.25rem" }}>
                 Back-office de facturation IA pour les agences et sociétés de services françaises.
@@ -1172,7 +1172,7 @@ export default function LandingPage() {
             gap: "0.75rem",
           }}>
             <div style={{ fontSize: "0.75rem", color: "#62666d" }}>
-              © {new Date().getFullYear()} Splitfact. Tous droits réservés.
+              © {new Date().getFullYear()} InvoiceOps. Tous droits réservés.
             </div>
             <div style={{ display: "flex", gap: "1.5rem" }}>
               {[

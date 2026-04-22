@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 interface Notification {
   id: string;
-  type: 'URSSAF_REMINDER' | 'TVA_THRESHOLD_WARNING' | 'TVA_THRESHOLD_EXCEEDED' | 'GENERAL';
+  type: 'INVOICE_BLOCKED' | 'COMPLIANCE_ALERT' | 'PAYMENT_REMINDER' | 'GENERAL';
   title: string;
   message: string;
   isRead: boolean;
@@ -114,36 +114,36 @@ export default function NotificationsPage() {
   // Get notification icon and color
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'URSSAF_REMINDER': return 'bi-calendar-check';
-      case 'TVA_THRESHOLD_WARNING': return 'bi-exclamation-triangle';
-      case 'TVA_THRESHOLD_EXCEEDED': return 'bi-exclamation-octagon';
+      case 'INVOICE_BLOCKED': return 'bi-exclamation-octagon';
+      case 'COMPLIANCE_ALERT': return 'bi-shield-exclamation';
+      case 'PAYMENT_REMINDER': return 'bi-credit-card';
       default: return 'bi-info-circle';
     }
   };
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'URSSAF_REMINDER': return 'text-primary';
-      case 'TVA_THRESHOLD_WARNING': return 'text-warning';
-      case 'TVA_THRESHOLD_EXCEEDED': return 'text-danger';
+      case 'INVOICE_BLOCKED': return 'text-danger';
+      case 'COMPLIANCE_ALERT': return 'text-warning';
+      case 'PAYMENT_REMINDER': return 'text-primary';
       default: return 'text-info';
     }
   };
 
   const getBadgeColor = (type: string) => {
     switch (type) {
-      case 'URSSAF_REMINDER': return 'bg-primary';
-      case 'TVA_THRESHOLD_WARNING': return 'bg-warning';
-      case 'TVA_THRESHOLD_EXCEEDED': return 'bg-danger';
+      case 'INVOICE_BLOCKED': return 'bg-danger';
+      case 'COMPLIANCE_ALERT': return 'bg-warning';
+      case 'PAYMENT_REMINDER': return 'bg-primary';
       default: return 'bg-info';
     }
   };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'URSSAF_REMINDER': return 'URSSAF';
-      case 'TVA_THRESHOLD_WARNING': return 'TVA';
-      case 'TVA_THRESHOLD_EXCEEDED': return 'TVA URGENT';
+      case 'INVOICE_BLOCKED': return 'Bloquée';
+      case 'COMPLIANCE_ALERT': return 'Conformité';
+      case 'PAYMENT_REMINDER': return 'Paiement';
       case 'GENERAL': return 'Général';
       default: return 'Info';
     }
@@ -238,7 +238,7 @@ export default function NotificationsPage() {
               <p className="text-muted">
                 {filter === 'unread' 
                   ? 'Toutes vos notifications ont été lues' 
-                  : 'Vous recevrez ici les rappels URSSAF et alertes TVA'}
+                  : 'Vous recevrez ici les alertes de conformité et de facturation'}
               </p>
             </div>
           ) : (

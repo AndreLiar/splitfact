@@ -143,7 +143,6 @@ function SettingsPageInner() {
       setProfile((p) => ({ ...p, [key]: e.target.value })),
   });
 
-  const isMicro = ['MicroBIC', 'BNC'].includes(profile.fiscalRegime);
   const isCompany = ['SASU', 'EURL', 'SARL', 'SAS'].includes(profile.legalStatus);
 
   if (status === 'loading' || profileLoading) {
@@ -224,8 +223,6 @@ function SettingsPageInner() {
                     <label className="form-label fw-medium">Régime fiscal <span className="text-danger">*</span></label>
                     <select className={`form-select ${profileErrors.fiscalRegime ? 'is-invalid' : ''}`} {...field('fiscalRegime')}>
                       <option value="">-- Choisir --</option>
-                      <option value="MicroBIC">Micro-BIC (commerçant)</option>
-                      <option value="BNC">BNC (libéral)</option>
                       <option value="EI">EI (entreprise individuelle)</option>
                       <option value="SASU">SASU / SAS</option>
                       <option value="Other">Autre</option>
@@ -243,32 +240,6 @@ function SettingsPageInner() {
                     {profileErrors.legalStatus && <div className="invalid-feedback">{profileErrors.legalStatus}</div>}
                   </div>
 
-                  {/* Micro-entrepreneur type — conditional */}
-                  {isMicro && (
-                    <div className="col-md-6">
-                      <label className="form-label fw-medium">Type micro-entrepreneur <span className="text-danger">*</span></label>
-                      <select className={`form-select ${profileErrors.microEntrepreneurType ? 'is-invalid' : ''}`} {...field('microEntrepreneurType')}>
-                        <option value="">-- Choisir --</option>
-                        <option value="COMMERCANT">Commerçant</option>
-                        <option value="PRESTATAIRE">Prestataire de services</option>
-                        <option value="LIBERAL">Libéral</option>
-                      </select>
-                      {profileErrors.microEntrepreneurType && <div className="invalid-feedback">{profileErrors.microEntrepreneurType}</div>}
-                    </div>
-                  )}
-
-                  {/* Declaration frequency — conditional */}
-                  {isMicro && (
-                    <div className="col-md-6">
-                      <label className="form-label fw-medium">Fréquence de déclaration URSSAF <span className="text-danger">*</span></label>
-                      <select className={`form-select ${profileErrors.declarationFrequency ? 'is-invalid' : ''}`} {...field('declarationFrequency')}>
-                        <option value="">-- Choisir --</option>
-                        <option value="monthly">Mensuelle</option>
-                        <option value="quarterly">Trimestrielle</option>
-                      </select>
-                      {profileErrors.declarationFrequency && <div className="invalid-feedback">{profileErrors.declarationFrequency}</div>}
-                    </div>
-                  )}
 
                   {/* TVA number — optional */}
                   <div className="col-md-6">

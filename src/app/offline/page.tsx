@@ -26,7 +26,7 @@ export default function OfflinePage() {
                   </h1>
                   
                   <p className="text-muted mb-4 lh-base">
-                    Vous êtes actuellement hors ligne. Certaines fonctionnalités de Splitfact 
+                    Vous êtes actuellement hors ligne. Certaines fonctionnalités d'InvoiceOps
                     ne sont pas disponibles, mais vous pouvez encore :
                   </p>
                 </div>
@@ -54,10 +54,10 @@ export default function OfflinePage() {
                   
                   <div className="col-md-6">
                     <div className="d-flex align-items-center p-3 bg-light rounded-3">
-                      <i className="bi bi-calculator text-info me-3 fs-5"></i>
+                      <i className="bi bi-shield-check text-info me-3 fs-5"></i>
                       <div className="text-start">
-                        <div className="fw-semibold small">Calculateur</div>
-                        <div className="text-muted small">URSSAF & TVA</div>
+                        <div className="fw-semibold small">Conformité</div>
+                        <div className="text-muted small">Score e-invoicing</div>
                       </div>
                     </div>
                   </div>
