@@ -147,8 +147,10 @@ Path aliases: `@/` → `src/`, `@/domains/*` → `src/domains/*`, `@/types/*` �
 **Workflow for every feature, fix, or chore:**
 1. Branch off `dev`: `git checkout dev && git pull && git checkout -b feat/my-feature`
 2. Open PR → `dev` when ready
-3. Once merged into `dev`, promote: `dev → staging → main` (each as a separate PR)
-4. Delete the feature branch after it is merged — never leave stale branches
+3. **Wait for Copilot to post its review** (`gh pr view <N> --repo AndreLiar/splitfact --json reviews`). Fix genuine issues it raises; note dismissed false positives. If Copilot approves, merge normally — no bypass needed.
+4. Once merged into `dev`, promote: `dev → staging → main` (each as a separate PR, each awaiting Copilot review)
+5. Delete the feature branch after it is merged — never leave stale branches
+6. Admin bypass (disable protection → merge → restore) is a last resort for emergencies only — always flag it explicitly
 
 Schema changes: run `nvm use 20 && npx prisma db push` after editing `prisma/schema.prisma`.
 

@@ -1,4 +1,4 @@
-# Splitfact
+# InvoiceOps
 
 **The AI back office for French e-invoicing compliance.**
 
@@ -7,9 +7,9 @@
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma)](https://prisma.io/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-Splitfact automates the path from approved work to compliant issued invoice — for French agencies and service SMEs navigating the 2026–2027 e-invoicing reform.
+InvoiceOps automates the path from approved work to compliant issued invoice — for French agencies and service SMEs navigating the 2026–2027 e-invoicing reform.
 
-Most invoicing tools stop at document creation. Splitfact completes the workflow: it collects the data, validates compliance, routes the invoice, tracks status, and surfaces only exceptions for human review.
+Most invoicing tools stop at document creation. InvoiceOps completes the workflow: it collects the data, validates compliance, routes the invoice, tracks status, and surfaces only exceptions for human review.
 
 ---
 
@@ -247,4 +247,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Splitfact — Issue compliant invoices and handle exceptions automatically.*
+*InvoiceOps — Issue compliant invoices and handle exceptions automatically.*

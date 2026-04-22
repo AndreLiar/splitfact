@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Conditions Generales d\'Utilisation - InvoiceOps',
-  description: 'Conditions generales d\'utilisation de la plateforme InvoiceOps pour micro-entrepreneurs',
+  title: 'Conditions Générales d\'Utilisation - InvoiceOps',
+  description: 'Conditions générales d\'utilisation de la plateforme InvoiceOps pour agences et sociétés de services françaises.',
 };
 
 export default function TermsOfServicePage() {
@@ -15,130 +15,130 @@ export default function TermsOfServicePage() {
             <div className="card-body p-5">
               <h1 className="h2 mb-4 text-primary">
                 <i className="bi bi-file-text me-2"></i>
-                Conditions Generales d&apos;Utilisation
+                Conditions Générales d&apos;Utilisation
               </h1>
-              
+
               <p className="text-muted mb-4">
-                <strong>Derniere mise a jour :</strong> {new Date().toLocaleDateString('fr-FR')}
+                <strong>Dernière mise à jour :</strong> {new Date().toLocaleDateString('fr-FR')}
               </p>
 
               <div className="mb-5">
                 <h2 className="h4 mb-3">1. Objet et Acceptation</h2>
                 <p>
-                  Les presentes Conditions Generales d&apos;Utilisation (CGU) regissent l&apos;utilisation de la plateforme 
-                  InvoiceOps, service de gestion fiscale et comptable destine aux micro-entrepreneurs francais.
+                  Les présentes Conditions Générales d&apos;Utilisation (CGU) régissent l&apos;utilisation de la plateforme
+                  InvoiceOps, service de workflow de facturation électronique destiné aux agences et sociétés de services françaises.
                 </p>
                 <p>
-                  L&apos;utilisation de la plateforme implique l&apos;acceptation pleine et entiere des presentes CGU. 
+                  L&apos;utilisation de la plateforme implique l&apos;acceptation pleine et entière des présentes CGU.
                   Si vous n&apos;acceptez pas ces conditions, vous ne devez pas utiliser nos services.
                 </p>
               </div>
 
               <div className="mb-5">
                 <h2 className="h4 mb-3">2. Description des Services</h2>
-                
+
                 <h3 className="h5 mb-2">2.1 Services Principaux</h3>
                 <ul className="mb-3">
-                  <li>Gestion des factures et devis</li>
-                  <li>Suivi du chiffre d&apos;affaires et des seuils</li>
-                  <li>Generation de rapports URSSAF et TVA</li>
-                  <li>Assistant fiscal intelligent avec IA</li>
-                  <li>Gestion des clients et projets</li>
-                  <li>Tableaux de bord et analyses</li>
+                  <li>Automatisation du workflow de facturation (du déclencheur à l&apos;émission)</li>
+                  <li>Moteur de conformité — vérification des champs EN 16931 obligatoires</li>
+                  <li>Inbox des exceptions — centralisation des factures bloquées</li>
+                  <li>Génération de factures Factur-X (PDF/A-3 + XML) conformes à la réforme 2026-2027</li>
+                  <li>Suivi des statuts de livraison et de paiement</li>
+                  <li>Tableau de bord et piste d&apos;audit complète</li>
                 </ul>
 
-                <h3 className="h5 mb-2">2.2 Fonctionnalites Avancees</h3>
+                <h3 className="h5 mb-2">2.2 Fonctionnalités Avancées</h3>
                 <ul className="mb-3">
-                  <li>Recherche web intelligente pour conseils fiscaux</li>
-                  <li>Alertes automatiques et notifications</li>
-                  <li>Rapports multi-sources et benchmarking</li>
-                  <li>Multi-agents IA pour analyses complexes</li>
+                  <li>Extraction automatique de données depuis PDF et documents</li>
+                  <li>Validation SIRET via INSEE SIRENE v3</li>
+                  <li>Soumission PPF / Chorus Pro via PISTE API</li>
+                  <li>Notifications intelligentes avec retry automatique</li>
                 </ul>
               </div>
 
               <div className="mb-5">
-                <h2 className="h4 mb-3">3. Integrations et Services Tiers</h2>
-                
+                <h2 className="h4 mb-3">3. Intégrations et Services Tiers</h2>
+
                 <div className="alert alert-warning">
                   <i className="bi bi-exclamation-triangle me-2"></i>
                   <strong>Important :</strong> Les services tiers ont leurs propres conditions d&apos;utilisation.
-                  Nous ne sommes pas responsables de leur disponibilite ou de leurs modifications.
+                  Nous ne sommes pas responsables de leur disponibilité ou de leurs modifications.
                 </div>
               </div>
 
               <div className="mb-5">
                 <h2 className="h4 mb-3">4. Obligations de l&apos;Utilisateur</h2>
-                
+
                 <h3 className="h5 mb-2">4.1 Usage Conforme</h3>
-                <p>Vous vous engagez a :</p>
+                <p>Vous vous engagez à :</p>
                 <ul className="mb-3">
-                  <li>Utiliser la plateforme dans le respect de la legislation</li>
+                  <li>Utiliser la plateforme dans le respect de la législation</li>
                   <li>Ne pas porter atteinte aux droits de tiers</li>
-                  <li>Maintenir la confidentialite de vos identifiants</li>
-                  <li>Signaler toute utilisation non autorisee de votre compte</li>
+                  <li>Maintenir la confidentialité de vos identifiants</li>
+                  <li>Signaler toute utilisation non autorisée de votre compte</li>
                 </ul>
 
-                <h3 className="h5 mb-2">4.2 Donnees Fiscales</h3>
-                <p>Concernant vos donnees fiscales, vous devez :</p>
+                <h3 className="h5 mb-2">4.2 Données de Facturation</h3>
+                <p>Concernant vos données de facturation, vous devez :</p>
                 <ul>
-                  <li>Fournir des informations exactes et completes</li>
-                  <li>Verifier la coherence des donnees synchronisees</li>
-                  <li>Conserver vos justificatifs selon la reglementation</li>
-                  <li>Assumer la responsabilite finale de vos declarations</li>
+                  <li>Fournir des informations exactes et complètes</li>
+                  <li>Vérifier la cohérence des données avant émission</li>
+                  <li>Conserver vos justificatifs selon la réglementation</li>
+                  <li>Assumer la responsabilité finale de vos factures émises</li>
                 </ul>
               </div>
 
               <div className="mb-5">
-                <h2 className="h4 mb-3">5. Assistant IA et Conseils Automatises</h2>
-                
-                <h3 className="h5 mb-2">5.1 Nature des Conseils</h3>
+                <h2 className="h4 mb-3">5. IA et Extraction Automatique</h2>
+
+                <h3 className="h5 mb-2">5.1 Nature du Service</h3>
                 <p>
-                  L&apos;assistant IA fournit des conseils bases sur vos donnees et les reglementations en vigueur. 
-                  Ces conseils sont informatifs et ne constituent pas un avis juridique ou comptable personnalise.
+                  InvoiceOps utilise l&apos;IA pour extraire et structurer des données de facturation.
+                  Ces extractions sont indicatives — vous devez vérifier et valider les données avant émission.
                 </p>
 
-                <h3 className="h5 mb-2">5.2 Responsabilite</h3>
+                <h3 className="h5 mb-2">5.2 Responsabilité</h3>
                 <ul className="mb-3">
-                  <li>Vous devez verifier et valider tous les conseils recus</li>
-                  <li>Consulter un professionnel pour les situations complexes</li>
-                  <li>L&apos;IA peut commettre des erreurs ou être incomplete</li>
+                  <li>Vous devez vérifier et valider toutes les données extraites</li>
+                  <li>L&apos;IA peut commettre des erreurs ou être incomplète</li>
+                  <li>La conformité finale de chaque facture relève de votre responsabilité</li>
                 </ul>
               </div>
 
               <div className="mb-5">
-                <h2 className="h4 mb-3">6. Protection des Donnees</h2>
+                <h2 className="h4 mb-3">6. Protection des Données</h2>
                 <p>
-                  Le traitement de vos donnees personnelles est regi par notre{' '}
-                  <a href="/privacy-policy" className="text-decoration-none">Politique de Confidentialite</a>, 
-                  qui fait partie integrante des presentes CGU.
+                  Le traitement de vos données personnelles est régi par notre{' '}
+                  <a href="/privacy-policy" className="text-decoration-none">Politique de Confidentialité</a>,
+                  qui fait partie intégrante des présentes CGU.
                 </p>
-                
-                <h3 className="h5 mb-2">6.1 Securite</h3>
+
+                <h3 className="h5 mb-2">6.1 Sécurité</h3>
                 <ul className="mb-3">
                   <li>Chiffrement de toutes les communications</li>
-                  <li>Authentification securisee</li>
-                  <li>Sauvegardes regulieres et chiffrees</li>
-                  <li>Acces restreint aux donnees sensibles</li>
+                  <li>Authentification sécurisée</li>
+                  <li>Sauvegardes régulières et chiffrées</li>
+                  <li>Accès restreint aux données sensibles</li>
                 </ul>
               </div>
 
               <div className="mb-5">
-                <h2 className="h4 mb-3">7. Limitation de Responsabilite</h2>
+                <h2 className="h4 mb-3">7. Limitation de Responsabilité</h2>
                 <div className="alert alert-info">
-                  <p><strong>Important :</strong> InvoiceOps est un outil d&apos;aide a la gestion fiscale. 
+                  <p><strong>Important :</strong> InvoiceOps est un outil d&apos;automatisation du workflow de facturation.
                   Vous restez seul responsable de :</p>
                   <ul className="mb-0">
-                    <li>L&apos;exactitude de vos declarations fiscales</li>
-                    <li>Le respect des obligations legales</li>
-                    <li>La validation des conseils automatises</li>
-                    <li>La sauvegarde de vos donnees importantes</li>
+                    <li>L&apos;exactitude de vos factures émises</li>
+                    <li>Le respect des obligations légales de facturation</li>
+                    <li>La validation des données extraites automatiquement</li>
+                    <li>La sauvegarde de vos données importantes</li>
                   </ul>
                 </div>
               </div>
 
               <div className="mb-5">
                 <h2 className="h4 mb-3">8. Contact et Support</h2>
-                
+
                 <div className="row">
                   <div className="col-md-6">
                     <h3 className="h6">Support Technique</h3>
@@ -163,9 +163,8 @@ export default function TermsOfServicePage() {
                   Engagement InvoiceOps
                 </h4>
                 <p className="mb-0">
-                  Nous nous engageons a fournir un service de qualite, respectueux de vos donnees 
-                  et conforme a la reglementation francaise et europeenne. Notre equipe reste 
-                  disponible pour repondre a vos questions et ameliorer continuellement la plateforme.
+                  Nous nous engageons à fournir un service de qualité, respectueux de vos données
+                  et conforme à la réglementation française et européenne sur la facturation électronique.
                 </p>
               </div>
 
@@ -175,11 +174,11 @@ export default function TermsOfServicePage() {
                 </p>
                 <Link href="/" className="btn btn-primary me-3">
                   <i className="bi bi-house me-2"></i>
-                  Retour a l&apos;accueil
+                  Retour à l&apos;accueil
                 </Link>
                 <Link href="/privacy-policy" className="btn btn-outline-secondary me-3">
                   <i className="bi bi-shield-check me-2"></i>
-                  Politique de Confidentialite
+                  Politique de Confidentialité
                 </Link>
                 <Link href="/dashboard" className="btn btn-outline-primary">
                   <i className="bi bi-speedometer2 me-2"></i>

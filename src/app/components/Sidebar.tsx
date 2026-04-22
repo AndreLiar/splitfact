@@ -178,7 +178,7 @@ export default function Sidebar() {
               lineHeight: 1.2,
               fontFeatureSettings: '"cv01", "ss03"',
             }}>
-              Splitfact
+              InvoiceOps
             </div>
             <div style={{
               fontSize: "0.5625rem",
