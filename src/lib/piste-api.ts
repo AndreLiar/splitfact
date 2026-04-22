@@ -221,4 +221,98 @@ export function mapPpfStatus(ppfStatus: PpfLifecycleStatus): string {
   return map[ppfStatus] ?? 'deposee';
 }
 
+// ─── Fetch invoices received via PPF (destinataire search) ───────────────────
+
+export interface ReceivedInvoiceEntry {
+  cppId: string;
+  invoiceNumber: string;
+  supplierName: string;
+  supplierSiret: string | null;
+  buyerSiret: string | null;
+  totalAmountTTC: number;
+  ppfStatus: string;
+  depositedAt: string | null; // ISO string
+}
+
+export interface FetchReceivedInvoicesResult {
+  success: boolean;
+  invoices: ReceivedInvoiceEntry[];
+  total: number;
+  error?: string;
+}
+
+export async function fetchReceivedInvoicesFromPpf(opts: {
+  fromDate: string; // YYYY-MM-DD
+  toDate: string;   // YYYY-MM-DD
+  page?: number;
+}): Promise<FetchReceivedInvoicesResult> {
+  try {
+    const token = await getAccessToken();
+    const cproAccount = getCproAccountHeader();
+
+    const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/rechercher/destinataire`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'cpro-account': cproAccount,
+        'Content-Type': 'application/json;charset=utf-8',
+      },
+      body: JSON.stringify({
+        dateDepotFactureDu: opts.fromDate,
+        dateDepotFactureAu: opts.toDate,
+        nbResultatsParPage: 50,
+        pageResultat: opts.page ?? 1,
+      }),
+    });
+
+    const json = await res.json().catch(() => ({})) as any;
+
+    if (!res.ok || (json?.codeRetour !== 0 && json?.codeRetour !== undefined)) {
+      return { success: false, invoices: [], total: 0, error: json?.libelle ?? `PISTE error ${res.status}` };
+    }
+
+    const raw: any[] = json?.listeFactures ?? [];
+    const invoices: ReceivedInvoiceEntry[] = raw.map((f) => ({
+      cppId: String(f.identifiantFactureCPP ?? ''),
+      invoiceNumber: f.numeroFacture ?? '',
+      supplierName: f.nomFournisseur ?? 'Fournisseur inconnu',
+      supplierSiret: f.siretFournisseur ?? null,
+      buyerSiret: f.siretDestinataire ?? null,
+      totalAmountTTC: Number(f.montantTTC ?? 0),
+      ppfStatus: f.statut ?? 'RECUE',
+      depositedAt: f.dateDepot ?? null,
+    }));
+
+    return { success: true, invoices, total: json?.nbTotalResultats ?? invoices.length };
+  } catch (err: any) {
+    return { success: false, invoices: [], total: 0, error: err?.message ?? 'PISTE fetch failed' };
+  }
+}
+
+// ─── Download raw XML for a received invoice ──────────────────────────────────
+
+export async function downloadReceivedInvoiceXml(cppId: string): Promise<string | null> {
+  try {
+    const token = await getAccessToken();
+    const cproAccount = getCproAccountHeader();
+
+    const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/telecharger`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'cpro-account': cproAccount,
+        'Content-Type': 'application/json;charset=utf-8',
+      },
+      body: JSON.stringify({ identifiantFactureCPP: Number(cppId), telechargerToutesVersions: false }),
+    });
+
+    const json = await res.json().catch(() => ({})) as any;
+    if (!res.ok || !json?.fichierFacture) return null;
+
+    return Buffer.from(json.fichierFacture, 'base64').toString('utf-8');
+  } catch {
+    return null;
+  }
+}
+
 export { ENV as PISTE_ENV };
