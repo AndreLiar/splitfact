@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import PWAInstallPrompt from "@/app/components/PWAInstallPrompt";
+import ReformReadinessWidget from "@/app/components/ReformReadinessWidget";
 
 interface UserInvoice {
   id: string;
@@ -148,6 +149,8 @@ export default function DashboardPage() {
       <div className="d-none d-lg-block mb-4">
         <PWAInstallPrompt />
       </div>
+
+      <ReformReadinessWidget />
 
       <div className="row g-3 mb-4">
         <div className="col-lg-3 col-md-6">
