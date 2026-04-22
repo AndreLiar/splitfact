@@ -15,6 +15,12 @@ interface ReformReadiness {
   emit: ReadinessCheck;
 }
 
+const CHECK_LABELS: Record<string, string> = {
+  cproCredentials: 'Compte technique Chorus Pro',
+  pisteCredentials: 'Credentials PISTE API',
+  siretValidated: 'SIRET renseigné',
+};
+
 function urgencyColor(days: number, ready: boolean): string {
   if (ready) return '#16a34a';
   if (days < 90) return '#dc2626';
@@ -44,7 +50,9 @@ function CheckRow({ label, ok }: { label: string; ok: boolean }) {
 function DeadlineBlock({ label, data }: { label: string; data: ReadinessCheck }) {
   const color = urgencyColor(data.daysRemaining, data.ready);
   const bg = urgencyBg(data.daysRemaining, data.ready);
-  const deadline = new Date(data.deadlineDate).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  // Parse ISO date parts directly to avoid local-timezone day shift for users west of UTC
+  const [year, month] = data.deadlineDate.split('-').map(Number);
+  const deadline = new Date(year, month - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
   return (
     <div style={{
@@ -98,14 +106,9 @@ function DeadlineBlock({ label, data }: { label: string; data: ReadinessCheck })
 
       {/* Checks */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-        {Object.entries(data.checks).map(([key, ok]) => {
-          const labels: Record<string, string> = {
-            cproCredentials: 'Compte technique Chorus Pro',
-            pisteCredentials: 'Credentials PISTE API',
-            siretValidated: 'SIRET renseigné',
-          };
-          return <CheckRow key={key} label={labels[key] ?? key} ok={ok} />;
-        })}
+        {Object.entries(data.checks).map(([key, ok]) => (
+          <CheckRow key={key} label={CHECK_LABELS[key] ?? key} ok={ok} />
+        ))}
       </div>
     </div>
   );
@@ -126,7 +129,11 @@ export default function ReformReadinessWidget() {
   if (!data) return null;
 
   const allReady = data.receive.ready && data.emit.ready;
-  const urgentIssue = !data.receive.ready && data.receive.daysRemaining < 180;
+  const minUnreadyDays = Math.min(
+    data.receive.ready ? Infinity : data.receive.daysRemaining,
+    data.emit.ready ? Infinity : data.emit.daysRemaining,
+  );
+  const urgentIssue = minUnreadyDays < 90;
 
   return (
     <div style={{
