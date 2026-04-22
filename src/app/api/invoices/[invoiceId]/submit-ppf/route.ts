@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { submitInvoiceToPpf, mapPpfStatus } from '@/lib/piste-api';
 import { buildFacturxXml } from '@/lib/facturx';
 import { logActivity } from '@/lib/activity-log';
+import { getUserPisteCredentials } from '@/app/api/settings/piste-credentials/route';
 
 // POST /api/invoices/[invoiceId]/submit-ppf
 // Deposits a Factur-X invoice to Chorus Pro via the PISTE API.
@@ -115,6 +116,9 @@ export async function POST(
     return NextResponse.json({ error: `Impossible de récupérer le PDF: ${err.message}` }, { status: 500 });
   }
 
+  // Resolve per-user credentials; fall back to platform env vars if not configured
+  const userCreds = await getUserPisteCredentials(session.user.id) ?? undefined;
+
   // Submit to PISTE
   const result = await submitInvoiceToPpf({
     invoiceNumber: invoice.invoiceNumber,
@@ -124,6 +128,7 @@ export async function POST(
     buyerSiret: buyerSiret ?? '',
     invoiceDate: invoice.invoiceDate.toISOString().split('T')[0],
     totalAmount: Number(invoice.totalAmount),
+    credentials: userCreds ?? undefined,
   });
 
   if (!result.success) {
