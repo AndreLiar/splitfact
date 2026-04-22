@@ -83,7 +83,7 @@ export default function PWAInstallPrompt({
 // Compact version for mobile
 export function PWAInstallBadge({ className = '' }: { className?: string }) {
   const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isDismissed] = useState(false);
 
   if (isInstalled || !isInstallable || isDismissed) {
     return null;

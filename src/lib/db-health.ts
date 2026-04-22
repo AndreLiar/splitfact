@@ -48,8 +48,8 @@ export class DatabaseHealthMonitor {
         issues.push('Consider enabling paid backups with 1000+ users');
       }
 
-      // Check for stale data
-      const recentInvoices = await prisma.invoice.count({
+      // Check for stale data (count not currently surfaced in metrics)
+      await prisma.invoice.count({
         where: {
           createdAt: {
             gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours

@@ -1,12 +1,9 @@
 'use client';
 
 import { use, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { loadStripe } from '@stripe/stripe-js';
 
 export default function PublicInvoicePayPage({ params: paramsPromise }: { params: Promise<{ invoiceId: string }> }) {
   const params = use(paramsPromise);
-  const router = useRouter();
   const { invoiceId } = params;
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);

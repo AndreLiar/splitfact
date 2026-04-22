@@ -363,16 +363,6 @@ export default function CreateInvoicePage() {
     }
   };
 
-  const getStepTitle = (step: number) => {
-    const titles = [
-      '',
-      'Informations générales',
-      'Articles & Services',
-      'Vérification & Création'
-    ];
-    return titles[step];
-  };
-
   const readinessPreview = useMemo(() => {
     if (!userProfile) return null;
 
