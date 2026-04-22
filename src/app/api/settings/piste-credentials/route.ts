@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { encryptCredential, decryptCredential } from '@/lib/credential-crypto';
+import { encryptCredential } from '@/lib/credential-crypto';
 
 // GET — return whether credentials are configured (never returns plaintext secrets)
 export async function GET() {
@@ -72,25 +72,4 @@ export async function DELETE() {
   });
 
   return NextResponse.json({ ok: true });
-}
-
-// Helper exported for other server-side code: resolve decrypted user credentials
-export async function getUserPisteCredentials(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { cproTechLogin: true, cproTechPassword: true, pisteClientId: true, pisteClientSecret: true, pisteEnv: true },
-  });
-  if (!user?.pisteClientId || !user.cproTechLogin) return null;
-
-  try {
-    return {
-      pisteClientId: user.pisteClientId,
-      pisteClientSecret: user.pisteClientSecret ? decryptCredential(user.pisteClientSecret) : '',
-      cproTechLogin: user.cproTechLogin,
-      cproTechPassword: user.cproTechPassword ? decryptCredential(user.cproTechPassword) : '',
-      pisteEnv: (user.pisteEnv ?? 'sandbox') as 'sandbox' | 'production',
-    };
-  } catch {
-    return null;
-  }
 }

@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { submitInvoiceToPpf, mapPpfStatus } from '@/lib/piste-api';
 import { buildFacturxXml } from '@/lib/facturx';
 import { logActivity } from '@/lib/activity-log';
-import { getUserPisteCredentials } from '@/app/api/settings/piste-credentials/route';
+import { getUserPisteCredentials } from '@/lib/user-piste-credentials';
 
 // POST /api/invoices/[invoiceId]/submit-ppf
 // Deposits a Factur-X invoice to Chorus Pro via the PISTE API.
