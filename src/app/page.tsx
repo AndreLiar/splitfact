@@ -1209,6 +1209,10 @@ export default function LandingPage() {
           outline: 2px solid rgba(212, 146, 26, 0.85);
           outline-offset: 2px;
           box-shadow: 0 0 0 4px rgba(212, 146, 26, 0.2);
+        .icp-pill:hover,
+        .icp-pill:focus-visible {
+          border-color: rgba(212, 146, 26, 0.3) !important;
+          outline: none;
         }
         @media (max-width: 991px) {
           .hero-grid, .two-col-grid { grid-template-columns: 1fr !important; gap: 2.5rem !important; }

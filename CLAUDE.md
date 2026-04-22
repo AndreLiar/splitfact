@@ -151,6 +151,8 @@ Path aliases: `@/` → `src/`, `@/domains/*` → `src/domains/*`, `@/types/*` �
 4. Once merged into `dev`, promote: `dev → staging → main` (each as a separate PR, each awaiting Copilot review)
 5. Delete the feature branch after it is merged — never leave stale branches
 6. Admin bypass (disable protection → merge → restore) is a last resort for emergencies only — always flag it explicitly
+3. Once merged into `dev`, promote: `dev → staging → main` (each as a separate PR)
+4. Delete the feature branch after it is merged — never leave stale branches
 
 Schema changes: run `nvm use 20 && npx prisma db push` after editing `prisma/schema.prisma`.
 

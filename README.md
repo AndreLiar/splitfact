@@ -1,4 +1,5 @@
 # InvoiceOps
+# Splitfact
 
 **The AI back office for French e-invoicing compliance.**
 
@@ -10,6 +11,9 @@
 InvoiceOps automates the path from approved work to compliant issued invoice — for French agencies and service SMEs navigating the 2026–2027 e-invoicing reform.
 
 Most invoicing tools stop at document creation. InvoiceOps completes the workflow: it collects the data, validates compliance, routes the invoice, tracks status, and surfaces only exceptions for human review.
+Splitfact automates the path from approved work to compliant issued invoice — for French agencies and service SMEs navigating the 2026–2027 e-invoicing reform.
+
+Most invoicing tools stop at document creation. Splitfact completes the workflow: it collects the data, validates compliance, routes the invoice, tracks status, and surfaces only exceptions for human review.
 
 ---
 
@@ -110,6 +114,7 @@ These businesses invoice frequently, manage billing across email, CRM, proposals
 ```bash
 git clone https://github.com/AndreLiar/splitfact.git
 cd splitfact
+cd splitfact/splitfact-app
 nvm use 22 && npm install
 ```
 
@@ -248,3 +253,4 @@ MIT — see [LICENSE](LICENSE).
 ---
 
 *InvoiceOps — Issue compliant invoices and handle exceptions automatically.*
+*Splitfact — Issue compliant invoices and handle exceptions automatically.*
