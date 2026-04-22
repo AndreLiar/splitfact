@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 
 interface FeedbackButtonProps {
   variant?: 'primary' | 'outline' | 'link' | 'floating';
@@ -17,22 +16,9 @@ export default function FeedbackButton({
   showText = true,
   position = 'dashboard'
 }: FeedbackButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  
-  const feedbackUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfXgPPkGdxl9Rz94wFy5kpy-7JovQscAyNy6yp0h4NcEzzikQ/viewform?usp=dialog";
   
   const handleFeedbackClick = () => {
-    // Open in a modal-like popup window
-    const width = 700;
-    const height = 800;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
-    
-    window.open(
-      feedbackUrl,
-      'feedback_form',
-      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-    );
+    // Feedback form no longer available
   };
 
   // Different styles based on variant and position
@@ -166,18 +152,7 @@ export default function FeedbackButton({
 // Alternative component for dropdown menu items
 export function FeedbackMenuItem({ className = '' }: { className?: string }) {
   const handleFeedbackClick = () => {
-    const feedbackUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfXgPPkGdxl9Rz94wFy5kpy-7JovQscAyNy6yp0h4NcEzzikQ/viewform?usp=dialog";
-    
-    const width = 700;
-    const height = 800;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
-    
-    window.open(
-      feedbackUrl,
-      'feedback_form',
-      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-    );
+    // Feedback form no longer available
   };
 
   return (
