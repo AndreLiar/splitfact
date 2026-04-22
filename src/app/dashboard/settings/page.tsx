@@ -134,38 +134,48 @@ function SettingsPageInner() {
     e.preventDefault();
     setPisteSaving(true);
     setPisteMessage(null);
-    const res = await fetch('/api/settings/piste-credentials', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pisteForm),
-    });
-    if (res.ok) {
-      setPisteMessage({ type: 'success', text: 'Credentials sauvegardés.' });
-      await fetchPisteCredentials();
-      setPisteForm((f) => ({ ...f, pisteClientSecret: '', cproTechPassword: '' }));
-    } else {
-      const body = await res.json().catch(() => ({}));
-      setPisteMessage({ type: 'error', text: body.error ?? 'Erreur lors de la sauvegarde.' });
+    try {
+      const res = await fetch('/api/settings/piste-credentials', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pisteForm),
+      });
+      if (res.ok) {
+        setPisteMessage({ type: 'success', text: 'Credentials sauvegardés.' });
+        await fetchPisteCredentials();
+        setPisteForm((f) => ({ ...f, pisteClientSecret: '', cproTechPassword: '' }));
+      } else {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        setPisteMessage({ type: 'error', text: body.error ?? 'Erreur lors de la sauvegarde.' });
+      }
+    } catch {
+      setPisteMessage({ type: 'error', text: 'Erreur réseau — vérifiez votre connexion.' });
+    } finally {
+      setPisteSaving(false);
     }
-    setPisteSaving(false);
   };
 
   const handlePisteTest = async () => {
     setPisteTesting(true);
     setPisteMessage({ type: 'info', text: 'Test en cours…' });
-    const body = pisteForm.pisteClientSecret || pisteForm.cproTechPassword
-      ? pisteForm
-      : { useSaved: true };
-    const res = await fetch('/api/settings/test-piste', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    setPisteMessage(data.ok
-      ? { type: 'success', text: 'Connexion PISTE réussie — credentials valides.' }
-      : { type: 'error', text: data.error ?? 'Connexion échouée.' });
-    setPisteTesting(false);
+    try {
+      const body = pisteForm.pisteClientSecret || pisteForm.cproTechPassword
+        ? pisteForm
+        : { useSaved: true };
+      const res = await fetch('/api/settings/test-piste', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({ ok: false, error: 'Réponse invalide du serveur.' })) as { ok: boolean; error?: string };
+      setPisteMessage(data.ok
+        ? { type: 'success', text: 'Connexion PISTE réussie — credentials valides.' }
+        : { type: 'error', text: data.error ?? 'Connexion échouée.' });
+    } catch {
+      setPisteMessage({ type: 'error', text: 'Erreur réseau — vérifiez votre connexion.' });
+    } finally {
+      setPisteTesting(false);
+    }
   };
 
   const handleProfileSave = async (e: React.FormEvent) => {

@@ -14,11 +14,11 @@ export async function getUserPisteCredentials(userId: string): Promise<PisteCred
   try {
     return {
       pisteClientId: user.pisteClientId,
-      pisteClientSecret: user.pisteClientSecret ? decryptCredential(user.pisteClientSecret) : '',
       cproTechLogin: user.cproTechLogin,
-      cproTechPassword: user.cproTechPassword ? decryptCredential(user.cproTechPassword) : '',
       pisteEnv: (user.pisteEnv ?? 'sandbox') as 'sandbox' | 'production',
-    };
+      ...(user.pisteClientSecret ? { pisteClientSecret: decryptCredential(user.pisteClientSecret) } : {}),
+      ...(user.cproTechPassword ? { cproTechPassword: decryptCredential(user.cproTechPassword) } : {}),
+    } as PisteCredentials;
   } catch {
     return null;
   }

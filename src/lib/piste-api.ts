@@ -21,6 +21,12 @@ export interface PisteCredentials {
   pisteEnv: 'sandbox' | 'production';
 }
 
+const VALID_ENVS = new Set(['sandbox', 'production']);
+
+function normalizePisteEnv(value: string | undefined): 'sandbox' | 'production' {
+  return value && VALID_ENVS.has(value) ? (value as 'sandbox' | 'production') : 'sandbox';
+}
+
 function getPlatformCredentials(): PisteCredentials | null {
   const pisteClientId = process.env.PISTE_CLIENT_ID;
   const pisteClientSecret = process.env.PISTE_CLIENT_SECRET;
@@ -34,7 +40,7 @@ function getPlatformCredentials(): PisteCredentials | null {
     pisteClientSecret,
     cproTechLogin,
     cproTechPassword,
-    pisteEnv: (process.env.PISTE_ENV as 'sandbox' | 'production') ?? 'sandbox',
+    pisteEnv: normalizePisteEnv(process.env.PISTE_ENV),
   };
 }
 
@@ -59,12 +65,25 @@ function getAuthUrl(env: string) {
     : 'https://sandbox-oauth.piste.gouv.fr/api/oauth/token';
 }
 
-// ─── Token cache keyed per pisteClientId (survives warm lambda invocations) ───
+// ─── Token cache keyed by "env:clientId" to prevent cross-env token reuse ────
 
 const tokenCache = new Map<string, { value: string; expiresAt: number }>();
 
+function tokenCacheKey(creds: PisteCredentials) {
+  return `${creds.pisteEnv}:${creds.pisteClientId}`;
+}
+
+function evictExpiredTokens() {
+  const now = Date.now();
+  for (const [key, entry] of tokenCache) {
+    if (now >= entry.expiresAt) tokenCache.delete(key);
+  }
+}
+
 async function getAccessToken(creds: PisteCredentials): Promise<string> {
-  const cached = tokenCache.get(creds.pisteClientId);
+  evictExpiredTokens();
+  const cacheKey = tokenCacheKey(creds);
+  const cached = tokenCache.get(cacheKey);
   if (cached && Date.now() < cached.expiresAt - 30_000) return cached.value;
 
   const res = await fetch(getAuthUrl(creds.pisteEnv), {
@@ -85,7 +104,7 @@ async function getAccessToken(creds: PisteCredentials): Promise<string> {
 
   const json = await res.json();
   const entry = { value: json.access_token, expiresAt: Date.now() + json.expires_in * 1000 };
-  tokenCache.set(creds.pisteClientId, entry);
+  tokenCache.set(cacheKey, entry);
   return entry.value;
 }
 
@@ -357,4 +376,4 @@ export async function testPisteConnection(creds: Partial<PisteCredentials>): Pro
 
 export { getPlatformCredentials };
 // Legacy export kept for reform-readiness check
-export const PISTE_ENV = process.env.PISTE_ENV ?? 'sandbox';
+export const PISTE_ENV = normalizePisteEnv(process.env.PISTE_ENV);

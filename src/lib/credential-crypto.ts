@@ -4,10 +4,14 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 // Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 function getKey(): Buffer {
   const hex = process.env.CREDENTIAL_ENCRYPTION_KEY;
-  if (!hex || hex.length !== 64) {
+  if (!hex || !/^[0-9a-fA-F]{64}$/.test(hex)) {
     throw new Error('CREDENTIAL_ENCRYPTION_KEY must be a 64-character hex string');
   }
-  return Buffer.from(hex, 'hex');
+  const key = Buffer.from(hex, 'hex');
+  if (key.length !== 32) {
+    throw new Error('CREDENTIAL_ENCRYPTION_KEY must decode to exactly 32 bytes');
+  }
+  return key;
 }
 
 export function encryptCredential(plaintext: string): string {
