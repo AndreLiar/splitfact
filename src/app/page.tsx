@@ -448,12 +448,12 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════════════════
           ICP — FOR WHOM
       ══════════════════════════════════════════════════════ */}
-      <section style={{ padding: "4rem 0" }}>
+      <section style={{ padding: "4rem 0" }} aria-labelledby="pour-qui-title" data-testid="pour-qui-section">
         <div className="main-container">
           <FadeUp>
             <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
               <SectionLabel>Pour qui</SectionLabel>
-              <h2 style={{
+              <h2 id="pour-qui-title" data-testid="pour-qui-heading" style={{
                 fontSize: "clamp(1.5rem, 2.5vw, 2rem)",
                 fontWeight: 590,
                 letterSpacing: "-0.03em",
@@ -462,14 +462,14 @@ export default function LandingPage() {
               }}>
                 Agences et sociétés de services françaises, 5–50 personnes.
               </h2>
-              <p style={{ fontSize: "0.9375rem", color: "#8a8f98", maxWidth: "520px", margin: "0 auto" }}>
+              <p data-testid="pour-qui-description" style={{ fontSize: "0.9375rem", color: "#8a8f98", maxWidth: "520px", margin: "0 auto" }}>
                 Celles qui facturent souvent, gèrent des données client éparpillées, et n'ont pas de DAF interne pour absorber la réforme 2026-2027.
               </p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+            <div data-testid="pour-qui-tags" style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
               {icpTypes.map(t => (
-                <div key={t.label} style={{
+                <span key={t.label} className="icp-pill" style={{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "7px",
@@ -480,13 +480,10 @@ export default function LandingPage() {
                   fontSize: "0.8125rem",
                   color: "#d0d6e0",
                   transition: "border-color 150ms ease",
-                }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,146,26,0.3)"}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"}
-                >
+                }}>
                   <i className={`bi ${t.icon}`} style={{ color: "#D4921A", fontSize: "0.875rem" }} />
                   {t.label}
-                </div>
+                </span>
               ))}
             </div>
           </FadeUp>
@@ -1203,6 +1200,11 @@ export default function LandingPage() {
         @keyframes shimmer {
           0%   { background-position: 0% center; }
           100% { background-position: 200% center; }
+        }
+        .icp-pill:hover,
+        .icp-pill:focus-visible {
+          border-color: rgba(212, 146, 26, 0.3) !important;
+          outline: none;
         }
         @media (max-width: 991px) {
           .hero-grid, .two-col-grid { grid-template-columns: 1fr !important; gap: 2.5rem !important; }
