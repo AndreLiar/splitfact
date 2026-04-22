@@ -135,8 +135,8 @@ function SignInContent() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {[
             { icon: 'bi-receipt', label: 'Facturation e-invoicing conforme' },
-            { icon: 'bi-robot', label: 'IA fiscale URSSAF intégrée' },
-            { icon: 'bi-people', label: 'Collectifs & partage de revenus' },
+            { icon: 'bi-shield-check', label: 'Moteur de conformité EN 16931' },
+            { icon: 'bi-inbox', label: 'Inbox des exceptions centralisée' },
           ].map(f => (
             <div key={f.label} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{

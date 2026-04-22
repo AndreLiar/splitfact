@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Politique de Confidentialite - InvoiceOps',
-  description: 'Politique de confidentialite et protection des donnees personnelles de InvoiceOps',
+  title: 'Politique de Confidentialité - InvoiceOps',
+  description: 'Politique de confidentialité et protection des données personnelles de InvoiceOps',
 };
 
 export default function PrivacyPolicyPage() {
@@ -25,9 +25,9 @@ export default function PrivacyPolicyPage() {
               <div className="mb-5">
                 <h2 className="h4 mb-3">1. Introduction</h2>
                 <p>
-                  InvoiceOps s&apos;engage a proteger votre vie privee et vos donnees personnelles. Cette politique de confidentialite 
-                  explique comment nous collectons, utilisons, stockons et protegeons vos informations lorsque vous utilisez 
-                  notre plateforme de gestion fiscale pour micro-entrepreneurs.
+                  InvoiceOps s&apos;engage à protéger votre vie privée et vos données personnelles. Cette politique de confidentialité
+                  explique comment nous collectons, utilisons, stockons et protégeons vos informations lorsque vous utilisez
+                  notre plateforme de workflow de facturation pour agences et sociétés de services françaises.
                 </p>
               </div>
 
