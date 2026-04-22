@@ -109,7 +109,7 @@ These businesses invoice frequently, manage billing across email, CRM, proposals
 ### 1. Clone and install
 ```bash
 git clone https://github.com/AndreLiar/splitfact.git
-cd splitfact/splitfact-app
+cd splitfact
 nvm use 22 && npm install
 ```
 

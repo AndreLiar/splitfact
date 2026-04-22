@@ -112,7 +112,7 @@ export default function NotificationsPage() {
   };
 
   // Get notification icon and color
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
       case 'INVOICE_BLOCKED': return 'bi-exclamation-octagon';
       case 'COMPLIANCE_ALERT': return 'bi-shield-exclamation';
@@ -121,7 +121,7 @@ export default function NotificationsPage() {
     }
   };
 
-  const getNotificationColor = (type: string) => {
+  const getNotificationColor = (type: Notification['type']) => {
     switch (type) {
       case 'INVOICE_BLOCKED': return 'text-danger';
       case 'COMPLIANCE_ALERT': return 'text-warning';
@@ -130,7 +130,7 @@ export default function NotificationsPage() {
     }
   };
 
-  const getBadgeColor = (type: string) => {
+  const getBadgeColor = (type: Notification['type']) => {
     switch (type) {
       case 'INVOICE_BLOCKED': return 'bg-danger';
       case 'COMPLIANCE_ALERT': return 'bg-warning';
@@ -139,7 +139,7 @@ export default function NotificationsPage() {
     }
   };
 
-  const getTypeLabel = (type: string) => {
+  const getTypeLabel = (type: Notification['type']) => {
     switch (type) {
       case 'INVOICE_BLOCKED': return 'Bloquée';
       case 'COMPLIANCE_ALERT': return 'Conformité';
