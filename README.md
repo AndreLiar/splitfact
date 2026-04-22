@@ -1,424 +1,256 @@
-# 📊 Splitfact
+# InvoiceOps
+# Splitfact
 
-**AI-Powered Invoicing & Fiscal Management Platform for French Micro-Entrepreneurs**
+**The AI back office for French e-invoicing compliance.**
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.3.5-black?logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.5.14-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-green?logo=openai)](https://openai.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma)](https://prisma.io/)
-[![Tests](https://img.shields.io/badge/Tests-100%25-brightgreen?logo=jest)](https://jestjs.io/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-**Splitfact** is a comprehensive, AI-powered invoicing and fiscal management platform specifically designed for French micro-entrepreneurs (auto-entrepreneurs) and freelance collectives. The application combines professional invoicing capabilities with intelligent business insights, automated tax compliance, and collaborative revenue sharing.
+InvoiceOps automates the path from approved work to compliant issued invoice — for French agencies and service SMEs navigating the 2026–2027 e-invoicing reform.
 
----
+Most invoicing tools stop at document creation. InvoiceOps completes the workflow: it collects the data, validates compliance, routes the invoice, tracks status, and surfaces only exceptions for human review.
+Splitfact automates the path from approved work to compliant issued invoice — for French agencies and service SMEs navigating the 2026–2027 e-invoicing reform.
 
-## 🚀 Features
-
-### 💰 **Invoicing & Payments**
-- **Professional Invoice Generation** with French legal compliance
-- **Stripe Integration** for secure online payments
-- **Multi-currency Support** with automatic conversion
-- **Recurring Invoice Automation**
-- **Payment Tracking & Reminders**
-
-### 🤖 **AI-Powered Insights**  
-- **Intelligent Query Routing** (Simple → Direct AI, Complex → Multi-Agent)
-- **French Fiscal Advisory** with real-time compliance checks
-- **URSSAF Declaration Assistance** and deadline reminders  
-- **TVA Threshold Monitoring** with automated warnings
-- **Cash Flow Predictions** and business analytics
-- **Cost-Optimized AI** (€0.30-€0.90/month for 20 users)
-
-### 👥 **Collective Management**
-- **Revenue Sharing** with customizable distribution rules
-- **Team Collaboration** with role-based permissions
-- **Client Assignment** and workload balancing
-- **Collective Reporting** and analytics
-
-### 📋 **Compliance & Reporting**
-- **French Tax Compliance** (MicroBIC, BNC regimes)
-- **Automated URSSAF Reports** with calculation assistance
-- **TVA Management** and threshold tracking
-- **Export to CSV/PDF** for accountants
-- **Deadline Notifications** and fiscal calendar
-
-### 🔔 **Smart Notifications**
-- **URSSAF Reminders** (2 days before deadlines)
-- **TVA Threshold Alerts** when approaching limits
-- **Payment Due Notifications**
-- **Cash Flow Insights** and recommendations
+Most invoicing tools stop at document creation. Splitfact completes the workflow: it collects the data, validates compliance, routes the invoice, tracks status, and surfaces only exceptions for human review.
 
 ---
 
-## 🛠️ Tech Stack
+## Why Now
 
-### **Frontend**
-- **Next.js 15.3.5** (App Router, React Server Components)
-- **TypeScript** for type safety
-- **Tailwind CSS** for responsive design
-- **Shadcn/UI** components
+French e-invoicing reform creates a hard deadline:
+- **1 September 2026** — all VAT-liable businesses must be able to *receive* e-invoices
+- **1 September 2027** — SMEs and micro-businesses must also *issue* them
 
-### **Backend**
-- **Next.js API Routes** (serverless functions)
-- **NextAuth.js** for authentication
-- **Prisma ORM** with PostgreSQL
-- **Stripe API** for payments
-
-### **AI & Intelligence**
-- **OpenAI GPT-4o-mini** for production (cost-optimized)
-- **Ollama** for local development
-- **Multi-Agent System** for complex fiscal analysis
-- **LangChain** for AI orchestration
-- **Smart Query Routing** to optimize costs
-
-### **Infrastructure**
-- **Vercel** deployment ready
-- **Neon PostgreSQL** database
-- **Cloudinary** for file storage
-- **Resend** for email notifications
+The winning product is not compliance software. It is software that **gets the admin work done**.
 
 ---
 
-## 📋 Prerequisites
+## Who It's For
 
-- **Node.js** 18+ 
-- **npm** or **yarn**
-- **PostgreSQL** database (or Neon)
-- **OpenAI API Key** (for production)
-- **Stripe Account** (for payments)
+French agencies and service SMEs with 5–50 employees:
+- creative agencies, consulting firms, dev shops
+- staffing and recruiting firms
+- expert-service boutiques
+
+These businesses invoice frequently, manage billing across email, CRM, proposals, and PDFs, and feel the regulatory pressure without having strong internal finance ops.
 
 ---
 
-## 🚀 Quick Start
+## Core Value
 
-### 1. **Clone the Repository**
+**From deal won to compliant paid invoice, with humans only handling exceptions.**
+
+---
+
+## What the Product Does
+
+### Invoice Readiness Engine
+- Validates every EN 16931 mandatory field before issuance
+- Distinguishes blocking compliance errors from optional warnings
+- Readiness state (`ready` / `blocked`) is visible on every invoice
+
+### Billing Workflow State Machine
+- Tracks invoices through explicit states: `triggered → collecting_data → blocked → ready_for_review → ready_to_issue → issued`
+- Timestamped transitions with full audit trail
+- Invalid transitions are prevented
+
+### AI-Powered OCR & Data Extraction
+- Upload a PDF or image → structured invoice data extracted automatically
+- **Groq** (primary): vision `llama-4-scout-17b`, text `mistral-saba-24b`
+- **Ollama Cloud** (fallback): vision `gemma3:27b`, text `ministral-3:8b`
+- Automatic failover on rate limits, 5xx, and timeouts
+
+### E-Invoicing Output (Factur-X / PPF)
+- **Factur-X CII XML** generation compliant with EN 16931
+- **UBL 2.1** serializer
+- **PPF / Chorus Pro** submission via PISTE API with automatic daily retry
+- Webhook endpoint for PPF delivery status updates
+
+### E-Reporting (B2C — art. 290 CGI)
+- Aggregates B2C invoices by TVA rate into CII TypeCode 751 XML
+- Auto-submits on the 2nd of each month
+
+### Compliance Monitoring
+- Compliance score 0–100 with penalty simulation (art. 1737 II CGI — €15/invoice, capped €45k/year)
+- URSSAF reminders (monthly/quarterly) with TVA threshold alerts
+- SIRET validation via INSEE SIRENE v3
+
+### Payments
+- Stripe Connect — clients pay online, funds go directly to the service provider's account
+
+### Notifications
+- In-app queue with exponential backoff retry (1min → 5min → 15min → 1h → 2h)
+- Duplicate prevention within the same day
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 15.5.14 (App Router) |
+| Language | TypeScript |
+| UI | Bootstrap 5 + Bootstrap Icons |
+| Database | Prisma ORM + Neon PostgreSQL |
+| Auth | NextAuth.js |
+| Payments | Stripe Connect |
+| AI / OCR | Groq (primary) → Ollama Cloud (fallback) |
+| Email | Resend |
+| File Storage | Cloudinary |
+| Deployment | Vercel |
+
+---
+
+## Quick Start
+
+### Prerequisites
+- Node.js 22 (required for `libxmljs`)
+- Node.js 20 for Prisma CLI only
+- PostgreSQL (Neon recommended)
+
+### 1. Clone and install
 ```bash
 git clone https://github.com/AndreLiar/splitfact.git
 cd splitfact
+cd splitfact/splitfact-app
+nvm use 22 && npm install
 ```
 
-### 2. **Install Dependencies**
-```bash
-npm install
-```
-
-### 3. **Environment Setup**
-Create `.env` file with the following variables:
-
+### 2. Environment setup
+Create `.env.local`:
 ```env
 # Database
-DATABASE_URL="postgresql://user:password@localhost:5432/splitfact"
+DATABASE_URL="postgresql://user:password@host/splitfact"
 
-# Authentication
+# Auth
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-secret-key
+NEXTAUTH_SECRET=your-secret
 
-# AI Configuration
-AI_MODE=local  # Use 'openai' for production
-OPENAI_API_KEY=sk-proj-your-openai-key
-OPENAI_MODEL=gpt-4o-mini
-
-# Ollama (for local development)
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=deepseek-coder-v2:latest
+# LLM Router
+LLM_PRIMARY=groq
+LLM_FALLBACK=ollama
+GROQ_API_KEY=gsk_...
+GROQ_MODEL=mistral-saba-24b
+GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+OLLAMA_API_KEY=your-ollama-cloud-key
+OLLAMA_BASE_URL=https://ollama.com/v1
+OLLAMA_MODEL=ministral-3:8b
+OLLAMA_VISION_MODEL=gemma3:27b
 
 # Stripe
-STRIPE_SECRET_KEY=sk_test_your-stripe-key
-STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 
 # Email
-RESEND_API_KEY=re_your-resend-key
-EMAIL_FROM=your-email@domain.com
+RESEND_API_KEY=re_...
+EMAIL_FROM=no-reply@yourdomain.com
 
 # File Storage
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=...
 
-# French e-invoicing — PISTE / PPF (Chorus Pro)
-PISTE_CLIENT_ID=your-piste-client-id
-PISTE_CLIENT_SECRET=your-piste-client-secret
-PISTE_ENV=sandbox                          # "sandbox" | "production"
-PISTE_WEBHOOK_SECRET=your-webhook-secret   # shared secret for /api/webhooks/ppf
+# Cron
+CRON_SECRET=your-cron-secret
 
-# INSEE SIRENE — SIRET validation
-SIRENE_API_KEY=your-sirene-api-key
+# E-Invoicing — PISTE / Chorus Pro
+PISTE_CLIENT_ID=...
+PISTE_CLIENT_SECRET=...
+PISTE_ENV=sandbox
+CPRO_TECH_LOGIN=...
+CPRO_TECH_PASSWORD=...
+PISTE_WEBHOOK_SECRET=...
+
+# SIRET validation
+SIRENE_API_KEY=...
 ```
 
-### 4. **Database Setup**
+### 3. Database
 ```bash
-# Generate Prisma client
-npx prisma generate
-
-# Run migrations
-npx prisma db push
-
-# (Optional) Seed database
-npx prisma db seed
+nvm use 20 && npx prisma db push && nvm use 22
 ```
 
-### 5. **Start Development Server**
+### 4. Run
 ```bash
-npm run dev
+npm run dev   # http://localhost:3000
 ```
-
-Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
 ---
 
-## 🧪 Testing
+## Commands
 
-### **Run All Tests**
 ```bash
-npm test                    # Jest unit tests
-npm run test:e2e           # Playwright e2e tests  
-npm run test:full          # Complete test suite (100% success rate)
-```
+npm run dev              # Dev server
+npm run build            # Production build
+npm run lint             # ESLint
 
-### **Quality Checks**
-```bash
-npm run lint               # ESLint code quality
-npm run type-check         # TypeScript validation
-npm run build              # Production build test
-```
+npm test                 # Unit tests
+npm run test:api         # API integration tests
+npm run test:coverage    # Coverage report
+npm run test:e2e         # Playwright
 
-### **Test Coverage**
-- ✅ **Unit Tests**: 72/72 passing
-- ✅ **API Integration Tests**: All endpoints covered
-- ✅ **TypeScript**: Zero compilation errors
-- ✅ **ESLint**: Zero linting errors
-- ✅ **Build**: Production ready
-
----
-
-## 🔧 Development Workflow
-
-### **Branch Strategy**
-```
-main     ← Production (auto-deploy to Vercel)
-├── staging ← Pre-production testing  
-└── dev     ← Active development
-```
-
-### **Local Development**
-```bash
-# Switch to development branch
-git checkout dev
-
-# Start with Ollama (local AI)
-AI_MODE=local npm run dev
-
-# Run tests continuously  
-npm run test:watch
-```
-
-### **AI Development Modes**
-
-#### **Local Development** (Free)
-```env
-AI_MODE=local
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=deepseek-coder-v2:latest
-```
-
-#### **Production** (Cost-Optimized)
-```env
-AI_MODE=openai
-OPENAI_MODEL=gpt-4o-mini
-OPENAI_API_KEY=sk-proj-your-key
+npm run db:health        # DB connectivity check
+npm run db:backup        # Dump DB
+npm run pwa:validate     # Validate PWA setup
 ```
 
 ---
 
-## 💰 AI Cost Management
+## Project Structure
 
-### **Optimized for €5 Budget**
-- **Model**: GPT-4o-mini (cheapest OpenAI model)
-- **Smart Routing**: Simple queries bypass expensive multi-agent processing
-- **Token Limits**: 1000 max tokens per request
-- **Budget Protection**: Automatic blocking when approaching limits
-- **Usage Tracking**: Real-time cost monitoring
-
-### **Expected Costs (20 users/month)**
 ```
-Simple Queries (80%): €0.001 each = €0.16
-Complex Queries (20%): €0.005 each = €0.20
-─────────────────────────────────────────
-Total Monthly Cost: ~€0.36 (7% of budget) ✅
-```
-
-### **Monitor Usage**
-```bash
-# Check current usage
-curl http://localhost:3000/api/ai/usage
-
-# Reset monthly stats
-curl -X POST http://localhost:3000/api/ai/usage \
-  -H "Content-Type: application/json" \
-  -d '{"action": "reset"}'
+src/
+├── domains/
+│   ├── invoices/        # invoice-readiness, ubl-serializer, facturx/, activity-log
+│   ├── compliance/      # compliance scoring, e-reporting/
+│   ├── notifications/   # NotificationService with retry queue
+│   └── fiscal/          # fiscal-context (user business metrics)
+├── lib/                 # Infrastructure: prisma, auth, email, cloudinary, piste-api, sirene-api
+│   └── llm-router.ts    # Groq → Ollama Cloud failover
+├── app/
+│   ├── api/             # API routes
+│   │   ├── invoices/    # CRUD, PDF, PPF submission
+│   │   ├── cron/        # PPF retry, e-reporting, URSSAF reminders
+│   │   ├── stripe/      # Onboarding, webhooks
+│   │   └── compliance/  # Compliance score
+│   └── dashboard/       # App pages
+└── types/
+    ├── fiscal.ts         # UserFiscalProfile
+    └── api.ts            # ApiResponse<T>, PaginatedResponse<T>
 ```
 
 ---
 
-## 🚀 Deployment
-
-### **Vercel Deployment** (Recommended)
-
-#### **1. Connect Repository**
-```bash
-# Deploy to Vercel  
-vercel --prod
-
-# Set environment variables in Vercel dashboard
-# Switch AI_MODE to 'openai' for production
-```
-
-#### **2. Database Setup**
-```bash
-# Use Neon PostgreSQL for production
-# Update DATABASE_URL in Vercel environment variables
-```
-
-#### **3. Domain Configuration**
-```bash
-# Update NEXTAUTH_URL to your production domain
-# Configure Stripe webhooks for production domain
-```
-
-### **Manual Deployment**
-```bash
-# Build for production
-npm run build
-
-# Start production server  
-npm run start
-```
-
----
-
-## 📁 Project Structure
+## Branch Workflow
 
 ```
-splitfact/
-├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── api/               # API routes
-│   │   │   ├── ai/           # AI services
-│   │   │   ├── auth/         # Authentication  
-│   │   │   ├── invoices/     # Invoice management
-│   │   │   └── reports/      # Fiscal reports
-│   │   ├── dashboard/        # Main application
-│   │   └── components/       # React components
-│   ├── lib/                   # Utilities & services
-│   │   ├── ai-service.ts     # Universal AI service
-│   │   ├── openai-service.ts # OpenAI integration
-│   │   ├── cost-monitor.ts   # Usage tracking
-│   │   ├── fiscal-agents.ts  # Multi-agent system
-│   │   └── prisma.ts         # Database client
-│   └── types/                # TypeScript definitions
-├── prisma/                   # Database schema & migrations
-├── tests/                    # Test suites
-├── docs/                     # Documentation
-└── scripts/                  # Automation scripts
+main      ← Production (auto-deploy to Vercel)
+staging   ← Pre-production
+dev       ← Active development
 ```
 
----
-
-## 🔒 Security Features
-
-- **NextAuth.js** authentication with session management
-- **CSRF Protection** on all forms
-- **Rate Limiting** on API endpoints
-- **Input Validation** with Zod schemas
-- **SQL Injection Prevention** with Prisma ORM
-- **Secure Headers** configured
-- **Environment Variable Protection**
+1. Branch from `dev`: `git checkout -b feat/my-feature`
+2. PR → `dev`, wait for Copilot review, merge
+3. Promote: `dev → staging → main` (separate PRs)
+4. Delete feature branch after merge
 
 ---
 
-## 🌍 French Business Compliance
+## Node Version Notes
 
-### **Supported Fiscal Regimes**
-- ✅ **Micro-BIC** (Commercial activities)
-- ✅ **BNC** (Liberal professions)  
-- ✅ **Auto-entrepreneur** status
-- ✅ **TVA** management and thresholds
-
-### **URSSAF Integration**
-- **Monthly/Quarterly** declaration assistance
-- **Automatic calculations** for social contributions
-- **Deadline reminders** and notifications
-- **Export formats** compatible with URSSAF
-
-### **TVA Thresholds (2024)**
-- **Commercial**: €91,900
-- **Services**: €36,800
-- **Liberal professions**: €36,800
-- **Automatic monitoring** and alerts
+- **Dev / Jest / builds**: Node 22 (`nvm use 22`)
+- **Prisma CLI only**: Node 20 (`nvm use 20`)
 
 ---
 
-## 🤝 Contributing
+## License
 
-### **Development Setup**
-```bash
-# Fork and clone the repository
-git clone https://github.com/YOUR-USERNAME/splitfact.git
-
-# Create feature branch from dev
-git checkout dev
-git checkout -b feature/your-feature-name
-
-# Make changes and test
-npm run test:full
-
-# Submit pull request to dev branch
-```
-
-### **Code Standards**
-- **TypeScript** required for all new code
-- **ESLint** configuration must pass
-- **100% test coverage** for new features
-- **Conventional commits** for commit messages
+MIT — see [LICENSE](LICENSE).
 
 ---
 
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 💬 Support
-
-- **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/AndreLiar/splitfact/issues)
-- **Email**: kanmegneandre@gmail.com
-
----
-
-## 🎯 Roadmap
-
-### **Phase 1** (Current)
-- ✅ Core invoicing functionality
-- ✅ AI-powered fiscal advice  
-- ✅ URSSAF compliance tools
-- ✅ Cost-optimized AI integration
-
-### **Phase 2** (Q2 2025)
-- 🔄 Advanced analytics dashboard
-- 🔄 Mobile application (React Native)
-- 🔄 Multi-language support
-- 🔄 Advanced collective features
-
-### **Phase 3** (Q3 2025)
-- 🔄 API for third-party integrations
-- 🔄 Marketplace for fiscal templates
-- 🔄 Advanced AI predictions
-- 🔄 European expansion
-
----
-
-**Made with ❤️ for French micro-entrepreneurs**
-
-*Empowering freelancers and small businesses with intelligent fiscal management.*
+*InvoiceOps — Issue compliant invoices and handle exceptions automatically.*
+*Splitfact — Issue compliant invoices and handle exceptions automatically.*
