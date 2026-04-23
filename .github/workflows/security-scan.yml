@@ -113,7 +113,7 @@ jobs:
 
       - name: TruffleHog OSS
         if: steps.check_commits.outputs.skip == 'false'
-        uses: trufflesecurity/trufflehog@v3
+        uses: trufflesecurity/trufflehog@v3.95.2
         with:
           path: ./
           extra_args: --only-verified
