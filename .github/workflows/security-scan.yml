@@ -100,10 +100,20 @@ jobs:
         with:
           fetch-depth: 0
           
+      - name: Check if there are commits to scan
+        id: check_commits
+        run: |
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+          if [ "$BEFORE" = "$SHA" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@main
+        if: steps.check_commits.outputs.skip == 'false'
+        uses: trufflesecurity/trufflehog@v3.95.2
         with:
           path: ./
-          base: main
-          head: HEAD
-          extra_args: --debug --only-verified
+          extra_args: --only-verified
