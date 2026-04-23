@@ -50,6 +50,12 @@ model User {
   rcsNumber           String?
   shareCapital        String?
   apeCode             String?
+  // Per-tenant Chorus Pro / PISTE credentials (passwords AES-256-GCM encrypted)
+  cproTechLogin       String?
+  cproTechPassword    String?
+  pisteClientId       String?
+  pisteClientSecret   String?
+  pisteEnv            String   @default("sandbox")
   accounts            Account[]
   sessions            Session[]
   clients               Client[]
@@ -428,7 +434,6 @@ model ReceivedInvoice {
   updatedAt       DateTime  @updatedAt
 
   @@index([userId, createdAt])
-  @@index([cppId])
 }
 
 model SireneCache {

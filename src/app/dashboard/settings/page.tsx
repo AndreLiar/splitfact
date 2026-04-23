@@ -38,13 +38,38 @@ function SettingsPageInner() {
   const [stripeConnecting, setStripeConnecting] = useState(false);
   const [siretLookup, setSiretLookup] = useState<{ loading: boolean; result: string | null; error: string | null }>({ loading: false, result: null, error: null });
 
+  // Chorus Pro / PISTE credentials
+  const [pisteForm, setPisteForm] = useState({
+    pisteEnv: 'sandbox',
+    pisteClientId: '',
+    pisteClientSecret: '',
+    cproTechLogin: '',
+    cproTechPassword: '',
+  });
+  const [pisteStatus, setPisteStatus] = useState({ pisteClientSecretSet: false, cproTechPasswordSet: false });
+  const [pisteSaving, setPisteSaving] = useState(false);
+  const [pisteTesting, setPisteTesting] = useState(false);
+  const [pisteMessage, setPisteMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
     } else if (status === 'authenticated') {
       fetchProfile();
+      fetchPisteCredentials();
     }
   }, [status, router]);
+
+  const fetchPisteCredentials = async () => {
+    try {
+      const res = await fetch('/api/settings/piste-credentials');
+      if (res.ok) {
+        const data = await res.json();
+        setPisteForm((f) => ({ ...f, pisteEnv: data.pisteEnv ?? 'sandbox', pisteClientId: data.pisteClientId ?? '', cproTechLogin: data.cproTechLogin ?? '' }));
+        setPisteStatus({ pisteClientSecretSet: data.pisteClientSecretSet, cproTechPasswordSet: data.cproTechPasswordSet });
+      }
+    } catch { /* ignore */ }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -104,6 +129,54 @@ function SettingsPageInner() {
       setSiretLookup({ loading: false, result: null, error: 'Erreur de vérification SIRENE' });
     }
   }, [profile.siret]);
+
+  const handlePisteSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPisteSaving(true);
+    setPisteMessage(null);
+    try {
+      const res = await fetch('/api/settings/piste-credentials', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pisteForm),
+      });
+      if (res.ok) {
+        setPisteMessage({ type: 'success', text: 'Credentials sauvegardés.' });
+        await fetchPisteCredentials();
+        setPisteForm((f) => ({ ...f, pisteClientSecret: '', cproTechPassword: '' }));
+      } else {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        setPisteMessage({ type: 'error', text: body.error ?? 'Erreur lors de la sauvegarde.' });
+      }
+    } catch {
+      setPisteMessage({ type: 'error', text: 'Erreur réseau — vérifiez votre connexion.' });
+    } finally {
+      setPisteSaving(false);
+    }
+  };
+
+  const handlePisteTest = async () => {
+    setPisteTesting(true);
+    setPisteMessage({ type: 'info', text: 'Test en cours…' });
+    try {
+      const body = pisteForm.pisteClientSecret || pisteForm.cproTechPassword
+        ? pisteForm
+        : { useSaved: true };
+      const res = await fetch('/api/settings/test-piste', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({ ok: false, error: 'Réponse invalide du serveur.' })) as { ok: boolean; error?: string };
+      setPisteMessage(data.ok
+        ? { type: 'success', text: 'Connexion PISTE réussie — credentials valides.' }
+        : { type: 'error', text: data.error ?? 'Connexion échouée.' });
+    } catch {
+      setPisteMessage({ type: 'error', text: 'Erreur réseau — vérifiez votre connexion.' });
+    } finally {
+      setPisteTesting(false);
+    }
+  };
 
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -276,6 +349,128 @@ function SettingsPageInner() {
                   {profileMessage?.type === 'success' && (
                     <span className="text-success small"><i className="bi bi-check-circle me-1"></i>{profileMessage.text}</span>
                   )}
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* ── Chorus Pro / PISTE ───────────────────────────── */}
+          <div className="card mb-4 shadow-sm">
+            <div className="card-header bg-white">
+              <h5 className="mb-0 fw-semibold">
+                <i className="bi bi-shield-lock me-2 text-primary"></i>
+                Chorus Pro / PISTE
+              </h5>
+              <small className="text-muted">
+                Credentials requis pour soumettre et recevoir des factures via le Portail Public de Facturation.
+              </small>
+            </div>
+            <div className="card-body">
+              {pisteMessage && (
+                <div className={`alert alert-${pisteMessage.type === 'success' ? 'success' : pisteMessage.type === 'info' ? 'info' : 'danger'} alert-dismissible`}>
+                  {pisteMessage.type === 'success' && <i className="bi bi-check-circle me-2" />}
+                  {pisteMessage.type === 'error' && <i className="bi bi-x-circle me-2" />}
+                  {pisteMessage.text}
+                  <button type="button" className="btn-close" onClick={() => setPisteMessage(null)} />
+                </div>
+              )}
+
+              <form onSubmit={handlePisteSave}>
+                <div className="row g-3">
+                  {/* Environment */}
+                  <div className="col-12">
+                    <label className="form-label fw-medium">Environnement</label>
+                    <select
+                      className="form-select"
+                      value={pisteForm.pisteEnv}
+                      onChange={(e) => setPisteForm((f) => ({ ...f, pisteEnv: e.target.value }))}
+                    >
+                      <option value="sandbox">Sandbox (tests)</option>
+                      <option value="production">Production</option>
+                    </select>
+                    <small className="text-muted">Utilisez sandbox pour les tests, production pour les vraies factures.</small>
+                  </div>
+
+                  {/* PISTE OAuth2 */}
+                  <div className="col-12">
+                    <div className="fw-medium text-muted mb-2" style={{ fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Credentials PISTE (OAuth2)
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">Client ID</label>
+                    <input
+                      className="form-control font-monospace"
+                      placeholder="votre-client-id"
+                      value={pisteForm.pisteClientId}
+                      onChange={(e) => setPisteForm((f) => ({ ...f, pisteClientId: e.target.value }))}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">
+                      Client Secret
+                      {pisteStatus.pisteClientSecretSet && <span className="badge bg-success ms-2 fw-normal">Configuré</span>}
+                    </label>
+                    <input
+                      type="password"
+                      className="form-control font-monospace"
+                      placeholder={pisteStatus.pisteClientSecretSet ? '••••••••• (laisser vide pour conserver)' : 'votre-client-secret'}
+                      value={pisteForm.pisteClientSecret}
+                      onChange={(e) => setPisteForm((f) => ({ ...f, pisteClientSecret: e.target.value }))}
+                      autoComplete="new-password"
+                    />
+                  </div>
+
+                  {/* Chorus Pro compte technique */}
+                  <div className="col-12">
+                    <div className="fw-medium text-muted mb-2 mt-1" style={{ fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Compte Technique Chorus Pro
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">Login</label>
+                    <input
+                      className="form-control"
+                      placeholder="login-compte-technique"
+                      value={pisteForm.cproTechLogin}
+                      onChange={(e) => setPisteForm((f) => ({ ...f, cproTechLogin: e.target.value }))}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">
+                      Mot de passe
+                      {pisteStatus.cproTechPasswordSet && <span className="badge bg-success ms-2 fw-normal">Configuré</span>}
+                    </label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      placeholder={pisteStatus.cproTechPasswordSet ? '••••••••• (laisser vide pour conserver)' : 'mot-de-passe'}
+                      value={pisteForm.cproTechPassword}
+                      onChange={(e) => setPisteForm((f) => ({ ...f, cproTechPassword: e.target.value }))}
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 d-flex flex-wrap align-items-center gap-2">
+                  <button type="submit" className="btn btn-primary px-4" disabled={pisteSaving}>
+                    {pisteSaving
+                      ? <><span className="spinner-border spinner-border-sm me-2" />Enregistrement…</>
+                      : <><i className="bi bi-check-lg me-2" />Enregistrer</>}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={handlePisteTest}
+                    disabled={pisteTesting}
+                  >
+                    {pisteTesting
+                      ? <><span className="spinner-border spinner-border-sm me-2" />Test…</>
+                      : <><i className="bi bi-wifi me-2" />Tester la connexion</>}
+                  </button>
+                  <small className="text-muted">
+                    <i className="bi bi-lock me-1" />Les mots de passe sont chiffrés AES-256 avant stockage.
+                  </small>
                 </div>
               </form>
             </div>
