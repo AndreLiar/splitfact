@@ -61,6 +61,7 @@ export default function ReceivedInvoicesPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchInvoices(); }, [filter]);
 
   const markRead = async (id: string) => {

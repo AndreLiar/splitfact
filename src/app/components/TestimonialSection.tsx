@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const testimonials = [
@@ -77,11 +78,13 @@ export default function TestimonialSection() {
             transition={{ duration: 0.5 }}
             className="d-flex flex-column align-items-center"
           >
-            <img
+            <Image
               src={testimonials[currentIndex].avatar}
               alt={testimonials[currentIndex].name}
+              width={80}
+              height={80}
               className="rounded-circle mb-lg"
-              style={{ width: '80px', height: '80px', objectFit: 'cover', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+              style={{ objectFit: 'cover', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
             />
             <h5 className="fw-bold mb-sm text-darkGray">{testimonials[currentIndex].name}</h5>
             <p className="text-mediumGray mb-lg" style={{ fontSize: '14px' }}>{testimonials[currentIndex].role}</p>

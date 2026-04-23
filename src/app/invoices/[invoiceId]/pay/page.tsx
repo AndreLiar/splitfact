@@ -12,6 +12,7 @@ export default function PublicInvoicePayPage({ params: paramsPromise }: { params
 
   useEffect(() => {
     fetchInvoice();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoiceId]);
 
   const fetchInvoice = async () => {
