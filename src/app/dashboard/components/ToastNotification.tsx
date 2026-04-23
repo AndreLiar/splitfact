@@ -37,6 +37,7 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({
 
       return () => clearTimeout(timer);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoHide, duration]);
 
   const handleClose = () => {

@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 // PATCH /api/received-invoices/[id] — mark as read
 export async function PATCH(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
