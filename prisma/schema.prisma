@@ -434,7 +434,6 @@ model ReceivedInvoice {
   updatedAt       DateTime  @updatedAt
 
   @@index([userId, createdAt])
-  @@index([cppId])
 }
 
 model SireneCache {

@@ -45,12 +45,21 @@ function getPlatformCredentials(): PisteCredentials | null {
 }
 
 function resolveCredentials(override?: Partial<PisteCredentials>): PisteCredentials {
-  const platform = getPlatformCredentials();
-  const merged = { ...platform, ...override } as Partial<PisteCredentials>;
-  if (!merged.pisteClientId || !merged.pisteClientSecret || !merged.cproTechLogin || !merged.cproTechPassword) {
+  // Override must be complete (all 4 secrets) or not applied at all — prevents mismatched credential pairs
+  const hasCompleteOverride = override &&
+    override.pisteClientId && override.pisteClientSecret &&
+    override.cproTechLogin && override.cproTechPassword;
+  const base = hasCompleteOverride ? override : getPlatformCredentials();
+  if (!base?.pisteClientId || !base.pisteClientSecret || !base.cproTechLogin || !base.cproTechPassword) {
     throw new Error('PISTE credentials not configured. Set env vars or configure credentials in Settings.');
   }
-  return merged as PisteCredentials;
+  return {
+    pisteClientId: base.pisteClientId,
+    pisteClientSecret: base.pisteClientSecret,
+    cproTechLogin: base.cproTechLogin,
+    cproTechPassword: base.cproTechPassword,
+    pisteEnv: normalizePisteEnv(base.pisteEnv),
+  };
 }
 
 function getPisteBase(env: string) {
@@ -283,7 +292,6 @@ export interface FetchReceivedInvoicesResult {
 export async function fetchReceivedInvoicesFromPpf(opts: {
   fromDate: string;
   toDate: string;
-  page?: number;
   credentials?: Partial<PisteCredentials>;
 }): Promise<FetchReceivedInvoicesResult> {
   try {
@@ -292,40 +300,53 @@ export async function fetchReceivedInvoicesFromPpf(opts: {
     const cproAccount = getCproAccountHeader(creds);
     const PISTE_BASE = getPisteBase(creds.pisteEnv);
 
-    const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/rechercher/destinataire`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'cpro-account': cproAccount,
-        'Content-Type': 'application/json;charset=utf-8',
-      },
-      body: JSON.stringify({
-        dateDepotFactureDu: opts.fromDate,
-        dateDepotFactureAu: opts.toDate,
-        nbResultatsParPage: 50,
-        pageResultat: opts.page ?? 1,
-      }),
-    });
+    const PAGE_SIZE = 50;
+    const allInvoices: ReceivedInvoiceEntry[] = [];
+    let page = 1;
+    let total = 0;
 
-    const json = await res.json().catch(() => ({})) as any;
+    do {
+      const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/rechercher/destinataire`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'cpro-account': cproAccount,
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+        body: JSON.stringify({
+          dateDepotFactureDu: opts.fromDate,
+          dateDepotFactureAu: opts.toDate,
+          nbResultatsParPage: PAGE_SIZE,
+          pageResultat: page,
+        }),
+      });
 
-    if (!res.ok || (json?.codeRetour !== 0 && json?.codeRetour !== undefined)) {
-      return { success: false, invoices: [], total: 0, error: json?.libelle ?? `PISTE error ${res.status}` };
-    }
+      const json = await res.json().catch(() => ({})) as any;
 
-    const raw: any[] = json?.listeFactures ?? [];
-    const invoices: ReceivedInvoiceEntry[] = raw.map((f) => ({
-      cppId: String(f.identifiantFactureCPP ?? ''),
-      invoiceNumber: f.numeroFacture ?? '',
-      supplierName: f.nomFournisseur ?? 'Fournisseur inconnu',
-      supplierSiret: f.siretFournisseur ?? null,
-      buyerSiret: f.siretDestinataire ?? null,
-      totalAmountTTC: Number(f.montantTTC ?? 0),
-      ppfStatus: f.statut ?? 'RECUE',
-      depositedAt: f.dateDepot ?? null,
-    }));
+      if (!res.ok || (json?.codeRetour !== 0 && json?.codeRetour !== undefined)) {
+        return { success: false, invoices: [], total: 0, error: json?.libelle ?? `PISTE error ${res.status}` };
+      }
 
-    return { success: true, invoices, total: json?.nbTotalResultats ?? invoices.length };
+      const raw: any[] = json?.listeFactures ?? [];
+      total = json?.nbTotalResultats ?? raw.length;
+
+      for (const f of raw) {
+        allInvoices.push({
+          cppId: String(f.identifiantFactureCPP ?? ''),
+          invoiceNumber: f.numeroFacture ?? '',
+          supplierName: f.nomFournisseur ?? 'Fournisseur inconnu',
+          supplierSiret: f.siretFournisseur ?? null,
+          buyerSiret: f.siretDestinataire ?? null,
+          totalAmountTTC: Number(f.montantTTC ?? 0),
+          ppfStatus: f.statut ?? 'RECUE',
+          depositedAt: f.dateDepot ?? null,
+        });
+      }
+
+      page++;
+    } while (allInvoices.length < total);
+
+    return { success: true, invoices: allInvoices, total };
   } catch (err: any) {
     return { success: false, invoices: [], total: 0, error: err?.message ?? 'PISTE fetch failed' };
   }

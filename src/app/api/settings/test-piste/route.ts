@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { testPisteConnection } from '@/lib/piste-api';
 import { getUserPisteCredentials } from '@/lib/user-piste-credentials';
-import { decryptCredential } from '@/lib/credential-crypto';
 
 // POST — test PISTE connection using body credentials (in-flight) or saved DB credentials
 export async function POST(request: Request) {

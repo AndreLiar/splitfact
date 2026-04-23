@@ -9,16 +9,17 @@ export async function getUserPisteCredentials(userId: string): Promise<PisteCred
     select: { cproTechLogin: true, cproTechPassword: true, pisteClientId: true, pisteClientSecret: true, pisteEnv: true },
   });
 
-  if (!user?.pisteClientId || !user.cproTechLogin) return null;
+  // All 4 required fields must be present — partial credentials cause mismatched auth
+  if (!user?.pisteClientId || !user.pisteClientSecret || !user.cproTechLogin || !user.cproTechPassword) return null;
 
   try {
     return {
       pisteClientId: user.pisteClientId,
+      pisteClientSecret: decryptCredential(user.pisteClientSecret),
       cproTechLogin: user.cproTechLogin,
-      pisteEnv: (user.pisteEnv ?? 'sandbox') as 'sandbox' | 'production',
-      ...(user.pisteClientSecret ? { pisteClientSecret: decryptCredential(user.pisteClientSecret) } : {}),
-      ...(user.cproTechPassword ? { cproTechPassword: decryptCredential(user.cproTechPassword) } : {}),
-    } as PisteCredentials;
+      cproTechPassword: decryptCredential(user.cproTechPassword),
+      pisteEnv: (user.pisteEnv === 'production' ? 'production' : 'sandbox'),
+    };
   } catch {
     return null;
   }

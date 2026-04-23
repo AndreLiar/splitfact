@@ -38,11 +38,11 @@ export async function PUT(request: Request) {
     cproTechPassword?: string;
   };
 
-  const data: Record<string, string> = {};
+  const data: Record<string, string | null> = {};
 
   if (body.pisteEnv) data.pisteEnv = body.pisteEnv === 'production' ? 'production' : 'sandbox';
-  if (body.pisteClientId !== undefined) data.pisteClientId = body.pisteClientId;
-  if (body.cproTechLogin !== undefined) data.cproTechLogin = body.cproTechLogin;
+  if (body.pisteClientId !== undefined) data.pisteClientId = body.pisteClientId.trim() || null;
+  if (body.cproTechLogin !== undefined) data.cproTechLogin = body.cproTechLogin.trim() || null;
 
   // Encrypt secrets — only update if a non-empty value was sent
   for (const field of SENSITIVE) {
@@ -54,6 +54,22 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: 'Encryption not configured (CREDENTIAL_ENCRYPTION_KEY missing)' }, { status: 500 });
       }
     }
+  }
+
+  // Ensure credentials are saved as complete pairs or not at all
+  const current = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { pisteClientId: true, pisteClientSecret: true, cproTechLogin: true, cproTechPassword: true },
+  });
+  const merged = { ...current, ...data };
+  const pisteComplete = !!(merged.pisteClientId && merged.pisteClientSecret);
+  const cproComplete = !!(merged.cproTechLogin && merged.cproTechPassword);
+  // If one side of a pair is being set, the other must already exist or be included in this request
+  if ((merged.pisteClientId || merged.pisteClientSecret) && !pisteComplete) {
+    return NextResponse.json({ error: 'PISTE Client ID et Client Secret doivent être fournis ensemble.' }, { status: 400 });
+  }
+  if ((merged.cproTechLogin || merged.cproTechPassword) && !cproComplete) {
+    return NextResponse.json({ error: 'Login et mot de passe Chorus Pro doivent être fournis ensemble.' }, { status: 400 });
   }
 
   await prisma.user.update({ where: { id: session.user.id }, data });
