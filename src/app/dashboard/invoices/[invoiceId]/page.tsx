@@ -217,6 +217,7 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
     if (status === 'authenticated') {
       void loadInvoice();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router, invoiceId]);
 
   const loadInvoice = async () => {

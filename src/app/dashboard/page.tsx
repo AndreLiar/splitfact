@@ -20,7 +20,7 @@ interface UserInvoice {
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [recentInvoices, setRecentInvoices] = useState<UserInvoice[]>([]);
   const [allInvoices, setAllInvoices] = useState<UserInvoice[]>([]);
@@ -36,6 +36,7 @@ export default function DashboardPage() {
     if (status === "authenticated") {
       void loadDashboard();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router]);
 
   const loadDashboard = async () => {
