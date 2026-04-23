@@ -41,6 +41,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     fetchNotifications();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   // Mark notification as read
