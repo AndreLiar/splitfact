@@ -6,16 +6,17 @@ import { prisma } from '@/lib/prisma';
 // PATCH /api/received-invoices/[id] — mark as read
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const { id } = await params;
+  const { id } = params;
   const inv = await prisma.receivedInvoice.findFirst({
     where: { id, userId: session.user.id },
+    select: { id: true },
   });
   if (!inv) return new NextResponse('Not found', { status: 404 });
 
@@ -30,16 +31,29 @@ export async function PATCH(
 // GET /api/received-invoices/[id] — fetch detail + XML
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const { id } = await params;
+  const { id } = params;
   const inv = await prisma.receivedInvoice.findFirst({
     where: { id, userId: session.user.id },
+    select: {
+      id: true,
+      cppId: true,
+      invoiceNumber: true,
+      supplierName: true,
+      supplierSiret: true,
+      buyerSiret: true,
+      totalAmountTTC: true,
+      ppfStatus: true,
+      depositedAt: true,
+      rawXml: true,
+      isRead: true,
+    },
   });
   if (!inv) return new NextResponse('Not found', { status: 404 });
 

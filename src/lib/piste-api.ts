@@ -2,10 +2,10 @@
  * PISTE API client — Portail de l'Impôt, de la Statistique et de l'Échange
  * OAuth2 client_credentials + Chorus Pro compte technique for PPF invoice submission.
  *
- * Sandbox:    https://sandbox-api.piste.gouv.fr
- * Production: https://api.piste.gouv.fr
+ * Supports both platform-level env var credentials (OD mode) and per-tenant credentials
+ * stored encrypted in the DB. Per-tenant credentials take precedence when provided.
  *
- * Required env vars:
+ * Required env vars (platform / OD fallback):
  *   PISTE_CLIENT_ID        — OAuth2 client ID
  *   PISTE_CLIENT_SECRET    — OAuth2 client secret
  *   PISTE_ENV              — "sandbox" | "production"  (default: "sandbox")
@@ -13,39 +13,95 @@
  *   CPRO_TECH_PASSWORD     — Chorus Pro compte technique password
  */
 
-const ENV = process.env.PISTE_ENV ?? 'sandbox';
+export interface PisteCredentials {
+  pisteClientId: string;
+  pisteClientSecret: string;
+  cproTechLogin: string;
+  cproTechPassword: string;
+  pisteEnv: 'sandbox' | 'production';
+}
 
-const PISTE_BASE = ENV === 'production'
-  ? 'https://api.piste.gouv.fr'
-  : 'https://sandbox-api.piste.gouv.fr';
+const VALID_ENVS = new Set(['sandbox', 'production']);
 
-const AUTH_URL = ENV === 'production'
-  ? 'https://oauth.piste.gouv.fr/api/oauth/token'
-  : 'https://sandbox-oauth.piste.gouv.fr/api/oauth/token';
+function normalizePisteEnv(value: string | undefined): 'sandbox' | 'production' {
+  return value && VALID_ENVS.has(value) ? (value as 'sandbox' | 'production') : 'sandbox';
+}
 
-// ─── Token cache (module-level, survives warm lambda invocations) ─────────────
-
-let cachedToken: { value: string; expiresAt: number } | null = null;
-
-async function getAccessToken(): Promise<string> {
-  if (cachedToken && Date.now() < cachedToken.expiresAt - 30_000) {
-    return cachedToken.value;
+function getPlatformCredentials(): PisteCredentials | null {
+  const pisteClientId = process.env.PISTE_CLIENT_ID;
+  const pisteClientSecret = process.env.PISTE_CLIENT_SECRET;
+  const cproTechLogin = process.env.CPRO_TECH_LOGIN;
+  const cproTechPassword = process.env.CPRO_TECH_PASSWORD;
+  if (!pisteClientId || !pisteClientSecret || !cproTechLogin || !cproTechPassword) {
+    return null;
   }
+  return {
+    pisteClientId,
+    pisteClientSecret,
+    cproTechLogin,
+    cproTechPassword,
+    pisteEnv: normalizePisteEnv(process.env.PISTE_ENV),
+  };
+}
 
-  const clientId = process.env.PISTE_CLIENT_ID;
-  const clientSecret = process.env.PISTE_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new Error('PISTE_CLIENT_ID and PISTE_CLIENT_SECRET must be set');
+function resolveCredentials(override?: Partial<PisteCredentials>): PisteCredentials {
+  // Override must be complete (all 4 secrets) or not applied at all — prevents mismatched credential pairs
+  const hasCompleteOverride = override &&
+    override.pisteClientId && override.pisteClientSecret &&
+    override.cproTechLogin && override.cproTechPassword;
+  const base = hasCompleteOverride ? override : getPlatformCredentials();
+  if (!base?.pisteClientId || !base.pisteClientSecret || !base.cproTechLogin || !base.cproTechPassword) {
+    throw new Error('PISTE credentials not configured. Set env vars or configure credentials in Settings.');
   }
+  return {
+    pisteClientId: base.pisteClientId,
+    pisteClientSecret: base.pisteClientSecret,
+    cproTechLogin: base.cproTechLogin,
+    cproTechPassword: base.cproTechPassword,
+    pisteEnv: normalizePisteEnv(base.pisteEnv),
+  };
+}
 
-  const res = await fetch(AUTH_URL, {
+function getPisteBase(env: string) {
+  return env === 'production'
+    ? 'https://api.piste.gouv.fr'
+    : 'https://sandbox-api.piste.gouv.fr';
+}
+
+function getAuthUrl(env: string) {
+  return env === 'production'
+    ? 'https://oauth.piste.gouv.fr/api/oauth/token'
+    : 'https://sandbox-oauth.piste.gouv.fr/api/oauth/token';
+}
+
+// ─── Token cache keyed by "env:clientId" to prevent cross-env token reuse ────
+
+const tokenCache = new Map<string, { value: string; expiresAt: number }>();
+
+function tokenCacheKey(creds: PisteCredentials) {
+  return `${creds.pisteEnv}:${creds.pisteClientId}`;
+}
+
+function evictExpiredTokens() {
+  const now = Date.now();
+  for (const [key, entry] of tokenCache) {
+    if (now >= entry.expiresAt) tokenCache.delete(key);
+  }
+}
+
+async function getAccessToken(creds: PisteCredentials): Promise<string> {
+  evictExpiredTokens();
+  const cacheKey = tokenCacheKey(creds);
+  const cached = tokenCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt - 30_000) return cached.value;
+
+  const res = await fetch(getAuthUrl(creds.pisteEnv), {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'client_credentials',
-      client_id: clientId,
-      client_secret: clientSecret,
+      client_id: creds.pisteClientId,
+      client_secret: creds.pisteClientSecret,
       scope: 'openid',
     }),
   });
@@ -56,24 +112,13 @@ async function getAccessToken(): Promise<string> {
   }
 
   const json = await res.json();
-  cachedToken = {
-    value: json.access_token,
-    expiresAt: Date.now() + json.expires_in * 1000,
-  };
-
-  return cachedToken.value;
+  const entry = { value: json.access_token, expiresAt: Date.now() + json.expires_in * 1000 };
+  tokenCache.set(cacheKey, entry);
+  return entry.value;
 }
 
-// Chorus Pro requires login:password base64-encoded in cpro-account header
-function getCproAccountHeader(): string {
-  const login = process.env.CPRO_TECH_LOGIN;
-  const password = process.env.CPRO_TECH_PASSWORD;
-
-  if (!login || !password) {
-    throw new Error('CPRO_TECH_LOGIN and CPRO_TECH_PASSWORD must be set');
-  }
-
-  return Buffer.from(`${login}:${password}`).toString('base64');
+function getCproAccountHeader(creds: PisteCredentials): string {
+  return Buffer.from(`${creds.cproTechLogin}:${creds.cproTechPassword}`).toString('base64');
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -104,22 +149,22 @@ export interface PpfStatusResult {
 }
 
 // ─── Submit invoice to PPF via deposerFluxFacture ────────────────────────────
-// API accepts JSON with base64-encoded file content + syntaxeFlux field.
-// For Factur-X PDF/A-3: syntaxeFlux = "IN_DP_E2_CII_FACTURX", extension .pdf
-// For pure CII XML:     syntaxeFlux = "IN_DP_E1_CII_16B",      extension .xml
 
 export async function submitInvoiceToPpf(params: {
   invoiceNumber: string;
-  facturxPdfBuffer?: Buffer;   // PDF/A-3 Factur-X (preferred)
-  facturxXml: string;          // CII XML (fallback when no PDF)
+  facturxPdfBuffer?: Buffer;
+  facturxXml: string;
   sellerSiret: string;
   buyerSiret: string;
-  invoiceDate: string; // YYYY-MM-DD
+  invoiceDate: string;
   totalAmount: number;
+  credentials?: Partial<PisteCredentials>;
 }): Promise<PpfSubmitResult> {
   try {
-    const token = await getAccessToken();
-    const cproAccount = getCproAccountHeader();
+    const creds = resolveCredentials(params.credentials);
+    const token = await getAccessToken(creds);
+    const cproAccount = getCproAccountHeader(creds);
+    const PISTE_BASE = getPisteBase(creds.pisteEnv);
 
     let fichierFlux: string;
     let nomFichier: string;
@@ -168,10 +213,15 @@ export async function submitInvoiceToPpf(params: {
 
 // ─── Poll invoice lifecycle status from PPF ───────────────────────────────────
 
-export async function getPpfInvoiceStatus(trackingId: string): Promise<PpfStatusResult> {
+export async function getPpfInvoiceStatus(
+  trackingId: string,
+  credentials?: Partial<PisteCredentials>,
+): Promise<PpfStatusResult> {
   try {
-    const token = await getAccessToken();
-    const cproAccount = getCproAccountHeader();
+    const creds = resolveCredentials(credentials);
+    const token = await getAccessToken(creds);
+    const cproAccount = getCproAccountHeader(creds);
+    const PISTE_BASE = getPisteBase(creds.pisteEnv);
 
     const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/consulter/historique`, {
       method: 'POST',
@@ -193,12 +243,10 @@ export async function getPpfInvoiceStatus(trackingId: string): Promise<PpfStatus
       };
     }
 
-    const statut = (json as any)?.statutCourant as string | undefined;
-
     return {
       success: true,
       trackingId,
-      status: statut as PpfLifecycleStatus | undefined,
+      status: (json as any)?.statutCourant as PpfLifecycleStatus | undefined,
       rejectionReason: (json as any)?.commentaireEtatCourant,
     };
   } catch (err: any) {
@@ -231,7 +279,7 @@ export interface ReceivedInvoiceEntry {
   buyerSiret: string | null;
   totalAmountTTC: number;
   ppfStatus: string;
-  depositedAt: string | null; // ISO string
+  depositedAt: string | null;
 }
 
 export interface FetchReceivedInvoicesResult {
@@ -242,48 +290,63 @@ export interface FetchReceivedInvoicesResult {
 }
 
 export async function fetchReceivedInvoicesFromPpf(opts: {
-  fromDate: string; // YYYY-MM-DD
-  toDate: string;   // YYYY-MM-DD
-  page?: number;
+  fromDate: string;
+  toDate: string;
+  credentials?: Partial<PisteCredentials>;
 }): Promise<FetchReceivedInvoicesResult> {
   try {
-    const token = await getAccessToken();
-    const cproAccount = getCproAccountHeader();
+    const creds = resolveCredentials(opts.credentials);
+    const token = await getAccessToken(creds);
+    const cproAccount = getCproAccountHeader(creds);
+    const PISTE_BASE = getPisteBase(creds.pisteEnv);
 
-    const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/rechercher/destinataire`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'cpro-account': cproAccount,
-        'Content-Type': 'application/json;charset=utf-8',
-      },
-      body: JSON.stringify({
-        dateDepotFactureDu: opts.fromDate,
-        dateDepotFactureAu: opts.toDate,
-        nbResultatsParPage: 50,
-        pageResultat: opts.page ?? 1,
-      }),
-    });
+    const PAGE_SIZE = 50;
+    const allInvoices: ReceivedInvoiceEntry[] = [];
+    let page = 1;
+    let total = 0;
 
-    const json = await res.json().catch(() => ({})) as any;
+    do {
+      const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/rechercher/destinataire`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'cpro-account': cproAccount,
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+        body: JSON.stringify({
+          dateDepotFactureDu: opts.fromDate,
+          dateDepotFactureAu: opts.toDate,
+          nbResultatsParPage: PAGE_SIZE,
+          pageResultat: page,
+        }),
+      });
 
-    if (!res.ok || (json?.codeRetour !== 0 && json?.codeRetour !== undefined)) {
-      return { success: false, invoices: [], total: 0, error: json?.libelle ?? `PISTE error ${res.status}` };
-    }
+      const json = await res.json().catch(() => ({})) as any;
 
-    const raw: any[] = json?.listeFactures ?? [];
-    const invoices: ReceivedInvoiceEntry[] = raw.map((f) => ({
-      cppId: String(f.identifiantFactureCPP ?? ''),
-      invoiceNumber: f.numeroFacture ?? '',
-      supplierName: f.nomFournisseur ?? 'Fournisseur inconnu',
-      supplierSiret: f.siretFournisseur ?? null,
-      buyerSiret: f.siretDestinataire ?? null,
-      totalAmountTTC: Number(f.montantTTC ?? 0),
-      ppfStatus: f.statut ?? 'RECUE',
-      depositedAt: f.dateDepot ?? null,
-    }));
+      if (!res.ok || (json?.codeRetour !== 0 && json?.codeRetour !== undefined)) {
+        return { success: false, invoices: [], total: 0, error: json?.libelle ?? `PISTE error ${res.status}` };
+      }
 
-    return { success: true, invoices, total: json?.nbTotalResultats ?? invoices.length };
+      const raw: any[] = json?.listeFactures ?? [];
+      total = json?.nbTotalResultats ?? raw.length;
+
+      for (const f of raw) {
+        allInvoices.push({
+          cppId: String(f.identifiantFactureCPP ?? ''),
+          invoiceNumber: f.numeroFacture ?? '',
+          supplierName: f.nomFournisseur ?? 'Fournisseur inconnu',
+          supplierSiret: f.siretFournisseur ?? null,
+          buyerSiret: f.siretDestinataire ?? null,
+          totalAmountTTC: Number(f.montantTTC ?? 0),
+          ppfStatus: f.statut ?? 'RECUE',
+          depositedAt: f.dateDepot ?? null,
+        });
+      }
+
+      page++;
+    } while (allInvoices.length < total);
+
+    return { success: true, invoices: allInvoices, total };
   } catch (err: any) {
     return { success: false, invoices: [], total: 0, error: err?.message ?? 'PISTE fetch failed' };
   }
@@ -291,10 +354,15 @@ export async function fetchReceivedInvoicesFromPpf(opts: {
 
 // ─── Download raw XML for a received invoice ──────────────────────────────────
 
-export async function downloadReceivedInvoiceXml(cppId: string): Promise<string | null> {
+export async function downloadReceivedInvoiceXml(
+  cppId: string,
+  credentials?: Partial<PisteCredentials>,
+): Promise<string | null> {
   try {
-    const token = await getAccessToken();
-    const cproAccount = getCproAccountHeader();
+    const creds = resolveCredentials(credentials);
+    const token = await getAccessToken(creds);
+    const cproAccount = getCproAccountHeader(creds);
+    const PISTE_BASE = getPisteBase(creds.pisteEnv);
 
     const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/telecharger`, {
       method: 'POST',
@@ -315,4 +383,18 @@ export async function downloadReceivedInvoiceXml(cppId: string): Promise<string 
   }
 }
 
-export { ENV as PISTE_ENV };
+// ─── Lightweight token test — validates PISTE credentials without side effects ─
+
+export async function testPisteConnection(creds: Partial<PisteCredentials>): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const resolved = resolveCredentials(creds);
+    await getAccessToken(resolved);
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? 'Connection test failed' };
+  }
+}
+
+export { getPlatformCredentials };
+// Legacy export kept for reform-readiness check
+export const PISTE_ENV = normalizePisteEnv(process.env.PISTE_ENV);
