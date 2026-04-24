@@ -414,6 +414,35 @@ function SettingsPageInner() {
                 </div>
               )}
 
+              {/* How-to guide */}
+              <div className="alert alert-light border mb-4" style={{ fontSize: '0.875rem' }}>
+                <p className="fw-semibold mb-2"><i className="bi bi-info-circle me-2 text-primary" />Comment obtenir vos credentials ?</p>
+                <ol className="mb-2 ps-3" style={{ lineHeight: '1.8' }}>
+                  <li>
+                    <strong>Créez une application PISTE</strong> sur le portail développeur :{' '}
+                    <a href="https://developer.aife.economie.gouv.fr/" target="_blank" rel="noreferrer">
+                      developer.aife.economie.gouv.fr
+                    </a>
+                    {' '}→ <em>Mes applications</em> → <em>Nouvelle application</em> → sélectionnez l'API <strong>Chorus Pro</strong>.
+                    Récupérez le <strong>Client ID</strong> et <strong>Client Secret</strong> de l'application.
+                  </li>
+                  <li>
+                    <strong>Créez un compte technique Chorus Pro</strong> sur{' '}
+                    <a href="https://chorus-pro.gouv.fr/" target="_blank" rel="noreferrer">
+                      chorus-pro.gouv.fr
+                    </a>
+                    {' '}→ <em>Administration</em> → <em>Gestion des comptes techniques</em> → <em>Créer un compte technique</em>.
+                    Le <strong>login</strong> et le <strong>mot de passe</strong> générés correspondent aux champs ci-dessous.
+                  </li>
+                  <li>
+                    Commencez en <strong>Sandbox</strong> pour valider la connexion avant de passer en Production.
+                  </li>
+                </ol>
+                <p className="mb-0 text-muted" style={{ fontSize: '0.8125rem' }}>
+                  <i className="bi bi-shield-check me-1" />Les credentials sont chiffrés AES-256 et ne sont jamais exposés côté client.
+                </p>
+              </div>
+
               <form onSubmit={handlePisteSave}>
                 <div className="row g-3">
                   {/* Environment */}
