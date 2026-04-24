@@ -18,6 +18,8 @@ jobs:
   promote-to-staging:
     name: Auto-promote dev to staging
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
     
     steps:
@@ -56,6 +58,8 @@ jobs:
   manual-promotion:
     name: Manual branch promotion
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     if: github.event_name == 'workflow_dispatch'
     
     steps:
