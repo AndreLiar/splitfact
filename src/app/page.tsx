@@ -36,6 +36,29 @@ const features = [
   { icon: "bi-graph-up-arrow", label: "Tableau de bord", text: "Volume facturé, encaissements, exceptions, délais — vue temps réel sur votre trésorerie." },
 ];
 
+const freeFeatures = [
+  "Jusqu'à 5 factures / mois",
+  "Création manuelle",
+  "Clients illimités",
+  "Tableau de bord basique",
+  "Lien de paiement Stripe",
+];
+
+const proFeatures = [
+  "Factures illimitées",
+  "Extraction IA (OCR image & PDF)",
+  "Génération Factur-X (PDF/A-3 + XML)",
+  "Dépôt Chorus Pro / PPF direct",
+  "E-reporting B2C (art. 290 CGI)",
+  "Score de conformité EN 16931",
+  "Inbox des exceptions centralisée",
+  "Facturation récurrente automatique",
+  "Polling statut PPF en temps réel",
+  "Validation SIRET (INSEE SIRENE)",
+  "Journal d'audit complet",
+  "Notifications avec file de retry",
+];
+
 const timeline = [
   { date: "Sep 2026", title: "Réception obligatoire", text: "Toutes les entreprises assujetties à la TVA doivent accepter les factures électroniques.", done: false },
   { date: "Sep 2027", title: "Émission obligatoire", text: "PME et micro-entreprises doivent émettre dans le nouveau cadre Chorus Pro / PDP.", done: false },
@@ -675,6 +698,174 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
+          PRICING
+      ══════════════════════════════════════════════════════ */}
+      <section id="pricing" style={{ padding: "6rem 0" }}>
+        <div className="main-container">
+          <FadeUp>
+            <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
+              <SectionLabel>Tarifs</SectionLabel>
+              <h2 style={{
+                fontSize: "clamp(1.75rem, 3vw, 2.5rem)",
+                fontWeight: 590,
+                letterSpacing: "-0.03em",
+                color: "#f7f8f8",
+                marginBottom: "0.75rem",
+              }}>
+                Simple. Prévisible. Prêt pour 2026.
+              </h2>
+              <p style={{ fontSize: "1rem", color: "#8a8f98", maxWidth: "480px", margin: "0 auto" }}>
+                Commencez gratuitement. Passez au Pro quand votre volume ou la réforme l'exige.
+              </p>
+            </div>
+          </FadeUp>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "1.5rem",
+            maxWidth: "860px",
+            margin: "0 auto",
+          }} className="pricing-grid">
+
+            {/* Free */}
+            <FadeUp delay={0}>
+              <div style={{
+                backgroundColor: "rgba(255,255,255,0.02)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                borderRadius: "12px",
+                padding: "2rem",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}>
+                <div style={{ marginBottom: "1.75rem" }}>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 590, letterSpacing: "0.08em", textTransform: "uppercase", color: "#62666d", marginBottom: "1rem" }}>
+                    Gratuit
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginBottom: "0.5rem" }}>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "2.5rem", fontWeight: 500, color: "#f7f8f8", letterSpacing: "-0.04em" }}>0 €</span>
+                    <span style={{ fontSize: "0.875rem", color: "#62666d" }}> / mois</span>
+                  </div>
+                  <p style={{ fontSize: "0.875rem", color: "#8a8f98", lineHeight: 1.6, margin: 0 }}>
+                    Pour découvrir la plateforme et envoyer vos premières factures.
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "2rem", flex: 1 }}>
+                  {freeFeatures.map(f => (
+                    <div key={f} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <i className="bi bi-check2" style={{ color: "#10b981", fontSize: "0.9rem", flexShrink: 0 }} />
+                      <span style={{ fontSize: "0.875rem", color: "#d0d6e0" }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <a href="/auth/register" style={{
+                  display: "block",
+                  textAlign: "center",
+                  padding: "9px 20px",
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  color: "#d0d6e0",
+                  borderRadius: "6px",
+                  fontSize: "0.9rem",
+                  fontWeight: 510,
+                  textDecoration: "none",
+                  transition: "all 120ms ease",
+                }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.07)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.04)"}
+                >
+                  Commencer gratuitement
+                </a>
+              </div>
+            </FadeUp>
+
+            {/* Pro */}
+            <FadeUp delay={0.08}>
+              <div style={{
+                backgroundColor: "rgba(212,146,26,0.04)",
+                border: "1px solid rgba(212,146,26,0.25)",
+                borderRadius: "12px",
+                padding: "2rem",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                position: "relative",
+                overflow: "hidden",
+              }}>
+                {/* Glow */}
+                <div style={{
+                  position: "absolute", top: 0, left: 0, right: 0, height: "1px",
+                  background: "linear-gradient(90deg, transparent, rgba(212,146,26,0.5), transparent)",
+                  pointerEvents: "none",
+                }} />
+
+                <div style={{ marginBottom: "1.75rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 590, letterSpacing: "0.08em", textTransform: "uppercase", color: "#D4921A" }}>
+                      Pro
+                    </div>
+                    <span style={{
+                      fontSize: "0.6rem", fontWeight: 590, letterSpacing: "0.06em", textTransform: "uppercase",
+                      padding: "3px 8px",
+                      backgroundColor: "rgba(212,146,26,0.12)",
+                      border: "1px solid rgba(212,146,26,0.25)",
+                      borderRadius: "4px",
+                      color: "#D4921A",
+                    }}>
+                      14 jours offerts
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginBottom: "0.5rem" }}>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "2.5rem", fontWeight: 500, color: "#f7f8f8", letterSpacing: "-0.04em" }}>49 €</span>
+                    <span style={{ fontSize: "0.875rem", color: "#62666d" }}> / mois</span>
+                  </div>
+                  <p style={{ fontSize: "0.875rem", color: "#8a8f98", lineHeight: 1.6, margin: 0 }}>
+                    Tout le workflow, de l'extraction IA au dépôt Chorus Pro — conforme 2026 dès aujourd'hui.
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "2rem", flex: 1 }}>
+                  {proFeatures.map(f => (
+                    <div key={f} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <i className="bi bi-check2" style={{ color: "#D4921A", fontSize: "0.9rem", flexShrink: 0 }} />
+                      <span style={{ fontSize: "0.875rem", color: "#d0d6e0" }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <a href="/auth/register" style={{
+                  display: "block",
+                  textAlign: "center",
+                  padding: "9px 20px",
+                  backgroundColor: "#D4921A",
+                  color: "#08090a",
+                  borderRadius: "6px",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  transition: "background-color 120ms ease",
+                }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = "#F0AE38"}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "#D4921A"}
+                >
+                  Démarrer l'essai gratuit
+                </a>
+              </div>
+            </FadeUp>
+          </div>
+
+          <FadeUp delay={0.1}>
+            <p style={{ textAlign: "center", fontSize: "0.8125rem", color: "#62666d", marginTop: "1.75rem" }}>
+              Pas de carte bancaire requise pour l'essai · Annulation à tout moment · TVA française applicable
+            </p>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
           REGULATORY TIMELINE
       ══════════════════════════════════════════════════════ */}
       <section style={{
@@ -1117,6 +1308,7 @@ export default function LandingPage() {
                 links: [
                   { label: "Comment ça marche", href: "#how-it-works" },
                   { label: "Fonctionnalités", href: "#benefits" },
+                  { label: "Tarifs", href: "#pricing" },
                   { label: "Programme pilote", href: "#design-partner-form" },
                 ],
               },
@@ -1220,6 +1412,7 @@ export default function LandingPage() {
           .features-grid { grid-template-columns: 1fr 1fr !important; }
           .stats-grid { grid-template-columns: 1fr !important; gap: 1.5rem !important; }
           .footer-grid { grid-template-columns: 1fr 1fr !important; gap: 2rem !important; }
+          .pricing-grid { grid-template-columns: 1fr !important; max-width: 480px !important; }
         }
         @media (max-width: 575px) {
           .steps-grid, .features-grid, .footer-grid { grid-template-columns: 1fr !important; }
