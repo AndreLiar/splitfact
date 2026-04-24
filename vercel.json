@@ -19,6 +19,10 @@
     {
       "path": "/api/cron/ppf-receive",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/ppf-status-poll",
+      "schedule": "0 12 * * *"
     }
   ],
   "functions": {
@@ -44,6 +48,9 @@
       "maxDuration": 60
     },
     "src/app/api/cron/ppf-receive/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cron/ppf-status-poll/route.ts": {
       "maxDuration": 60
     }
   }
