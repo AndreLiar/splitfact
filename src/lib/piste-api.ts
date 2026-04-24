@@ -306,7 +306,7 @@ export async function fetchReceivedInvoicesFromPpf(opts: {
     let total = 0;
 
     do {
-      const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/rechercher/destinataire`, {
+      const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/rechercher/recipiendaire`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -364,14 +364,14 @@ export async function downloadReceivedInvoiceXml(
     const cproAccount = getCproAccountHeader(creds);
     const PISTE_BASE = getPisteBase(creds.pisteEnv);
 
-    const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/telecharger`, {
+    const res = await fetch(`${PISTE_BASE}/cpro/factures/v1/telecharger/groupe`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'cpro-account': cproAccount,
         'Content-Type': 'application/json;charset=utf-8',
       },
-      body: JSON.stringify({ identifiantFactureCPP: Number(cppId), telechargerToutesVersions: false }),
+      body: JSON.stringify({ listeIdentifiantsFactureCPP: [Number(cppId)], telechargerToutesVersions: false }),
     });
 
     const json = await res.json().catch(() => ({})) as any;
