@@ -50,6 +50,12 @@ model User {
   rcsNumber           String?
   shareCapital        String?
   apeCode             String?
+  // Platform subscription (Stripe Subscriptions — separate from Stripe Connect)
+  stripePlatformCustomerId  String?   @unique
+  subscriptionId            String?   @unique
+  subscriptionStatus        String    @default("free")  // free | trialing | active | past_due | canceled
+  planId                    String    @default("free")  // free | pro
+  subscriptionPeriodEnd     DateTime?
   // Per-tenant Chorus Pro / PISTE credentials (passwords AES-256-GCM encrypted)
   cproTechLogin       String?
   cproTechPassword    String?
