@@ -201,6 +201,8 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
   const [issuingInvoice, setIssuingInvoice] = useState(false);
   const [submittingPpf, setSubmittingPpf] = useState(false);
   const [ppfError, setPpfError] = useState<string | null>(null);
+  const [preflight, setPreflight] = useState<{ ready: boolean; blockers: string[]; warnings: string[]; pisteEnv: string | null } | null>(null);
+  const [preflightLoading, setPreflightLoading] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
   const [reminderSent, setReminderSent] = useState(false);
   const [stripeConnected, setStripeConnected] = useState(false);
@@ -341,12 +343,31 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
     try {
       const res = await fetch(`/api/invoices/${invoiceId}/submit-ppf`, { method: 'POST' });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error || 'Échec du dépôt sur Chorus Pro');
+      if (!res.ok) {
+        if (payload.upgrade) {
+          throw new Error('Le dépôt PPF requiert le plan InvoiceOps Pro. Passez au Pro dans Paramètres.');
+        }
+        throw new Error(payload.error || 'Échec du dépôt sur Chorus Pro');
+      }
       await loadInvoice();
     } catch (err: any) {
       setPpfError(err.message);
     } finally {
       setSubmittingPpf(false);
+    }
+  };
+
+  const handlePreflight = async () => {
+    setPreflightLoading(true);
+    setPreflight(null);
+    try {
+      const res = await fetch(`/api/invoices/${invoiceId}/ppf-preflight`);
+      const data = await res.json().catch(() => ({}));
+      setPreflight(data);
+    } catch {
+      setPreflight({ ready: false, blockers: ['Impossible de contacter le serveur.'], warnings: [], pisteEnv: null });
+    } finally {
+      setPreflightLoading(false);
     }
   };
 
@@ -719,12 +740,43 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
               <i className="bi bi-building me-2 text-primary"></i>
               Chorus Pro (PPF)
             </h2>
+
+            {/* Current status */}
             <div className="d-flex justify-content-between align-items-center mb-3">
               <span className="text-muted small">Statut</span>
               <span className={`badge ${ppfBadgeClass(invoice.ppfStatus)}`}>
                 {ppfStatusLabel(invoice.ppfStatus)}
               </span>
             </div>
+
+            {/* Lifecycle timeline for in-flight invoices */}
+            {invoice.ppfStatus && !['not_submitted', 'pending_retry'].includes(invoice.ppfStatus) && (
+              <div className="mb-3">
+                {(['deposee', 'en_cours_de_routage', 'recue', 'approuvee', 'payee'] as const).map((step, i) => {
+                  const steps = ['deposee', 'en_cours_de_routage', 'recue', 'approuvee', 'payee'];
+                  const currentIdx = steps.indexOf(invoice.ppfStatus ?? '');
+                  const isRejected = ['rejetee', 'refusee'].includes(invoice.ppfStatus ?? '');
+                  const isDone = currentIdx >= i;
+                  const labels: Record<string, string> = {
+                    deposee: 'Déposée', en_cours_de_routage: 'Routage', recue: 'Reçue',
+                    approuvee: 'Approuvée', payee: 'Payée',
+                  };
+                  return (
+                    <div key={step} className="d-flex align-items-center gap-2 mb-1">
+                      <i className={`bi ${isRejected && i === currentIdx ? 'bi-x-circle-fill text-danger' : isDone ? 'bi-check-circle-fill text-success' : 'bi-circle text-muted'}`} style={{ fontSize: '0.85rem' }}></i>
+                      <span className={`small ${isDone && !isRejected ? 'fw-semibold' : 'text-muted'}`}>{labels[step]}</span>
+                    </div>
+                  );
+                })}
+                {['rejetee', 'refusee'].includes(invoice.ppfStatus ?? '') && (
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <i className="bi bi-x-circle-fill text-danger" style={{ fontSize: '0.85rem' }}></i>
+                    <span className="small fw-semibold text-danger">{ppfStatusLabel(invoice.ppfStatus)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {invoice.ppfTrackingId && (
               <div className="text-muted small mb-2">
                 Identifiant CPP : <code>{invoice.ppfTrackingId}</code>
@@ -752,17 +804,58 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
                 {ppfError}
               </div>
             )}
-            {invoice.workflowStatus === 'issued' && invoice.facturxPdfUrl &&
-              (!invoice.ppfStatus || ['not_submitted', 'pending_retry'].includes(invoice.ppfStatus)) && (
-              <button
-                className="btn btn-primary btn-sm w-100 mt-2"
-                onClick={handleSubmitPpf}
-                disabled={submittingPpf}
-              >
-                {submittingPpf
-                  ? <><span className="spinner-border spinner-border-sm me-1" />Dépôt en cours...</>
-                  : <><i className="bi bi-send me-1"></i>Déposer sur Chorus Pro</>}
-              </button>
+
+            {/* Preflight panel */}
+            {(!invoice.ppfStatus || ['not_submitted', 'pending_retry', 'rejetee', 'refusee'].includes(invoice.ppfStatus)) && (
+              <div className="mt-2">
+                <button
+                  className="btn btn-outline-secondary btn-sm w-100 mb-2"
+                  onClick={handlePreflight}
+                  disabled={preflightLoading}
+                >
+                  {preflightLoading
+                    ? <><span className="spinner-border spinner-border-sm me-1" />Vérification en cours...</>
+                    : <><i className="bi bi-shield-check me-1"></i>Vérifier les prérequis PPF</>}
+                </button>
+
+                {preflight && (
+                  <div className={`alert ${preflight.ready ? 'alert-success' : 'alert-warning'} small py-2 mb-2`}>
+                    {preflight.pisteEnv && (
+                      <div className="mb-1">
+                        <span className={`badge ${preflight.pisteEnv === 'production' ? 'bg-danger' : 'bg-secondary'} me-1`}>
+                          {preflight.pisteEnv === 'production' ? 'PRODUCTION' : 'SANDBOX'}
+                        </span>
+                        {preflight.pisteEnv === 'sandbox' && <span className="text-muted">Les dépôts n'atteignent pas le PPF réel.</span>}
+                      </div>
+                    )}
+                    {preflight.blockers.length > 0 && (
+                      <ul className="mb-1 ps-3">
+                        {preflight.blockers.map((b, i) => (
+                          <li key={i} className="text-danger"><i className="bi bi-x-circle me-1"></i>{b}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {preflight.warnings.map((w, i) => (
+                      <div key={i} className="text-warning"><i className="bi bi-exclamation-triangle me-1"></i>{w}</div>
+                    ))}
+                    {preflight.ready && <div className="text-success fw-semibold"><i className="bi bi-check-circle me-1"></i>Prêt pour le dépôt PPF.</div>}
+                  </div>
+                )}
+
+                {invoice.workflowStatus === 'issued' && invoice.facturxPdfUrl &&
+                  (!invoice.ppfStatus || ['not_submitted', 'pending_retry'].includes(invoice.ppfStatus)) && (
+                  <button
+                    className="btn btn-primary btn-sm w-100"
+                    onClick={handleSubmitPpf}
+                    disabled={submittingPpf || (preflight !== null && !preflight.ready)}
+                    title={preflight && !preflight.ready ? 'Résolvez les prérequis avant de déposer' : ''}
+                  >
+                    {submittingPpf
+                      ? <><span className="spinner-border spinner-border-sm me-1" />Dépôt en cours...</>
+                      : <><i className="bi bi-send me-1"></i>Déposer sur Chorus Pro</>}
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
