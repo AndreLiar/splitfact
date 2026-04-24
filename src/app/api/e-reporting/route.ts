@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { aggregateEReportingData, buildEReportingXml } from '@/lib/e-reporting/generate';
 import { submitInvoiceToPpf } from '@/lib/piste-api';
+import { isPro } from '@/lib/subscription';
 
 // GET /api/e-reporting?period=YYYY-MM  — fetch or generate period summary
 // POST /api/e-reporting                 — generate + optionally submit a period
@@ -33,6 +34,13 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  if (!(await isPro(session.user.id))) {
+    return NextResponse.json(
+      { error: 'E-reporting requires an InvoiceOps Pro plan.', upgrade: true },
+      { status: 403 }
+    );
+  }
 
   const body = await req.json().catch(() => ({}));
   const { period, submit = false } = body as { period: string; submit?: boolean };
