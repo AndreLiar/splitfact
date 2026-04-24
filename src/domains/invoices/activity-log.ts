@@ -12,7 +12,8 @@ export type ActivityAction =
   | 'ppf_submitted'
   | 'ppf_submission_failed'
   | 'ppf_status_updated'
-  | 'ppf_retry_succeeded';
+  | 'ppf_retry_succeeded'
+  | 'ppf_status_polled';
 
 export async function logActivity(params: {
   invoiceId: string;
