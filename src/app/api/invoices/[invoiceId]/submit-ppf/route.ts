@@ -6,6 +6,7 @@ import { submitInvoiceToPpf, mapPpfStatus } from '@/lib/piste-api';
 import { buildFacturxXml } from '@/lib/facturx';
 import { logActivity } from '@/lib/activity-log';
 import { getUserPisteCredentials } from '@/lib/user-piste-credentials';
+import { isPro } from '@/lib/subscription';
 
 // POST /api/invoices/[invoiceId]/submit-ppf
 // Deposits a Factur-X invoice to Chorus Pro via the PISTE API.
@@ -17,6 +18,13 @@ export async function POST(
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!(await isPro(session.user.id))) {
+    return NextResponse.json(
+      { error: 'PPF submission requires an InvoiceOps Pro plan.', upgrade: true },
+      { status: 403 }
+    );
   }
 
   const { invoiceId } = await params;

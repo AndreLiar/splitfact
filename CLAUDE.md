@@ -138,6 +138,8 @@ Path aliases: `@/` → `src/`, `@/domains/*` → `src/domains/*`, `@/types/*` �
 | `CPRO_TECH_LOGIN` / `CPRO_TECH_PASSWORD` | Chorus Pro compte technique for `cpro-account` header |
 | `PISTE_WEBHOOK_SECRET` | Shared secret for `/api/webhooks/ppf` |
 | `SIRENE_API_KEY` | INSEE SIRENE v3 API key for SIRET validation |
+| `STRIPE_PRO_PRICE_ID` | Stripe Price ID for the Pro monthly/yearly plan |
+| `STRIPE_PLATFORM_WEBHOOK_SECRET` | Webhook secret for `/api/webhooks/stripe-subscriptions` |
 
 ## Branch Strategy
 - `main` → production (auto-deploy Vercel project `splitfact-6xo8`)

@@ -38,6 +38,9 @@ function SettingsPageInner() {
   const [stripeConnecting, setStripeConnecting] = useState(false);
   const [siretLookup, setSiretLookup] = useState<{ loading: boolean; result: string | null; error: string | null }>({ loading: false, result: null, error: null });
 
+  const [subscription, setSubscription] = useState<{ planId: string; subscriptionStatus: string; subscriptionPeriodEnd: string | null } | null>(null);
+  const [billingLoading, setBillingLoading] = useState(false);
+
   // Chorus Pro / PISTE credentials
   const [pisteForm, setPisteForm] = useState({
     pisteEnv: 'sandbox',
@@ -57,8 +60,44 @@ function SettingsPageInner() {
     } else if (status === 'authenticated') {
       fetchProfile();
       fetchPisteCredentials();
+      fetchSubscription();
     }
   }, [status, router]);
+
+  const fetchSubscription = async () => {
+    try {
+      const res = await fetch('/api/billing/subscription');
+      if (res.ok) setSubscription(await res.json());
+    } catch { /* ignore */ }
+  };
+
+  const handleUpgrade = async () => {
+    setBillingLoading(true);
+    try {
+      const res = await fetch('/api/billing/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Erreur');
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (err: any) {
+      setProfileMessage({ type: 'error', text: err.message });
+    } finally {
+      setBillingLoading(false);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    setBillingLoading(true);
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' });
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Erreur');
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (err: any) {
+      setProfileMessage({ type: 'error', text: err.message });
+    } finally {
+      setBillingLoading(false);
+    }
+  };
 
   const fetchPisteCredentials = async () => {
     try {
@@ -517,6 +556,102 @@ function SettingsPageInner() {
                       ? <><i className="bi bi-arrow-repeat me-1"></i>Reconfigurer</>
                       : <><i className="bi bi-box-arrow-up-right me-1"></i>Connecter Stripe</>}
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Subscription & Billing ────────────────────────── */}
+          <div className="card mb-4 shadow-sm">
+            <div className="card-header bg-white">
+              <h5 className="mb-0 fw-semibold">
+                <i className="bi bi-credit-card me-2 text-primary"></i>
+                Abonnement InvoiceOps
+              </h5>
+              <small className="text-muted">PPF, e-reporting et fonctionnalités avancées requièrent le plan Pro.</small>
+            </div>
+            <div className="card-body">
+              {searchParams.get('billing') === 'success' && (
+                <div className="alert alert-success d-flex align-items-center gap-2 mb-3">
+                  <i className="bi bi-check-circle-fill"></i>
+                  Votre abonnement Pro est actif — bienvenue !
+                </div>
+              )}
+              {searchParams.get('billing') === 'cancelled' && (
+                <div className="alert alert-warning d-flex align-items-center gap-2 mb-3">
+                  <i className="bi bi-x-circle"></i>
+                  Paiement annulé. Vous pouvez réessayer à tout moment.
+                </div>
+              )}
+
+              {subscription ? (
+                <div className="d-flex align-items-center justify-content-between py-2">
+                  <div>
+                    <div className="fw-medium d-flex align-items-center gap-2">
+                      Plan actuel
+                      {subscription.planId === 'pro' ? (
+                        <span className="badge bg-primary"><i className="bi bi-lightning-fill me-1"></i>Pro</span>
+                      ) : (
+                        <span className="badge bg-secondary">Gratuit</span>
+                      )}
+                      {subscription.subscriptionStatus === 'trialing' && (
+                        <span className="badge bg-info text-dark">Période d'essai</span>
+                      )}
+                      {subscription.subscriptionStatus === 'past_due' && (
+                        <span className="badge bg-danger">Paiement en retard</span>
+                      )}
+                    </div>
+                    {subscription.subscriptionPeriodEnd && (
+                      <small className="text-muted">
+                        {subscription.subscriptionStatus === 'trialing'
+                          ? `Essai gratuit jusqu'au`
+                          : 'Renouvellement le'}{' '}
+                        {new Date(subscription.subscriptionPeriodEnd).toLocaleDateString('fr-FR')}
+                      </small>
+                    )}
+                  </div>
+                  {subscription.planId === 'pro' ? (
+                    <button className="btn btn-sm btn-outline-secondary" onClick={handleManageBilling} disabled={billingLoading}>
+                      {billingLoading ? <span className="spinner-border spinner-border-sm me-1" /> : <i className="bi bi-gear me-1"></i>}
+                      Gérer l'abonnement
+                    </button>
+                  ) : (
+                    <button className="btn btn-sm btn-primary" onClick={handleUpgrade} disabled={billingLoading}>
+                      {billingLoading ? <span className="spinner-border spinner-border-sm me-1" /> : <i className="bi bi-lightning-fill me-1"></i>}
+                      Passer au Pro — 14 jours gratuits
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="d-flex align-items-center justify-content-between py-2">
+                  <div>
+                    <div className="fw-medium">Plan Gratuit</div>
+                    <small className="text-muted">Créez des factures et gérez vos clients sans limite.</small>
+                  </div>
+                  <button className="btn btn-sm btn-primary" onClick={handleUpgrade} disabled={billingLoading}>
+                    {billingLoading ? <span className="spinner-border spinner-border-sm me-1" /> : <i className="bi bi-lightning-fill me-1"></i>}
+                    Passer au Pro
+                  </button>
+                </div>
+              )}
+
+              <hr className="my-3" />
+              <div className="row g-2 text-center">
+                <div className="col-4">
+                  <small className="text-muted d-block">Factures illimitées</small>
+                  <i className="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div className="col-4">
+                  <small className="text-muted d-block">Dépôt PPF / Chorus Pro</small>
+                  {subscription?.planId === 'pro'
+                    ? <i className="bi bi-check-circle-fill text-success"></i>
+                    : <i className="bi bi-lock-fill text-warning"></i>}
+                </div>
+                <div className="col-4">
+                  <small className="text-muted d-block">E-reporting B2C</small>
+                  {subscription?.planId === 'pro'
+                    ? <i className="bi bi-check-circle-fill text-success"></i>
+                    : <i className="bi bi-lock-fill text-warning"></i>}
+                </div>
               </div>
             </div>
           </div>
