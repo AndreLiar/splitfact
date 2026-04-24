@@ -2,9 +2,9 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, staging, dev ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, staging, dev ]
 
 jobs:
   test:
@@ -27,7 +27,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [22.x]
 
     steps:
     - name: Checkout code
