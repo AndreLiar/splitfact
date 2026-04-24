@@ -416,26 +416,30 @@ function SettingsPageInner() {
 
               {/* How-to guide */}
               <div className="alert alert-light border mb-4" style={{ fontSize: '0.875rem' }}>
-                <p className="fw-semibold mb-2"><i className="bi bi-info-circle me-2 text-primary" />Comment obtenir vos credentials ?</p>
-                <ol className="mb-2 ps-3" style={{ lineHeight: '1.8' }}>
+                <p className="fw-semibold mb-2">
+                  <i className="bi bi-info-circle me-2 text-primary" />Comment obtenir vos credentials ?
+                </p>
+                <p className="text-muted mb-2" style={{ fontSize: '0.8125rem' }}>
+                  Ces credentials sont <strong>propres à votre structure</strong> (votre SIRET). Chaque entreprise configure les siennes — InvoiceOps ne partage pas de credentials entre clients.
+                </p>
+                <ol className="mb-3 ps-3" style={{ lineHeight: '2' }}>
                   <li>
-                    <strong>Créez une application PISTE</strong> sur le portail développeur :{' '}
-                    <a href="https://developer.aife.economie.gouv.fr/" target="_blank" rel="noreferrer">
-                      developer.aife.economie.gouv.fr
-                    </a>
-                    {' '}→ <em>Mes applications</em> → <em>Nouvelle application</em> → sélectionnez l'API <strong>Chorus Pro</strong>.
-                    Récupérez le <strong>Client ID</strong> et <strong>Client Secret</strong> de l'application.
+                    <strong>Créez une application PISTE</strong> sur{' '}
+                    <a href="https://piste.gouv.fr" target="_blank" rel="noreferrer">piste.gouv.fr</a>
+                    {' '}→ inscrivez-vous → <em>API Catalog</em> → recherchez <strong>Factures</strong> → <em>S'abonner</em>.
+                    Récupérez le <strong>Client ID</strong> et <strong>Client Secret</strong> OAuth2 (pas la clé API).
                   </li>
                   <li>
                     <strong>Créez un compte technique Chorus Pro</strong> sur{' '}
-                    <a href="https://chorus-pro.gouv.fr/" target="_blank" rel="noreferrer">
-                      chorus-pro.gouv.fr
-                    </a>
-                    {' '}→ <em>Administration</em> → <em>Gestion des comptes techniques</em> → <em>Créer un compte technique</em>.
-                    Le <strong>login</strong> et le <strong>mot de passe</strong> générés correspondent aux champs ci-dessous.
+                    <a href="https://portail.chorus-pro.gouv.fr" target="_blank" rel="noreferrer">portail.chorus-pro.gouv.fr</a>
+                    {' '}→ connectez-vous → <em>Raccordements</em> → <em>Compte technique</em> → créez un compte avec le rôle <strong>Dépôt de factures</strong>.
+                    Le login et mot de passe générés correspondent aux champs ci-dessous.{' '}
+                    <span className="text-muted">(Seul le Gestionnaire de la structure peut créer un compte technique.)</span>
                   </li>
                   <li>
-                    Commencez en <strong>Sandbox</strong> pour valider la connexion avant de passer en Production.
+                    Testez d'abord en <strong>Sandbox</strong> avec l'environnement de qualification :{' '}
+                    <a href="https://chorus-pro.gouv.fr/qualif" target="_blank" rel="noreferrer">chorus-pro.gouv.fr/qualif</a>.
+                    Passez en <strong>Production</strong> une fois la connexion validée.
                   </li>
                 </ol>
                 <p className="mb-0 text-muted" style={{ fontSize: '0.8125rem' }}>
