@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import withPWA from "next-pwa";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
@@ -139,4 +140,14 @@ const pwaConfig = withPWA({
   buildExcludes: [/middleware-manifest\.json$/]
 });
 
-export default pwaConfig(nextConfig);
+const sentryConfig = {
+  org: 'saas-gz',
+  project: 'javascript-nextjs',
+  silent: true,
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  disableLogger: true,
+  automaticVercelMonitors: true,
+};
+
+export default withSentryConfig(pwaConfig(nextConfig), sentryConfig);
