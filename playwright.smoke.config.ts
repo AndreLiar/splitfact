@@ -2,8 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: 'smoke-prod.spec.ts',
-  timeout: 45_000,
+  testMatch: '*.spec.ts',
+  timeout: 60_000,
   retries: 1,
   reporter: [['list'], ['html', { outputFolder: 'playwright-smoke-report', open: 'never' }]],
   use: {
