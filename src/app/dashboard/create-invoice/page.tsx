@@ -116,7 +116,7 @@ export default function CreateInvoicePage() {
   const [extractionSource, setExtractionSource] = useState<string | null>(null);
   const [suggestNewClient, setSuggestNewClient] = useState<{ name: string; address?: string; email?: string; siret?: string } | null>(null);
   const [creatingClient, setCreatingClient] = useState(false);
-  const [quota, setQuota] = useState<{ plan: string; limit: number | null; used: number | null; remaining: number | null } | null>(null);
+  const [quota, setQuota] = useState<{ plan: string; limit: number | null; used: number | null; remaining: number | null; llmConfigured?: boolean } | null>(null);
   const [siretCheck, setSiretCheck] = useState<{ loading: boolean; result: { valid: boolean; active: boolean; companyName: string | null; error?: string } | null }>({ loading: false, result: null });
 
   const handleDocumentUpload = async (file: File) => {
@@ -520,6 +520,21 @@ export default function CreateInvoicePage() {
                       Saisir manuellement →
                     </button>
                   </div>
+                </>
+              ) : quota?.llmConfigured === false ? (
+                <>
+                  <div className="mb-3" style={{ fontSize: '2.5rem' }}>
+                    <i className="bi bi-robot text-secondary"></i>
+                  </div>
+                  <div className="fw-semibold mb-1">Extraction IA — bientôt disponible</div>
+                  <div className="text-muted small mb-3">Cette fonctionnalité sera activée prochainement. En attendant, saisissez votre facture manuellement.</div>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setShowUploadZone(false)}
+                  >
+                    Saisir manuellement →
+                  </button>
                 </>
               ) : (
                 <>
