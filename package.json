@@ -24,7 +24,8 @@
     "db:schema-backup": "chmod +x scripts/backup-to-git.sh && ./scripts/backup-to-git.sh",
     "pwa:validate": "node scripts/pwa-setup.js",
     "pwa:icons": "chmod +x scripts/generate-pwa-icons.sh && ./scripts/generate-pwa-icons.sh",
-    "pwa:build": "npm run pwa:validate && npm run build"
+    "pwa:build": "npm run pwa:validate && npm run build",
+    "test:smoke": "playwright test --config=playwright.smoke.config.ts"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
