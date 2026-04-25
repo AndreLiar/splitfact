@@ -162,6 +162,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2563eb',
   },
+  bankSection: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: '#f9fafb',
+    borderRadius: 5,
+  },
   paymentTermsSection: {
     marginBottom: 20,
     padding: 15,
@@ -409,6 +415,22 @@ const InvoicePdf = ({ invoice }: any) => {
           </View>
         </View>
 
+        {/* Bank Details Section */}
+        {(invoice.issuerIban || invoice.issuerBic) && (
+          <View style={styles.bankSection}>
+            <Text style={styles.paymentTermsTitle}>Coordonnées bancaires</Text>
+            {invoice.issuerIban && (
+              <Text style={styles.paymentTermsText}>IBAN : {invoice.issuerIban}</Text>
+            )}
+            {invoice.issuerBic && (
+              <Text style={styles.paymentTermsText}>BIC : {invoice.issuerBic}</Text>
+            )}
+            {invoice.issuerBankName && (
+              <Text style={styles.paymentTermsText}>Banque : {invoice.issuerBankName}</Text>
+            )}
+          </View>
+        )}
+
         {/* Payment Terms Section */}
         <View style={styles.paymentTermsSection}>
           <Text style={styles.paymentTermsTitle}>Conditions de paiement</Text>
@@ -436,18 +458,14 @@ const InvoicePdf = ({ invoice }: any) => {
         <View style={styles.legalMentionsSection}>
           <Text style={styles.sectionTitle}>Mentions légales</Text>
           <Text style={styles.legalMentionsText}>
-            {invoice.legalMentions || 
-            `Paiement à réception de facture. Aucun escompte consenti pour paiement anticipé.
-            
-En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal ainsi qu'une indemnité forfaitaire de recouvrement de 40€ seront automatiquement appliquées.
-
-Facture émise conformément à la réglementation française en vigueur.`}
+            {invoice.legalMentions ||
+            `Paiement à réception de facture. Aucun escompte consenti pour paiement anticipé.\n\nEn cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal ainsi qu'une indemnité forfaitaire de recouvrement de 40€ seront automatiquement appliquées.\n\n${totalTVA === 0 ? 'TVA non applicable, art. 293 B du CGI.\n\n' : ''}Facture émise conformément à la réglementation française en vigueur.`}
           </Text>
         </View>
 
         {/* Footer */}
         <Text style={styles.footer}>
-          Document généré par Splitfact - Plateforme de facturation professionnelle
+          Document généré par InvoiceOps - Plateforme de facturation professionnelle
           {'\n'}
           {invoice.issuerName} - {invoice.issuerAddress || 'Adresse non fournie'}
         </Text>
