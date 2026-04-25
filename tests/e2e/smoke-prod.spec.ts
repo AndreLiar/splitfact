@@ -115,11 +115,25 @@ test.describe('InvoiceOps — production smoke test', () => {
 
     await page.screenshot({ path: 'tests/e2e/screenshots/smoke-02b-before-save.png', fullPage: true });
 
+    // Intercept and log the PUT /api/users/me response
+    let saveResponse: { status: number; body: string } | null = null;
+    page.on('response', async (res) => {
+      if (res.url().includes('/api/users/me') && res.request().method() === 'PUT') {
+        saveResponse = { status: res.status(), body: await res.text().catch(() => '') };
+      }
+    });
+
     // Save profile
     const saveBtn = page.getByRole('button', { name: /enregistrer le profil|sauvegarder/i }).first();
-    if (await saveBtn.isVisible()) {
-      await saveBtn.click();
-      await page.waitForTimeout(2000);
+    await expect(saveBtn).toBeVisible({ timeout: 5_000 });
+    await saveBtn.click();
+    await page.waitForTimeout(2500);
+
+    if (saveResponse) {
+      console.log(`  → PUT /api/users/me → ${saveResponse.status}: ${saveResponse.body.slice(0, 200)}`);
+      expect(saveResponse.status, `Profile save failed: ${saveResponse.body}`).toBe(200);
+    } else {
+      console.log('  ⚠ No PUT /api/users/me response captured');
     }
 
     await page.screenshot({ path: 'tests/e2e/screenshots/smoke-02c-settings-saved.png', fullPage: true });
