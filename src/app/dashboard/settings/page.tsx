@@ -367,6 +367,17 @@ function SettingsPageInner() {
                     <small className="text-muted">Détermine votre taux URSSAF et le régime fiscal applicable</small>
                   </div>
 
+                  {/* Declaration frequency — required for MicroBIC/BNC */}
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">Fréquence de déclaration URSSAF <span className="text-danger">*</span></label>
+                    <select className="form-select" {...field('declarationFrequency')}>
+                      <option value="">-- Choisir --</option>
+                      <option value="monthly">Mensuelle</option>
+                      <option value="quarterly">Trimestrielle</option>
+                    </select>
+                    <small className="text-muted">Mensuelle si CA &gt; 85 800 € (BIC) ou 34 400 € (BNC)</small>
+                  </div>
+
                   {/* TVA number — optional */}
                   <div className="col-md-6">
                     <label className="form-label fw-medium">Numéro TVA intracommunautaire</label>
