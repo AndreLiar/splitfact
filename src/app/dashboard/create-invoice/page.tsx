@@ -115,6 +115,7 @@ export default function CreateInvoicePage() {
   const [extractionSource, setExtractionSource] = useState<string | null>(null);
   const [suggestNewClient, setSuggestNewClient] = useState<{ name: string; address?: string; email?: string; siret?: string } | null>(null);
   const [creatingClient, setCreatingClient] = useState(false);
+  const [quota, setQuota] = useState<{ plan: string; limit: number | null; used: number | null; remaining: number | null } | null>(null);
 
   const handleDocumentUpload = async (file: File) => {
     setExtracting(true);
@@ -189,6 +190,7 @@ export default function CreateInvoicePage() {
     } else if (status === 'authenticated') {
       fetchUserProfile();
       fetchClients();
+      fetch('/api/billing/quota').then(r => r.json()).then(setQuota).catch(() => null);
     }
   }, [status, router]);
 
@@ -301,6 +303,10 @@ export default function CreateInvoicePage() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error("Server error data:", errorData);
+        if (response.status === 402) {
+          // Refresh quota state to show updated count in the banner
+          fetch('/api/billing/quota').then(r => r.json()).then(setQuota).catch(() => null);
+        }
         throw new Error(errorData.error || 'Failed to create invoice');
       }
 
@@ -421,6 +427,25 @@ export default function CreateInvoicePage() {
             </div>
           </div>
           
+          {/* Free plan quota banner */}
+          {quota?.plan === 'free' && quota.limit !== null && (
+            <div className={`alert d-flex align-items-center justify-content-between py-2 mb-3 ${quota.remaining === 0 ? 'alert-danger' : quota.remaining! <= 2 ? 'alert-warning' : 'alert-info'}`} style={{ fontSize: '0.875rem' }}>
+              <div className="d-flex align-items-center gap-2">
+                <i className={`bi ${quota.remaining === 0 ? 'bi-x-circle-fill' : 'bi-info-circle-fill'}`}></i>
+                <span>
+                  {quota.remaining === 0
+                    ? `Limite atteinte — ${quota.used}/${quota.limit} factures ce mois. Passez au Pro pour continuer.`
+                    : `Plan gratuit — ${quota.used}/${quota.limit} factures utilisées ce mois (${quota.remaining} restante${quota.remaining! > 1 ? 's' : ''})`}
+                </span>
+              </div>
+              {quota.remaining === 0 && (
+                <a href="/dashboard/settings" className="btn btn-sm btn-danger ms-3 text-nowrap">
+                  <i className="bi bi-lightning-fill me-1"></i>Passer au Pro
+                </a>
+              )}
+            </div>
+          )}
+
           {/* Progress Bar */}
           <div className="progress mb-4" style={{ height: '8px' }}>
             <div
@@ -996,10 +1021,11 @@ export default function CreateInvoicePage() {
                       <i className="bi bi-arrow-right ms-1"></i>
                     </button>
                   ) : (
-                    <button 
-                      type="submit" 
-                      className="btn btn-success" 
-                      disabled={isSubmitting}
+                    <button
+                      type="submit"
+                      className="btn btn-success"
+                      disabled={isSubmitting || (quota?.plan === 'free' && quota.remaining === 0)}
+                      title={quota?.plan === 'free' && quota.remaining === 0 ? 'Limite mensuelle atteinte — passez au Pro' : undefined}
                     >
                       {isSubmitting ? (
                         <>
