@@ -1,101 +1,42 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface Notification {
-  id: string;
-  type: 'INVOICE_BLOCKED' | 'COMPLIANCE_ALERT' | 'PAYMENT_REMINDER' | 'GENERAL';
-  title: string;
-  message: string;
-  isRead: boolean;
-  actionUrl?: string;
-  metadata?: any;
-  createdAt: string;
-  readAt?: string;
-}
+import { useNotifications, revalidateNotifications } from '@/app/hooks/useApi';
+import type { Notification } from '@/app/hooks/useApi';
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const router = useRouter();
 
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const url = filter === 'unread'
-        ? '/api/notifications?unread=true&limit=100'
-        : '/api/notifications?limit=100';
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data.notifications);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { notifications, isLoading: loading } = useNotifications(filter === 'unread');
 
-  useEffect(() => {
-    fetchNotifications();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
-
-  // Mark notification as read
   const markAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}`, {
+      await fetch(`/api/notifications/${notificationId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isRead: true }),
       });
-
-      if (response.ok) {
-        setNotifications(prev =>
-          prev.map(n =>
-            n.id === notificationId
-              ? { ...n, isRead: true, readAt: new Date().toISOString() }
-              : n
-          )
-        );
-      }
+      await revalidateNotifications();
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
   };
 
-  // Delete notification
   const deleteNotification = async (notificationId: string) => {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      }
+      await fetch(`/api/notifications/${notificationId}`, { method: 'DELETE' });
+      await revalidateNotifications();
     } catch (error) {
       console.error('Error deleting notification:', error);
     }
   };
 
-  // Mark all as read
   const markAllAsRead = async () => {
     try {
-      const response = await fetch('/api/notifications/mark-all-read', {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        setNotifications(prev =>
-          prev.map(n => ({ ...n, isRead: true, readAt: new Date().toISOString() }))
-        );
-      }
+      await fetch('/api/notifications/mark-all-read', { method: 'POST' });
+      await revalidateNotifications();
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
