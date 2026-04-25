@@ -83,6 +83,8 @@ export default function EReportingPage() {
         body: JSON.stringify({ period, submit: false }),
       });
       const data = await res.json();
+      if (res.status === 403) throw new Error('Cette fonctionnalité nécessite un plan Pro. Mettez à niveau dans Paramètres > Abonnement.');
+      if (res.status === 404) throw new Error('Aucune transaction B2C pour cette période — aucun rapport à générer.');
       if (!res.ok) throw new Error(data.error ?? 'Erreur génération');
       setSuccess(`Rapport ${period} généré.`);
       loadPeriods();
@@ -104,6 +106,8 @@ export default function EReportingPage() {
         body: JSON.stringify({ period, submit: true }),
       });
       const data = await res.json();
+      if (res.status === 403) throw new Error('Cette fonctionnalité nécessite un plan Pro. Mettez à niveau dans Paramètres > Abonnement.');
+      if (res.status === 404) throw new Error('Aucune transaction B2C pour cette période — aucun rapport à soumettre.');
       if (!res.ok) throw new Error(data.error ?? 'Erreur soumission');
       setSuccess(`Rapport ${period} soumis — flux n° ${data.numeroFluxDepot}`);
       loadPeriods();
