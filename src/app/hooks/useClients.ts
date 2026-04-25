@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
-import { Client } from '@/types/domain';
+import { fetcher } from '@/lib/fetcher';
+import { revalidateClients } from './useApi';
+import useSWR from 'swr';
+import type { Client } from '@/types/domain';
 
 export const clientSchema = z.object({
   name: z.string().min(1, 'Nom requis'),
@@ -24,10 +27,15 @@ const EMPTY_FORM: ClientFormData = {
 };
 
 export function useClients() {
-  const [clients, setClients] = useState<Client[]>([]);
+  // SWR handles caching, deduplication, and revalidation
+  const { data: clients = [], error: swrError, isLoading: loading } = useSWR<Client[]>(
+    '/api/clients',
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5000 },
+  );
+
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(swrError?.message ?? null);
 
   const [showModal, setShowModal] = useState(false);
   const [currentClient, setCurrentClient] = useState<Client | null>(null);
@@ -45,21 +53,6 @@ export function useClients() {
   const [uploading, setUploading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
-
-  const fetchClients = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/clients');
-      if (!response.ok) throw new Error(`Error: ${response.statusText}`);
-      const data = await response.json();
-      setClients(data);
-      setFilteredClients(data);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur inconnue');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     let filtered = clients.filter((client) => {
@@ -156,7 +149,7 @@ export function useClients() {
     try {
       const response = await fetch(`/api/clients/${clientId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(`Error: ${response.statusText}`);
-      fetchClients();
+      await revalidateClients();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     }
@@ -187,7 +180,7 @@ export function useClients() {
       });
       if (!response.ok) throw new Error(`Error: ${response.statusText}`);
       setShowModal(false);
-      fetchClients();
+      await revalidateClients();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     }
@@ -230,7 +223,7 @@ export function useClients() {
       const result = await response.json();
       setImportSuccess(`Importation réussie: ${result.importedCount} clients importés, ${result.skippedCount} ignorés.`);
       setSelectedFile(null);
-      fetchClients();
+      await revalidateClients();
     } catch (err: unknown) {
       setImportError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -275,7 +268,6 @@ export function useClients() {
     uploading,
     importError,
     importSuccess,
-    fetchClients,
     handleInputChange,
     handleAddClient,
     handleEditClient,

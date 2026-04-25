@@ -5,10 +5,11 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
+import { useInvoices } from '@/app/hooks/useApi';
 
 type InvoiceRecord = {
   id: string;
-  invoiceNumber: string;
+  invoiceNumber?: string | null;
   invoiceDate: string;
   dueDate: string;
   totalAmount: number | string;
@@ -153,28 +154,13 @@ function ExceptionCard({
 export default function ExceptionsPage() {
   const { status } = useSession();
   const router = useRouter();
-  const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { invoices, isLoading: loading, error: swrError } = useInvoices();
+  const error = swrError?.message ?? null;
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (status === 'unauthenticated') { router.push('/auth/signin'); return; }
-    if (status === 'authenticated') void loadInvoices();
   }, [status, router]);
-
-  const loadInvoices = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('/api/invoices');
-      if (!res.ok) throw new Error('Impossible de charger les exceptions.');
-      setInvoices(await res.json());
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors du chargement.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleResolved = (id: string) => setResolvedIds((prev) => new Set([...prev, id]));
 

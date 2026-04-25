@@ -35,7 +35,6 @@ function ClientManagementPageInner() {
     uploading,
     importError,
     importSuccess,
-    fetchClients,
     handleInputChange,
     handleAddClient,
     handleEditClient,
@@ -50,8 +49,6 @@ function ClientManagementPageInner() {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
-    } else if (status === 'authenticated') {
-      fetchClients();
     }
   }, [status, router]);
 
