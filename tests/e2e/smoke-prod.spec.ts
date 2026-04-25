@@ -97,17 +97,21 @@ test.describe('InvoiceOps — production smoke test', () => {
       if (!current) await addressField.fill('12 rue de la Paix, 75001 Paris');
     }
 
-    // Fiscal regime — select with option value "EI" (not "Micro-entreprise")
-    const fiscalSelect = page.locator('select').filter({ has: page.locator('option[value="EI"]') }).first();
-    if (await fiscalSelect.isVisible()) await fiscalSelect.selectOption('EI');
+    // Fiscal regime — MicroBIC so microEntrepreneurType is required and fully validated
+    const fiscalSelect = page.locator('select').filter({ has: page.locator('option[value="MicroBIC"]') }).first();
+    if (await fiscalSelect.isVisible()) await fiscalSelect.selectOption('MicroBIC');
 
-    // Legal status — select with option text "Micro-entreprise"
+    // Legal status — "Micro-entreprise"
     const legalSelect = page.locator('select').filter({ has: page.locator('option[value="Micro-entreprise"]') }).first();
     if (await legalSelect.isVisible()) await legalSelect.selectOption('Micro-entreprise');
 
-    // Nature de l'activité (microEntrepreneurType) — select with option value "PRESTATAIRE"
+    // Nature de l'activité (microEntrepreneurType)
     const activitySelect = page.locator('select').filter({ has: page.locator('option[value="PRESTATAIRE"]') }).first();
     if (await activitySelect.isVisible()) await activitySelect.selectOption('PRESTATAIRE');
+
+    // Declaration frequency (required for MicroBIC)
+    const freqSelect = page.locator('select').filter({ has: page.locator('option[value="monthly"]') }).first();
+    if (await freqSelect.isVisible()) await freqSelect.selectOption('monthly');
 
     await page.screenshot({ path: 'tests/e2e/screenshots/smoke-02b-before-save.png', fullPage: true });
 
