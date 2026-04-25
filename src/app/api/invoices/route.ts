@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { getLegalMentionsByFiscalRegime } from '@/lib/utils';
 import { evaluateInvoiceReadiness } from '@/lib/invoice-readiness';
+import { getUserPlan, getMonthlyInvoiceCount, FREE_INVOICE_LIMIT } from '@/lib/subscription';
 
 const invoiceSchema = z.object({
   clientId: z.string(),
@@ -66,6 +67,20 @@ export async function POST(req: NextRequest) {
   if (!user || !user.name || !user.siret || !user.address || !user.legalStatus || !user.apeCode ||
       ((user.fiscalRegime === "MicroBIC" || user.fiscalRegime === "BNC") && !user.microEntrepreneurType)) {
     return NextResponse.json({ error: 'User profile is incomplete. Please provide your name, SIRET, address, legal status, APE Code, and Micro-Entrepreneur Type (if applicable) in your profile.' }, { status: 400 });
+  }
+
+  // Free plan quota — 5 invoices per calendar month
+  const plan = await getUserPlan(session.user.id);
+  if (plan === 'free') {
+    const used = await getMonthlyInvoiceCount(session.user.id);
+    if (used >= FREE_INVOICE_LIMIT) {
+      return NextResponse.json({
+        error: `Limite du plan gratuit atteinte : ${used}/${FREE_INVOICE_LIMIT} factures ce mois-ci. Passez au plan Pro pour des factures illimitées.`,
+        upgrade: true,
+        used,
+        limit: FREE_INVOICE_LIMIT,
+      }, { status: 402 });
+    }
   }
 
   const legalMentions = getLegalMentionsByFiscalRegime(user);
