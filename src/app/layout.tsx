@@ -72,26 +72,27 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
     <html lang="fr">
       <head>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-        <title>Splitfact – L'IA du workflow de facturation électronique</title>
-        <meta name="description" content="Splitfact aide les agences françaises à automatiser le passage du travail validé à la facture conforme, prête pour la réforme e-invoicing 2026-2027." />
+        <title>InvoiceOps – Facturation électronique IA pour micro-entrepreneurs</title>
+        <meta name="description" content="InvoiceOps automatise la facturation électronique conforme Factur-X, la soumission Chorus Pro et la conformité fiscale pour les micro-entrepreneurs français." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        
+
         {/* Favicon configuration - Override Vercel default */}
         <link rel="icon" href="/favicon.png" type="image/png" />
         <link rel="shortcut icon" href="/favicon.png" type="image/png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
-        
+
         {/* PWA Configuration */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#D4921A" />
-        <meta name="application-name" content="Splitfact" />
+        <meta name="application-name" content="InvoiceOps" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Splitfact" />
+        <meta name="apple-mobile-web-app-title" content="InvoiceOps" />
         <meta name="msapplication-TileColor" content="#D4921A" />
+
         <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
         
         {/* Apple Touch Icons */}
