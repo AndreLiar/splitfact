@@ -3,6 +3,39 @@ import { Resend } from 'resend';
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const FROM = process.env.EMAIL_FROM ?? 'InvoiceOps <noreply@invoiceops.fr>';
+const APP_URL = process.env.NEXTAUTH_URL ?? 'https://invoiceops.fr';
+
+export async function sendVerificationEmail(email: string, token: string) {
+  const url = `${APP_URL}/api/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
+  const html = `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#111">
+      <h2 style="color:#2563eb">Vérifiez votre adresse email</h2>
+      <p>Merci pour votre inscription sur InvoiceOps. Cliquez sur le bouton ci-dessous pour activer votre compte.</p>
+      <p style="margin:24px 0">
+        <a href="${url}" style="background:#2563eb;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">
+          Vérifier mon email
+        </a>
+      </p>
+      <p style="color:#6b7280;font-size:13px">Ce lien expire dans 24 heures. Si vous n'avez pas créé de compte, ignorez cet email.</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+      <p style="color:#6b7280;font-size:12px">InvoiceOps — Facturation électronique conforme EN 16931</p>
+    </div>
+  `;
+  if (!resend) { console.warn('RESEND_API_KEY not set — verification email skipped'); return; }
+  return resend.emails.send({ from: FROM, to: email, subject: 'Vérifiez votre adresse email — InvoiceOps', html });
+}
+
+export async function sendAccountDeletionConfirmation(email: string) {
+  const html = `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#111">
+      <h2 style="color:#dc2626">Votre compte a été supprimé</h2>
+      <p>Votre compte InvoiceOps et toutes vos données associées ont été définitivement supprimés conformément au RGPD (art. 17).</p>
+      <p style="color:#6b7280;font-size:13px">Si vous n'êtes pas à l'origine de cette demande, contactez-nous immédiatement à support@invoiceops.fr.</p>
+    </div>
+  `;
+  if (!resend) return;
+  return resend.emails.send({ from: FROM, to: email, subject: 'Votre compte InvoiceOps a été supprimé', html });
+}
 
 export interface SendInvoiceEmailParams {
   to: string;

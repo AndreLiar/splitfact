@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
+import { sendAccountDeletionConfirmation } from "@/lib/email-service";
 
 
 const companyLegalStatuses = ["SASU", "EURL", "SARL", "SAS"];
@@ -139,4 +141,56 @@ export async function PUT(request: Request) {
     console.error("Error updating user profile:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
+}
+
+// DELETE /api/users/me — GDPR right-to-erasure (requires password confirmation)
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return new NextResponse("Unauthorized", { status: 401 });
+
+  const { password } = await request.json().catch(() => ({}));
+  if (!password) {
+    return NextResponse.json({ error: 'Mot de passe requis pour confirmer la suppression.' }, { status: 400 });
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, email: true, password: true } });
+  if (!user) return new NextResponse("Not found", { status: 404 });
+
+  if (user.password) {
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return NextResponse.json({ error: 'Mot de passe incorrect.' }, { status: 403 });
+  }
+
+  // Delete in dependency order (no cascade on most relations)
+  await prisma.$transaction([
+    prisma.notificationQueue.deleteMany({ where: { userId: user.id } }),
+    prisma.notification.deleteMany({ where: { userId: user.id } }),
+    prisma.billingTrigger.deleteMany({ where: { userId: user.id } }),
+    prisma.eReportingPeriod.deleteMany({ where: { userId: user.id } }),
+    prisma.complianceEvent.deleteMany({ where: { userId: user.id } }),
+    prisma.urssafReport.deleteMany({ where: { userId: user.id } }),
+    prisma.receivedInvoice.deleteMany({ where: { userId: user.id } }),
+  ]);
+
+  // Delete invoice children before invoices
+  const invoiceIds = (await prisma.invoice.findMany({ where: { userId: user.id }, select: { id: true } })).map(i => i.id);
+  if (invoiceIds.length > 0) {
+    await prisma.$transaction([
+      prisma.activityLog.deleteMany({ where: { invoiceId: { in: invoiceIds } } }),
+      prisma.invoiceItem.deleteMany({ where: { invoiceId: { in: invoiceIds } } }),
+      prisma.payment.deleteMany({ where: { invoiceId: { in: invoiceIds } } }),
+    ]);
+  }
+
+  await prisma.$transaction([
+    prisma.invoice.deleteMany({ where: { userId: user.id } }),
+    prisma.client.deleteMany({ where: { userId: user.id } }),
+    prisma.verificationToken.deleteMany({ where: { identifier: user.email ?? '' } }),
+    // Account and Session have onDelete: Cascade — they'll be removed with the User
+    prisma.user.delete({ where: { id: user.id } }),
+  ]);
+
+  if (user.email) await sendAccountDeletionConfirmation(user.email);
+
+  return NextResponse.json({ message: 'Compte supprimé.' });
 }

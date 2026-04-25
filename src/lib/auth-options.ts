@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { JWT } from "next-auth/jwt";
 import { Session, User } from "next-auth";
+import { rateLimit } from "@/lib/rate-limit";
 
 const prisma = new PrismaClient()
 
@@ -17,9 +18,16 @@ export const authOptions = {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           return null;
+        }
+
+        // Rate limit: 10 login attempts per IP per 15 minutes
+        const ip = (req as any)?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ?? 'unknown';
+        const rl = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
+        if (!rl.allowed) {
+          throw new Error('RATE_LIMITED');
         }
 
         const user = await prisma.user.findUnique({ where: { email: credentials.email } });
@@ -32,6 +40,11 @@ export const authOptions = {
 
         if (!isPasswordValid) {
           return null;
+        }
+
+        // Block unverified accounts (RESEND_API_KEY must be configured for this to be enforced)
+        if (process.env.RESEND_API_KEY && !user.emailVerified) {
+          throw new Error('EMAIL_NOT_VERIFIED');
         }
 
         return {
