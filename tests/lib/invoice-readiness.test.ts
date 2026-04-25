@@ -1,4 +1,4 @@
-import { evaluateInvoiceReadiness } from '@/lib/invoice-readiness'
+import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness'
 
 describe('invoice readiness', () => {
   it('marks an invoice as blocked when required fields are missing', () => {

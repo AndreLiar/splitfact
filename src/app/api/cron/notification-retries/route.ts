@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { NotificationService } from "@/lib/notification-service";
+import { NotificationService } from "@/domains/notifications/notification-service";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("Authorization");

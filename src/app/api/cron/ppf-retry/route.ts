@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { submitInvoiceToPpf, mapPpfStatus } from '@/lib/piste-api';
-import { buildFacturxXml } from '@/lib/facturx';
-import { logActivity } from '@/lib/activity-log';
+import { buildFacturxXml } from '@/domains/invoices/facturx';
+import { logActivity } from '@/domains/invoices/activity-log';
 
 // GET /api/cron/ppf-retry
 // Retries invoices stuck in pending_retry status.

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPpfInvoiceStatus, mapPpfStatus, type PpfLifecycleStatus } from '@/lib/piste-api';
 import { getUserPisteCredentials } from '@/lib/user-piste-credentials';
-import { logActivity } from '@/lib/activity-log';
+import { logActivity } from '@/domains/invoices/activity-log';
 
 // GET /api/cron/ppf-status-poll
 // Polls Chorus Pro for updated lifecycle status on in-flight invoices.

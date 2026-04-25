@@ -1,4 +1,4 @@
-import { buildEReportingXml, EReportingData } from '@/lib/e-reporting/generate';
+import { buildEReportingXml, EReportingData } from '@/domains/compliance/e-reporting/generate';
 
 const baseData: EReportingData = {
   period: '2026-03',

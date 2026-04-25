@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { getLegalMentionsByFiscalRegime } from '@/lib/utils';
-import { evaluateInvoiceReadiness } from '@/lib/invoice-readiness';
+import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
 import { getUserPlan, getMonthlyInvoiceCount, FREE_INVOICE_LIMIT } from '@/lib/subscription';
 
 const invoiceSchema = z.object({
