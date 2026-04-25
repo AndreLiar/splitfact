@@ -5,35 +5,11 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { z } from 'zod';
-import { getLegalMentionsByFiscalRegime, formatCurrency } from '@/lib/utils'; // Import the utility function
+import { getLegalMentionsByFiscalRegime, formatCurrency } from '@/lib/utils';
 import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
-
-interface UserProfile {
-  name: string | null;
-  siret: string | null;
-  address: string | null;
-  legalStatus: string | null;
-  apeCode: string | null;
-  tvaNumber: string | null;
-  rcsNumber: string | null;
-  shareCapital: string | null;
-  fiscalRegime: string | null;
-  microEntrepreneurType: "COMMERCANT" | "PRESTATAIRE" | "LIBERAL" | null;
-}
-
-interface Client {
-  id: string;
-  name: string;
-  address: string;
-  siret?: string;
-  siretValidated?: boolean;
-  tvaNumber?: string;
-  legalStatus?: string;
-  shareCapital?: string;
-  contactName?: string;
-  email?: string;
-  phone?: string;
-}
+import { useUserProfile } from '@/app/hooks/useUserProfile';
+import { useClients as useApiClients, useQuota, revalidateInvoices } from '@/app/hooks/useApi';
+import type { Client } from '@/types/domain';
 
 interface FormData {
   clientId: string;
@@ -91,7 +67,7 @@ const invoiceSchema = z.object({
 export default function CreateInvoicePage() {
   const { status } = useSession();
   const router = useRouter();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const { userProfile, fetchUserProfile } = useUserProfile();
   const [formData, setFormData] = useState<FormData>({
     clientId: '',
     invoiceDate: new Date().toISOString().split('T')[0],
@@ -103,9 +79,10 @@ export default function CreateInvoicePage() {
     latePenaltyRate: "3 fois le taux d'intérêt légal",
     recoveryIndemnity: 40,
   });
-  const [clients, setClients] = useState<Client[]>([]);
+  const { clients, mutate: refetchClients } = useApiClients();
+  const { quota } = useQuota();
   const [errors, setErrors] = useState<any>({});
-  const [loading, setLoading] = useState(true);
+  const [loading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -116,7 +93,6 @@ export default function CreateInvoicePage() {
   const [extractionSource, setExtractionSource] = useState<string | null>(null);
   const [suggestNewClient, setSuggestNewClient] = useState<{ name: string; address?: string; email?: string; siret?: string } | null>(null);
   const [creatingClient, setCreatingClient] = useState(false);
-  const [quota, setQuota] = useState<{ plan: string; limit: number | null; used: number | null; remaining: number | null; llmConfigured?: boolean } | null>(null);
   const [siretCheck, setSiretCheck] = useState<{ loading: boolean; result: { valid: boolean; active: boolean; companyName: string | null; error?: string } | null }>({ loading: false, result: null });
 
   const handleDocumentUpload = async (file: File) => {
@@ -150,9 +126,9 @@ export default function CreateInvoicePage() {
       }));
 
       // Auto-match client by name if found in client list
-      setClients((currentClients) => {
+      (() => {
         if (e.clientName) {
-          const match = currentClients.find(
+          const match = clients.find(
             (c) => c.name.toLowerCase() === (e.clientName as string).toLowerCase()
           );
           if (match) {
@@ -174,8 +150,7 @@ export default function CreateInvoicePage() {
             });
           }
         }
-        return currentClients;
-      });
+      })();
 
       setExtractionSource(file.name);
       setShowUploadZone(false);
@@ -191,44 +166,8 @@ export default function CreateInvoicePage() {
       router.push('/auth/signin');
     } else if (status === 'authenticated') {
       fetchUserProfile();
-      fetchClients();
-      fetch('/api/billing/quota').then(r => r.json()).then(setQuota).catch(() => null);
     }
   }, [status, router]);
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch('/api/users/me');
-      if (!response.ok) {
-        throw new Error('Failed to fetch user profile');
-      }
-      const data = await response.json();
-      setUserProfile(data);
-      
-      // Set TVA rate to 0 for all Micro-Entrepreneurs
-      setFormData(prev => ({
-        ...prev,
-        items: prev.items.map(item => ({ ...item, tvaRate: 0 }))
-      }));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchClients = async () => {
-    try {
-      const response = await fetch(`/api/clients`); // New endpoint
-      if (!response.ok) {
-        throw new Error('Failed to fetch clients');
-      }
-      const data = await response.json();
-      setClients(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   const verifySiret = async () => {
     const clientSiret = formData.clientSiret;
@@ -244,7 +183,7 @@ export default function CreateInvoicePage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ siret: clientSiret, clientId: formData.clientId }),
         });
-        setClients(prev => prev.map(c => c.id === formData.clientId ? { ...c, siretValidated: true } : c));
+        await refetchClients();
       }
     } catch {
       setSiretCheck({ loading: false, result: { valid: false, active: false, companyName: null, error: 'Erreur réseau lors de la vérification.' } });
@@ -328,13 +267,13 @@ export default function CreateInvoicePage() {
         const errorData = await response.json().catch(() => ({}));
         console.error("Server error data:", errorData);
         if (response.status === 402) {
-          // Refresh quota state to show updated count in the banner
-          fetch('/api/billing/quota').then(r => r.json()).then(setQuota).catch(() => null);
+          // quota revalidated automatically by SWR on next focus/interval
         }
         throw new Error(errorData.error || 'Failed to create invoice');
       }
 
       const createdInvoice = await response.json();
+      await revalidateInvoices();
       router.push(`/dashboard/invoices/${createdInvoice.id}`);
     } catch (error: any) {
       console.error(error);
@@ -634,7 +573,7 @@ export default function CreateInvoicePage() {
                     });
                     if (res.ok) {
                       const newClient = await res.json();
-                      setClients((prev) => [...prev, newClient]);
+                      await refetchClients();
                       setFormData((prev) => ({ ...prev, clientId: newClient.id }));
                       setSuggestNewClient(null);
                     }

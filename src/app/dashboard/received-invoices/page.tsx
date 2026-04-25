@@ -1,21 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
-interface ReceivedInvoice {
-  id: string;
-  cppId: string;
-  invoiceNumber: string;
-  supplierName: string;
-  supplierSiret: string | null;
-  totalAmountTTC: number;
-  currency: string;
-  invoiceDate: string | null;
-  depositedAt: string | null;
-  ppfStatus: string;
-  isRead: boolean;
-  createdAt: string;
-}
+import { useState } from 'react';
+import { useReceivedInvoices, revalidateReceivedInvoices } from '@/app/hooks/useApi';
+import type { ReceivedInvoice } from '@/app/hooks/useApi';
 
 const STATUS_BADGE: Record<string, { label: string; color: string }> = {
   DEPOSEE:            { label: 'Déposée',       color: 'bg-secondary' },
@@ -37,41 +24,19 @@ function fmtDate(iso: string | null) {
 }
 
 export default function ReceivedInvoicesPage() {
-  const [invoices, setInvoices] = useState<ReceivedInvoice[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const { invoices, isLoading: loading } = useReceivedInvoices(filter === 'unread');
 
   const unreadCount = invoices.filter((i) => !i.isRead).length;
 
-  const fetchInvoices = async () => {
-    setLoading(true);
-    try {
-      const url = filter === 'unread'
-        ? '/api/received-invoices?unread=true&limit=100'
-        : '/api/received-invoices?limit=100';
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setInvoices(data.invoices);
-        setTotal(data.total);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchInvoices(); }, [filter]);
-
   const markRead = async (id: string) => {
     await fetch(`/api/received-invoices/${id}`, { method: 'PATCH' });
-    setInvoices((prev) => prev.map((i) => i.id === id ? { ...i, isRead: true } : i));
+    await revalidateReceivedInvoices();
   };
 
   const markAllRead = async () => {
     await fetch('/api/received-invoices', { method: 'PATCH' });
-    setInvoices((prev) => prev.map((i) => ({ ...i, isRead: true })));
+    await revalidateReceivedInvoices();
   };
 
   return (
@@ -99,7 +64,7 @@ export default function ReceivedInvoicesPage() {
       <div className="row g-3 mb-4">
         <div className="col-md-4">
           <div className="card shadow-sm text-center py-3">
-            <div className="h3 fw-bold text-primary mb-0">{total}</div>
+            <div className="h3 fw-bold text-primary mb-0">{invoices.length}</div>
             <small className="text-muted">Factures reçues</small>
           </div>
         </div>
@@ -126,7 +91,7 @@ export default function ReceivedInvoicesPage() {
             <input type="radio" className="btn-check" name="recv-filter" id="recv-all"
               checked={filter === 'all'} onChange={() => setFilter('all')} />
             <label className="btn btn-outline-primary" htmlFor="recv-all">
-              <i className="bi bi-list me-1"></i>Toutes ({total})
+              <i className="bi bi-list me-1"></i>Toutes ({invoices.length})
             </label>
             <input type="radio" className="btn-check" name="recv-filter" id="recv-unread"
               checked={filter === 'unread'} onChange={() => setFilter('unread')} />

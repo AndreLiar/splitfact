@@ -1,29 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-interface ComplianceScore {
-  score: number;
-  level: 'green' | 'warning' | 'red';
-  penaltyExposure: number;
-  issuedTotal: number;
-  submittedToPpf: number;
-  pendingSubmission: number;
-  unreportedB2C: number;
-}
-
-interface ComplianceEvent {
-  id: string;
-  type: string;
-  description: string;
-  penaltyAmount: number;
-  resolvedAt: string | null;
-  createdAt: string;
-  invoiceId: string | null;
-}
+import { useCompliance } from '@/app/hooks/useApi';
 
 const EVENT_LABELS: Record<string, string> = {
   missing_einvoice:    'Facture non soumise au PPF',
@@ -39,22 +20,13 @@ const fmt = (n: number) =>
 export default function CompliancePage() {
   const { status } = useSession();
   const router = useRouter();
-  const [data, setData] = useState<{ score: ComplianceScore; events: ComplianceEvent[] } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { score, events, isLoading: loading } = useCompliance();
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/signin');
   }, [status, router]);
 
-  useEffect(() => {
-    if (status !== 'authenticated') return;
-    fetch('/api/compliance')
-      .then((r) => r.json())
-      .then(setData)
-      .finally(() => setLoading(false));
-  }, [status]);
-
-  if (loading || !data) {
+  if (loading || !score) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
         <div className="spinner-border text-primary" />
@@ -62,7 +34,6 @@ export default function CompliancePage() {
     );
   }
 
-  const { score, events } = data;
   const scoreColor = score.level === 'green' ? '#198754' : score.level === 'warning' ? '#fd7e14' : '#dc3545';
   const scoreBg = score.level === 'green' ? 'bg-success' : score.level === 'warning' ? 'bg-warning' : 'bg-danger';
 

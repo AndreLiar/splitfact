@@ -1,21 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-
-interface EReportingPeriod {
-  id?: string;
-  period: string;
-  status: string;
-  transactionCount: number;
-  totalHT: number;
-  totalTVA: number;
-  totalTTC: number;
-  numeroFluxDepot?: string | null;
-  submittedAt?: string | null;
-  errorMessage?: string | null;
-}
+import { useEReportingPeriods } from '@/app/hooks/useApi';
+import type { EReportingPeriod } from '@/app/hooks/useApi';
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   draft:     { label: 'Brouillon',  cls: 'bg-secondary' },
@@ -46,8 +35,11 @@ export default function EReportingPage() {
   const { status } = useSession();
   const router = useRouter();
 
-  const [periods, setPeriods] = useState<EReportingPeriod[]>([]);
-  const [loading, setLoading] = useState(true);
+  const months = useMemo(() => getPreviousMonths(6), []);
+  const { periods, isLoading: loading, mutate: reloadPeriods } = useEReportingPeriods(
+    status === 'authenticated' ? months : [],
+  );
+
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -55,22 +47,6 @@ export default function EReportingPage() {
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/signin');
   }, [status, router]);
-
-  const loadPeriods = useCallback(async () => {
-    setLoading(true);
-    const months = getPreviousMonths(6);
-    const results = await Promise.all(
-      months.map(async (period) => {
-        const res = await fetch(`/api/e-reporting?period=${period}`);
-        if (!res.ok) return { period, status: 'draft', transactionCount: 0, totalHT: 0, totalTVA: 0, totalTTC: 0 };
-        return res.json();
-      })
-    );
-    setPeriods(results);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { if (status === 'authenticated') loadPeriods(); }, [status, loadPeriods]);
 
   const handleGenerate = async (period: string) => {
     setSubmitting(period);
@@ -87,9 +63,9 @@ export default function EReportingPage() {
       if (res.status === 404) throw new Error('Aucune transaction B2C pour cette période — aucun rapport à générer.');
       if (!res.ok) throw new Error(data.error ?? 'Erreur génération');
       setSuccess(`Rapport ${period} généré.`);
-      loadPeriods();
-    } catch (e: any) {
-      setError(e.message);
+      reloadPeriods();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Erreur inconnue');
     } finally {
       setSubmitting(null);
     }
@@ -110,9 +86,9 @@ export default function EReportingPage() {
       if (res.status === 404) throw new Error('Aucune transaction B2C pour cette période — aucun rapport à soumettre.');
       if (!res.ok) throw new Error(data.error ?? 'Erreur soumission');
       setSuccess(`Rapport ${period} soumis — flux n° ${data.numeroFluxDepot}`);
-      loadPeriods();
-    } catch (e: any) {
-      setError(e.message);
+      reloadPeriods();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Erreur inconnue');
     } finally {
       setSubmitting(null);
     }
@@ -176,7 +152,7 @@ export default function EReportingPage() {
           <div className="card shadow-sm border-0">
             <div className="card-header bg-white d-flex align-items-center justify-content-between py-3">
               <h5 className="mb-0 fw-semibold">Historique des rapports (6 derniers mois)</h5>
-              <button className="btn btn-sm btn-outline-secondary" onClick={loadPeriods}>
+              <button className="btn btn-sm btn-outline-secondary" onClick={() => reloadPeriods()}>
                 <i className="bi bi-arrow-clockwise me-1"></i>Actualiser
               </button>
             </div>
