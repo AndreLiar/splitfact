@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     if (isImage) {
       // Vision model — direct image understanding
       const base64 = buffer.toString('base64');
-      raw = await extractFromImage(base64, mimeType, EXTRACTION_PROMPT);
+      raw = await extractFromImage(base64, mimeType, EXTRACTION_PROMPT, session.user.id);
     } else {
       // PDF — extract text first, then use Mistral (French text model)
       const pdfParse = (await import('pdf-parse')).default;
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      raw = await extractFromText(pdfText, EXTRACTION_PROMPT);
+      raw = await extractFromText(pdfText, EXTRACTION_PROMPT, session.user.id);
     }
 
     // Strip markdown fences if model wraps in ```json
