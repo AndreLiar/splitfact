@@ -128,8 +128,9 @@ test.describe('InvoiceOps — production smoke test', () => {
     await page.waitForTimeout(2500);
 
     if (saveResponse) {
-      console.log(`  → PUT /api/users/me → ${saveResponse.status}: ${saveResponse.body.slice(0, 200)}`);
-      expect(saveResponse.status, `Profile save failed: ${saveResponse.body}`).toBe(200);
+      const r = saveResponse as { status: number; body: string };
+      console.log(`  → PUT /api/users/me → ${r.status}: ${r.body.slice(0, 200)}`);
+      expect(r.status, `Profile save failed: ${r.body}`).toBe(200);
     } else {
       console.log('  ⚠ No PUT /api/users/me response captured');
     }
@@ -262,8 +263,9 @@ test.describe('InvoiceOps — production smoke test', () => {
     await page.screenshot({ path: 'tests/e2e/screenshots/smoke-05b-pdf-generated.png', fullPage: true });
 
     if (pdfResponse) {
-      console.log(`  → POST /api/invoices/.../pdf → ${pdfResponse.status}`);
-      expect(pdfResponse.status, 'PDF generation API failed').toBe(200);
+      const r = pdfResponse as { status: number };
+      console.log(`  → POST /api/invoices/.../pdf → ${r.status}`);
+      expect(r.status, 'PDF generation API failed').toBe(200);
     } else {
       console.log('  ⚠ No PDF API response captured — checking for download link');
     }
