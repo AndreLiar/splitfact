@@ -4,7 +4,8 @@ import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-interface UserProfile {
+// Form-state shape: all strings (empty string = unset), not nullable
+interface ProfileFormData {
   name: string;
   siret: string;
   address: string;
@@ -25,7 +26,7 @@ function SettingsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [profile, setProfile] = useState<UserProfile>({
+  const [profile, setProfile] = useState<ProfileFormData>({
     name: '', siret: '', address: '', fiscalRegime: '', microEntrepreneurType: '',
     declarationFrequency: '', tvaNumber: '', legalStatus: '', apeCode: '',
     rcsNumber: '', shareCapital: '',
@@ -249,7 +250,7 @@ function SettingsPageInner() {
     setProfileSaving(false);
   };
 
-  const field = (key: keyof UserProfile) => ({
+  const field = (key: keyof ProfileFormData) => ({
     value: profile[key],
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setProfile((p) => ({ ...p, [key]: e.target.value })),
