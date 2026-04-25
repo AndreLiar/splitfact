@@ -386,8 +386,9 @@ export default function CreateInvoicePage() {
     return <div className="d-flex justify-content-center align-items-center vh-100">Chargement...</div>;
   }
 
+  const needsActivityType = ['MicroBIC', 'BNC'].includes(userProfile?.fiscalRegime ?? '');
   if (!userProfile?.name || !userProfile?.siret || !userProfile?.address || !userProfile?.legalStatus || !userProfile?.apeCode ||
-      !userProfile?.microEntrepreneurType) {
+      (needsActivityType && !userProfile?.microEntrepreneurType)) {
     return (
       <div className="container mt-5">
         <div className="alert alert-warning text-center">

@@ -335,6 +335,8 @@ function SettingsPageInner() {
                     <label className="form-label fw-medium">Régime fiscal <span className="text-danger">*</span></label>
                     <select className={`form-select ${profileErrors.fiscalRegime ? 'is-invalid' : ''}`} {...field('fiscalRegime')}>
                       <option value="">-- Choisir --</option>
+                      <option value="MicroBIC">Micro-BIC (achat/revente, commerçant)</option>
+                      <option value="BNC">Micro-BNC (profession libérale)</option>
                       <option value="EI">EI (entreprise individuelle)</option>
                       <option value="SASU">SASU / SAS</option>
                       <option value="Other">Autre</option>
