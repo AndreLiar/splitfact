@@ -17,6 +17,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,10 +39,10 @@ export default function Register() {
       });
 
       if (response.ok) {
-        router.push("/auth/signin?registration=success");
+        setEmailSent(true);
       } else {
         const data = await response.json();
-        setError(data.message || "Échec de l'inscription. Veuillez réessayer.");
+        setError(data.error || data.message || "Échec de l'inscription. Veuillez réessayer.");
       }
     } catch {
       setError("Une erreur inattendue s'est produite. Vérifiez votre connexion.");
@@ -268,7 +269,30 @@ export default function Register() {
             </p>
           </div>
 
-          {error && (
+          {emailSent && (
+            <div style={{
+              padding: "20px",
+              backgroundColor: "rgba(16,185,129,0.08)",
+              border: "1px solid rgba(16,185,129,0.2)",
+              borderRadius: "8px",
+              color: "#10b981",
+              fontSize: "0.9rem",
+              textAlign: "center",
+            }}>
+              <div style={{ fontSize: "2rem", marginBottom: "12px" }}>📬</div>
+              <div style={{ fontWeight: 590, marginBottom: "8px", color: "#f7f8f8" }}>Vérifiez votre boîte mail</div>
+              <div style={{ color: "#8a8f98", fontSize: "0.875rem" }}>
+                Un lien de confirmation a été envoyé à <strong style={{ color: "#d0d6e0" }}>{email}</strong>. Cliquez dessus pour activer votre compte.
+              </div>
+              <div style={{ marginTop: "16px" }}>
+                <Link href="/auth/signin" style={{ color: "#D4921A", textDecoration: "none", fontSize: "0.875rem" }}>
+                  Retour à la connexion
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {!emailSent && error && (
             <div style={{
               padding: "12px 16px",
               backgroundColor: "rgba(224,82,82,0.08)",
@@ -283,7 +307,7 @@ export default function Register() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <form onSubmit={handleSubmit} style={{ display: emailSent ? "none" : "flex", flexDirection: "column", gap: "16px" }}>
             {/* Email */}
             <div>
               <label style={{
