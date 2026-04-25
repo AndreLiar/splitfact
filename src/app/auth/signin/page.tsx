@@ -12,13 +12,13 @@ function SignInContent() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useState(() => {
-    if (searchParams.get("registration") === "success") {
-      setRegistrationSuccess(true);
-    }
+    if (searchParams.get("registration") === "success") setRegistrationSuccess(true);
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,7 +32,12 @@ function SignInContent() {
       password,
     });
 
-    if (result?.error) {
+    if (result?.error === 'EMAIL_NOT_VERIFIED') {
+      setUnverifiedEmail(email);
+      setError("Votre email n'est pas encore vérifié. Consultez votre boîte mail ou renvoyez le lien ci-dessous.");
+    } else if (result?.error === 'RATE_LIMITED') {
+      setError("Trop de tentatives. Attendez quelques minutes avant de réessayer.");
+    } else if (result?.error) {
       setError("Email ou mot de passe incorrect. Veuillez réessayer.");
     } else {
       router.push("/dashboard");
@@ -218,16 +223,48 @@ function SignInContent() {
             Reprenez votre workflow là où vous l'avez laissé.
           </p>
 
+          {searchParams.get('verified') === '1' && (
+            <div className="alert alert-success mb-4">
+              <i className="bi bi-patch-check-fill me-2"></i>
+              Email vérifié avec succès. Connectez-vous pour accéder à votre compte.
+            </div>
+          )}
+          {searchParams.get('error') === 'token_expired' && (
+            <div className="alert alert-warning mb-4">
+              <i className="bi bi-clock me-2"></i>
+              Ce lien de vérification a expiré. Reconnectez-vous pour en recevoir un nouveau.
+            </div>
+          )}
           {registrationSuccess && (
             <div className="alert alert-success mb-4">
-              <i className="bi bi-check-circle me-2"></i>
-              Inscription réussie ! Vous pouvez maintenant vous connecter.
+              <i className="bi bi-envelope-check me-2"></i>
+              Inscription réussie ! Un email de vérification a été envoyé. Vérifiez votre boîte mail.
             </div>
           )}
           {error && (
             <div className="alert alert-danger mb-4">
               <i className="bi bi-exclamation-triangle me-2"></i>
               {error}
+              {unverifiedEmail && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-light"
+                    disabled={resendState !== 'idle'}
+                    onClick={async () => {
+                      setResendState('sending');
+                      await fetch('/api/auth/resend-verification', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: unverifiedEmail }),
+                      });
+                      setResendState('sent');
+                    }}
+                  >
+                    {resendState === 'sending' ? 'Envoi…' : resendState === 'sent' ? 'Email envoyé !' : 'Renvoyer le lien de vérification'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

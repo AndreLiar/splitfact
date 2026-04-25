@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface UserProfile {
@@ -714,6 +714,85 @@ function SettingsPageInner() {
             </div>
           </div>
 
+        </div>
+      </div>
+
+      {/* ── GDPR Account Deletion ──────────────────────────── */}
+      <DangerZone />
+    </div>
+  );
+}
+
+function DangerZone() {
+  const router = useRouter();
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleDelete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: confirmPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error || 'Erreur lors de la suppression.'); return; }
+      await signOut({ redirect: false });
+      router.push('/?deleted=1');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="row mt-4">
+      <div className="col-12">
+        <div className="card border-danger shadow-sm">
+          <div className="card-header bg-danger bg-opacity-10 border-danger">
+            <h5 className="mb-0 text-danger d-flex align-items-center gap-2">
+              <i className="bi bi-exclamation-octagon-fill"></i>
+              Zone de danger — Suppression du compte
+            </h5>
+          </div>
+          <div className="card-body">
+            <p className="text-muted small mb-3">
+              La suppression est <strong>définitive et irréversible</strong>. Toutes vos données (factures, clients, rapports) seront effacées conformément au <strong>RGPD art. 17</strong>. Un email de confirmation vous sera envoyé.
+            </p>
+            {!showConfirm ? (
+              <button className="btn btn-outline-danger btn-sm" onClick={() => setShowConfirm(true)}>
+                <i className="bi bi-trash3 me-2"></i>Supprimer mon compte
+              </button>
+            ) : (
+              <form onSubmit={handleDelete}>
+                <div className="mb-3" style={{ maxWidth: '360px' }}>
+                  <label className="form-label fw-semibold text-danger">Confirmez avec votre mot de passe</label>
+                  <input
+                    type="password"
+                    className="form-control border-danger"
+                    placeholder="Mot de passe actuel"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
+                </div>
+                {error && <div className="alert alert-danger py-2 small mb-3">{error}</div>}
+                <div className="d-flex gap-2">
+                  <button type="submit" className="btn btn-danger btn-sm" disabled={deleting || !confirmPassword}>
+                    {deleting ? <><span className="spinner-border spinner-border-sm me-1" />Suppression…</> : 'Supprimer définitivement'}
+                  </button>
+                  <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => { setShowConfirm(false); setError(null); setConfirmPassword(''); }}>
+                    Annuler
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>
