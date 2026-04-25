@@ -519,11 +519,11 @@ export default function Register() {
             fontFeatureSettings: '"cv01","ss03"',
           }}>
             En créant un compte, vous acceptez nos{" "}
-            <Link href="/legal/terms" style={{ color: "#8a8f98", textDecoration: "underline" }}>
+            <Link href="/terms-of-service" style={{ color: "#8a8f98", textDecoration: "underline" }}>
               CGU
             </Link>{" "}
             et notre{" "}
-            <Link href="/legal/privacy" style={{ color: "#8a8f98", textDecoration: "underline" }}>
+            <Link href="/privacy-policy" style={{ color: "#8a8f98", textDecoration: "underline" }}>
               politique de confidentialité
             </Link>.
           </p>
