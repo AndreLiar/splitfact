@@ -70,9 +70,8 @@ test.describe('InvoiceOps — production smoke test', () => {
 
     await page.screenshot({ path: 'tests/e2e/screenshots/smoke-02b-settings.png', fullPage: true });
 
-    // Fill name if empty
-    const nameInput = page.locator('input').filter({ hasText: '' }).first();
-    const nameField = page.locator('input[placeholder*="Jean Dupont"], input[placeholder*="Dupont"]').first();
+    // Fill name
+    const nameField = page.locator('input[placeholder*="Jean Dupont"]').first();
     if (await nameField.isVisible()) {
       await nameField.fill('Andre Kanmegne');
     }
@@ -81,9 +80,7 @@ test.describe('InvoiceOps — production smoke test', () => {
     const siretField = page.locator('input[placeholder="12345678900012"]').first();
     if (await siretField.isVisible()) {
       const current = await siretField.inputValue();
-      if (!current || current.length < 14) {
-        await siretField.fill('89265544000017');
-      }
+      if (!current || current.length < 14) await siretField.fill('89265544000017');
     }
 
     // APE code
@@ -100,23 +97,29 @@ test.describe('InvoiceOps — production smoke test', () => {
       if (!current) await addressField.fill('12 rue de la Paix, 75001 Paris');
     }
 
-    // Fiscal regime
-    const fiscalSelect = page.locator('select').filter({ has: page.locator('option[value="EI"]') }).first();
-    if (await fiscalSelect.isVisible()) {
-      await fiscalSelect.selectOption('EI');
-    }
+    // Fiscal regime — MicroBIC so microEntrepreneurType is required and fully validated
+    const fiscalSelect = page.locator('select').filter({ has: page.locator('option[value="MicroBIC"]') }).first();
+    if (await fiscalSelect.isVisible()) await fiscalSelect.selectOption('MicroBIC');
 
-    // Legal status
-    const legalSelect = page.locator('select').filter({ has: page.locator('option', { hasText: 'Micro-entreprise' }) }).first();
-    if (await legalSelect.isVisible()) {
-      await legalSelect.selectOption('Micro-entreprise');
-    }
+    // Legal status — "Micro-entreprise"
+    const legalSelect = page.locator('select').filter({ has: page.locator('option[value="Micro-entreprise"]') }).first();
+    if (await legalSelect.isVisible()) await legalSelect.selectOption('Micro-entreprise');
+
+    // Nature de l'activité (microEntrepreneurType)
+    const activitySelect = page.locator('select').filter({ has: page.locator('option[value="PRESTATAIRE"]') }).first();
+    if (await activitySelect.isVisible()) await activitySelect.selectOption('PRESTATAIRE');
+
+    // Declaration frequency (required for MicroBIC)
+    const freqSelect = page.locator('select').filter({ has: page.locator('option[value="monthly"]') }).first();
+    if (await freqSelect.isVisible()) await freqSelect.selectOption('monthly');
+
+    await page.screenshot({ path: 'tests/e2e/screenshots/smoke-02b-before-save.png', fullPage: true });
 
     // Save profile
-    const saveBtn = page.getByRole('button', { name: /enregistrer|sauvegarder|save/i }).first();
+    const saveBtn = page.getByRole('button', { name: /enregistrer le profil|sauvegarder/i }).first();
     if (await saveBtn.isVisible()) {
       await saveBtn.click();
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(2000);
     }
 
     await page.screenshot({ path: 'tests/e2e/screenshots/smoke-02c-settings-saved.png', fullPage: true });
@@ -153,44 +156,58 @@ test.describe('InvoiceOps — production smoke test', () => {
     console.log('✅ Client created');
   });
 
-  // ── 4. Create invoice ──────────────────────────────────────────────────────
+  // ── 4. Create invoice (multi-step form) ────────────────────────────────────
   test('4 · Create an invoice', async ({ page }) => {
     if (!PASSWORD) { test.skip(true, 'SMOKE_PASSWORD not set'); return; }
     await login(page);
     await page.goto(`${BASE}/dashboard/create-invoice`);
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1500);
 
-    // Select client
-    const clientSelect = page.locator('select[name="clientId"], input[name="clientId"]').first();
+    await page.screenshot({ path: 'tests/e2e/screenshots/smoke-04a-step1.png', fullPage: true });
+
+    // ── Step 1: client + basic info ──────────────────────────────────────────
+    // Select client (first non-placeholder option)
+    const clientSelect = page.locator('select').filter({ has: page.locator('option:not([value=""])') }).first();
     if (await clientSelect.isVisible()) {
-      if (await clientSelect.evaluate(el => el.tagName) === 'SELECT') {
-        // Pick first real option (index 1, index 0 is usually placeholder)
-        const options = await clientSelect.locator('option').count();
-        if (options > 1) await clientSelect.selectOption({ index: 1 });
-      }
+      const optCount = await clientSelect.locator('option').count();
+      if (optCount > 1) await clientSelect.selectOption({ index: 1 });
     }
 
-    // Fill description
-    const descInput = page.locator('input[name="description"], textarea[name="description"]').first();
-    if (await descInput.isVisible()) {
-      await descInput.fill(INVOICE_DESC);
+    // Step 1 → next
+    const nextBtn1 = page.getByRole('button', { name: /étape suivante/i }).first();
+    if (await nextBtn1.isVisible()) {
+      await nextBtn1.click();
+      await page.waitForTimeout(800);
     }
+
+    await page.screenshot({ path: 'tests/e2e/screenshots/smoke-04b-step2.png', fullPage: true });
+
+    // ── Step 2: line items ───────────────────────────────────────────────────
+    // Fill description
+    const descInput = page.locator('input[placeholder*="description"], input[placeholder*="prestation"], textarea').first();
+    if (await descInput.isVisible()) await descInput.fill(INVOICE_DESC);
 
     // Fill unit price
-    const priceInput = page.locator('input[name*="price"], input[name*="unitPrice"], input[placeholder*="prix"]').first();
-    if (await priceInput.isVisible()) {
-      await priceInput.fill('500');
+    const priceInput = page.locator('input[placeholder*="prix"], input[placeholder*="0.00"], input[type="number"]').first();
+    if (await priceInput.isVisible()) await priceInput.fill('500');
+
+    // Step 2 → next
+    const nextBtn2 = page.getByRole('button', { name: /étape suivante/i }).first();
+    if (await nextBtn2.isVisible()) {
+      await nextBtn2.click();
+      await page.waitForTimeout(800);
     }
 
-    await page.screenshot({ path: 'tests/e2e/screenshots/smoke-04a-invoice-form.png', fullPage: true });
+    await page.screenshot({ path: 'tests/e2e/screenshots/smoke-04c-step3.png', fullPage: true });
 
-    // Submit — button says "Créer la facture prête" or "Créer le brouillon"
+    // ── Step 3: submit ───────────────────────────────────────────────────────
     const submitBtn = page.getByRole('button', { name: /créer la facture|créer le brouillon/i }).first();
+    await expect(submitBtn).toBeVisible({ timeout: 10_000 });
     await submitBtn.click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
-    await page.screenshot({ path: 'tests/e2e/screenshots/smoke-04b-invoice-created.png', fullPage: true });
+    await page.screenshot({ path: 'tests/e2e/screenshots/smoke-04d-created.png', fullPage: true });
     console.log('✅ Invoice created, URL:', page.url());
   });
 
