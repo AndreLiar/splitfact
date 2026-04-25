@@ -25,7 +25,7 @@ export const authOptions = {
 
         // Rate limit: 10 login attempts per IP per 15 minutes
         const ip = (req as any)?.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ?? 'unknown';
-        const rl = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
+        const rl = await rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
         if (!rl.allowed) {
           throw new Error('RATE_LIMITED');
         }
