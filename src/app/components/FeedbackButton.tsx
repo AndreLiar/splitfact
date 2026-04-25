@@ -128,7 +128,7 @@ export default function FeedbackButton({
         onClick={handleFeedbackClick}
         style={getButtonStyles()}
         className={`btn ${className}`}
-        title="Donner votre avis sur Splitfact"
+        title="Donner votre avis sur InvoiceOps"
         aria-label="Ouvrir le formulaire de feedback"
       >
         {getButtonContent()}
@@ -141,7 +141,7 @@ export default function FeedbackButton({
       onClick={handleFeedbackClick}
       style={getButtonStyles()}
       className={`btn ${getSizeClass()} ${className}`}
-      title="Donner votre avis sur Splitfact"
+      title="Donner votre avis sur InvoiceOps"
       aria-label="Ouvrir le formulaire de feedback"
     >
       {getButtonContent()}

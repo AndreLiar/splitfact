@@ -67,19 +67,22 @@ test.describe('InvoiceOps — production smoke test', () => {
     await page.goto(`${BASE}/dashboard/clients`);
     await page.waitForLoadState('networkidle');
 
-    // Open add-client modal or form
-    const addBtn = page.getByRole('button', { name: /ajouter|nouveau client|add client/i }).first();
+    // Open add-client modal
+    const addBtn = page.getByRole('button', { name: /nouveau client|ajouter un client|nouveau/i }).first();
     await addBtn.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(800);
 
-    await page.fill('input[name="name"], input[placeholder*="nom"]', INVOICE_CLIENT);
+    // Fill name field (try multiple selectors)
+    const nameInput = page.locator('input[name="name"], input[placeholder*="nom"], input[placeholder*="entreprise"]').first();
+    await nameInput.fill(INVOICE_CLIENT);
 
     const emailInput = page.locator('input[type="email"], input[name="email"]').first();
     if (await emailInput.isVisible()) {
       await emailInput.fill('client-smoke@example.com');
     }
 
-    const saveBtn = page.getByRole('button', { name: /enregistrer|sauvegarder|créer|save/i }).first();
+    // Submit modal — button says "Ajouter le client" or "Enregistrer les modifications"
+    const saveBtn = page.getByRole('button', { name: /ajouter le client|enregistrer les modifications/i }).first();
     await saveBtn.click();
     await page.waitForTimeout(1000);
 
@@ -119,8 +122,8 @@ test.describe('InvoiceOps — production smoke test', () => {
 
     await page.screenshot({ path: 'tests/e2e/screenshots/smoke-04a-invoice-form.png', fullPage: true });
 
-    // Submit
-    const submitBtn = page.getByRole('button', { name: /créer|enregistrer|sauvegarder/i }).first();
+    // Submit — button says "Créer la facture prête" or "Créer le brouillon"
+    const submitBtn = page.getByRole('button', { name: /créer la facture|créer le brouillon/i }).first();
     await submitBtn.click();
     await page.waitForTimeout(2000);
 
