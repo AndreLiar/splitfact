@@ -3,7 +3,7 @@
  * Run with: npx tsx scripts/test-ppf-submit.ts
  */
 
-import { buildFacturxXml } from '../src/lib/facturx/invoice-to-cii';
+import { buildFacturxXml } from '../src/domains/invoices/facturx/invoice-to-cii';
 
 const PISTE_BASE = 'https://sandbox-api.piste.gouv.fr';
 const AUTH_URL = 'https://sandbox-oauth.piste.gouv.fr/api/oauth/token';

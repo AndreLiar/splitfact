@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { z } from 'zod';
 import { getLegalMentionsByFiscalRegime, formatCurrency } from '@/lib/utils'; // Import the utility function
-import { evaluateInvoiceReadiness } from '@/lib/invoice-readiness';
+import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
 
 interface UserProfile {
   name: string | null;

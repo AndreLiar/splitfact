@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { submitInvoiceToPpf, mapPpfStatus } from '@/lib/piste-api';
-import { buildFacturxXml } from '@/lib/facturx';
-import { logActivity } from '@/lib/activity-log';
+import { buildFacturxXml } from '@/domains/invoices/facturx';
+import { logActivity } from '@/domains/invoices/activity-log';
 import { getUserPisteCredentials } from '@/lib/user-piste-credentials';
 import { isPro } from '@/lib/subscription';
 
