@@ -477,6 +477,26 @@ export default function CreateInvoicePage() {
                   <div className="fw-semibold">Extraction en cours…</div>
                   <div className="text-muted small mt-1">L'IA analyse votre document et extrait les champs de facturation.</div>
                 </>
+              ) : quota?.plan === 'free' ? (
+                <>
+                  <div className="mb-3" style={{ fontSize: '2.5rem' }}>
+                    <i className="bi bi-lock-fill text-warning"></i>
+                  </div>
+                  <div className="fw-semibold mb-1">Extraction IA — Plan Pro</div>
+                  <div className="text-muted small mb-3">Passez au Pro pour extraire automatiquement client, lignes et montants depuis vos devis et contrats.</div>
+                  <a href="/dashboard/settings#billing" className="btn btn-primary mb-2">
+                    <i className="bi bi-lightning-fill me-2"></i>Passer au Pro — 14 jours offerts
+                  </a>
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      className="btn btn-link text-muted text-decoration-none small"
+                      onClick={() => setShowUploadZone(false)}
+                    >
+                      Saisir manuellement →
+                    </button>
+                  </div>
+                </>
               ) : (
                 <>
                   <div className="mb-3" style={{ fontSize: '2.5rem' }}>
