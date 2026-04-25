@@ -6,9 +6,9 @@ import { renderToStream } from '@react-pdf/renderer';
 
 import InvoicePdf from '@/app/components/InvoicePdf';
 import cloudinary from '@/lib/cloudinary';
-import { evaluateInvoiceReadiness } from '@/lib/invoice-readiness';
-import { generateFacturxDocument } from '@/lib/facturx';
-import { logActivity } from '@/lib/activity-log';
+import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
+import { generateFacturxDocument } from '@/domains/invoices/facturx';
+import { logActivity } from '@/domains/invoices/activity-log';
 import { sendInvoiceEmail } from '@/lib/email-service';
 
 

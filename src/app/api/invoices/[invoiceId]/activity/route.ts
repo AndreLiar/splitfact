@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { getActivityLogs } from '@/lib/activity-log';
+import { getActivityLogs } from '@/domains/invoices/activity-log';
 
 
 export async function GET(

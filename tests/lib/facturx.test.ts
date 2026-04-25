@@ -1,5 +1,5 @@
-import { generateFacturxDocument } from '@/lib/facturx/facturx-generator'
-import { validateFacturxXml } from '@/lib/facturx/facturx-validator'
+import { generateFacturxDocument } from '@/domains/invoices/facturx/facturx-generator'
+import { validateFacturxXml } from '@/domains/invoices/facturx/facturx-validator'
 
 const buildInvoiceInput = () => ({
   invoiceNumber: 'INV-202604-0001',

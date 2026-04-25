@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { mapPpfStatus, type PpfLifecycleStatus } from '@/lib/piste-api';
-import { logActivity } from '@/lib/activity-log';
+import { logActivity } from '@/domains/invoices/activity-log';
 
 // POST /api/webhooks/ppf
 // Receives lifecycle events from PISTE/Chorus Pro for submitted invoices.

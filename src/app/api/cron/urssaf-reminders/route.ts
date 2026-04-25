@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { NotificationService } from "@/lib/notification-service";
+import { NotificationService } from "@/domains/notifications/notification-service";
 
 const getUrssafRate = (microEntrepreneurType: string) => {
   switch (microEntrepreneurType) {

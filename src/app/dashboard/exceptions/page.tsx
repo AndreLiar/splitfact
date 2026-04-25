@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { evaluateInvoiceReadiness } from '@/lib/invoice-readiness';
+import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
 
 type InvoiceRecord = {
   id: string;

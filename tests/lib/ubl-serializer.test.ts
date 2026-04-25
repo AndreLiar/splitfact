@@ -1,4 +1,4 @@
-import { buildUblXml, UblInvoiceInput } from '@/lib/ubl-serializer';
+import { buildUblXml, UblInvoiceInput } from '@/domains/invoices/ubl-serializer';
 
 const baseInvoice: UblInvoiceInput = {
   invoiceNumber: 'FA-2026-0001',
