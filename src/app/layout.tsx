@@ -12,11 +12,21 @@ import FeedbackButton from "@/app/components/FeedbackButton";
 import { PWAInstallBadge } from "@/app/components/PWAInstallPrompt";
 import OfflineIndicator from "@/app/components/OfflineIndicator";
 import PWAUpdatePrompt from "@/app/components/PWAUpdatePrompt";
-import { useEffect } from "react";
+import CookieBanner, { getCookieConsent } from "@/app/components/CookieBanner";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { GoogleAnalytics } from '@next/third-parties/google';
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
+  const [analyticsConsent, setAnalyticsConsent] = useState(false);
+
+  useEffect(() => {
+    setAnalyticsConsent(getCookieConsent() === 'accepted');
+    const onStorage = () => setAnalyticsConsent(getCookieConsent() === 'accepted');
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   useEffect(() => {
     require("bootstrap/dist/js/bootstrap.bundle.min.js");
     
@@ -233,8 +243,9 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
               <main>{children}</main>
             </>
           )}
+          <CookieBanner />
         </SessionProvider>
-        <GoogleAnalytics gaId="G-VNPY0RYV2B" />
+        {analyticsConsent && <GoogleAnalytics gaId="G-VNPY0RYV2B" />}
       </body>
     </html>
   );

@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   const data = await aggregateEReportingData(session.user.id, period);
 
   if (!data || data.transactionCount === 0) {
-    return NextResponse.json({ error: 'No B2C invoices found for this period' }, { status: 404 });
+    return NextResponse.json({ error: 'Aucune transaction B2C trouvée pour cette période.' }, { status: 404 });
   }
 
   const xml = buildEReportingXml(data);
