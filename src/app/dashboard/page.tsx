@@ -24,6 +24,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [recentInvoices, setRecentInvoices] = useState<UserInvoice[]>([]);
   const [allInvoices, setAllInvoices] = useState<UserInvoice[]>([]);
+  const [userProfile, setUserProfile] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,10 +43,11 @@ export default function DashboardPage() {
   const loadDashboard = async () => {
     try {
       setLoading(true);
-      const [recentInvoicesResponse, allInvoicesResponse, clientsResponse] = await Promise.all([
+      const [recentInvoicesResponse, allInvoicesResponse, clientsResponse, profileResponse] = await Promise.all([
         fetch("/api/users/me/invoices?page=1&limit=6"),
         fetch("/api/users/me/invoices?all=true"),
         fetch("/api/clients"),
+        fetch("/api/users/me"),
       ]);
 
       if (!recentInvoicesResponse.ok || !allInvoicesResponse.ok) {
@@ -55,6 +57,8 @@ export default function DashboardPage() {
       const recentInvoicesData = await recentInvoicesResponse.json();
       const allInvoicesData = await allInvoicesResponse.json();
       const clientsData = clientsResponse.ok ? await clientsResponse.json() : [];
+      const profileData = profileResponse.ok ? await profileResponse.json() : null;
+      setUserProfile(profileData);
 
       const hasClients = Array.isArray(clientsData) ? clientsData.length > 0 : (clientsData?.clients?.length ?? 0) > 0;
       const hasInvoices = (allInvoicesData.invoices?.length ?? 0) > 0;
@@ -152,6 +156,58 @@ export default function DashboardPage() {
       </div>
 
       <ReformReadinessWidget />
+
+      {/* ── Compliance Readiness ───────────────────────────── */}
+      {userProfile && (() => {
+        const p = userProfile as any;
+        const checks = [
+          { label: "SIRET renseigné", done: !!p.siret },
+          { label: "Adresse complète", done: !!p.address },
+          { label: "Statut juridique", done: !!p.legalStatus },
+          { label: "Code APE", done: !!p.apeCode },
+          { label: "Numéro de TVA", done: !!p.tvaNumber },
+          { label: "Régime fiscal", done: !!p.fiscalRegime },
+        ];
+        const done = checks.filter(c => c.done).length;
+        const pct = Math.round((done / checks.length) * 100);
+        if (pct === 100) return null;
+        return (
+          <div className="card shadow-sm border-0 rounded-xl p-4 mb-4" style={{ borderLeft: "3px solid #D4921A" }}>
+            <div className="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <h2 className="h6 mb-1 d-flex align-items-center gap-2">
+                  <i className="bi bi-shield-check text-warning"></i>
+                  Conformité réforme 2026
+                </h2>
+                <p className="text-muted small mb-0">
+                  Complétez votre profil pour que vos factures passent le portail PPF sans rejet.
+                </p>
+              </div>
+              <Link href="/dashboard/settings" className="btn btn-sm btn-outline-warning text-nowrap">
+                Compléter
+              </Link>
+            </div>
+            <div className="d-flex align-items-center gap-3 mb-3">
+              <div className="progress flex-grow-1" style={{ height: "8px" }}>
+                <div
+                  className={`progress-bar ${pct === 100 ? "bg-success" : pct >= 60 ? "bg-warning" : "bg-danger"}`}
+                  style={{ width: `${pct}%`, transition: "width 0.6s ease" }}
+                />
+              </div>
+              <span className="fw-semibold text-nowrap" style={{ fontSize: "0.875rem" }}>{done}/{checks.length}</span>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              {checks.map(c => (
+                <span key={c.label} className={`badge rounded-pill ${c.done ? "bg-success bg-opacity-10 text-success" : "bg-danger bg-opacity-10 text-danger"}`}
+                      style={{ fontSize: "0.75rem", fontWeight: 500 }}>
+                  <i className={`bi ${c.done ? "bi-check-circle-fill" : "bi-x-circle-fill"} me-1`}></i>
+                  {c.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="row g-3 mb-4">
         <div className="col-lg-3 col-md-6">
