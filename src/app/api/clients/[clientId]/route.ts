@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
 import { NextResponse } from "next/server";
 import { z } from 'zod';
-import { evaluateInvoiceReadiness } from "@/lib/invoice-readiness";
+import { evaluateInvoiceReadiness } from "@/domains/invoices/invoice-readiness";
 
 
 const clientSchema = z.object({

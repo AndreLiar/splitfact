@@ -1,4 +1,4 @@
-import { buildFacturxXml, type FacturxInvoiceInput } from '../../src/lib/facturx/invoice-to-cii';
+import { buildFacturxXml, type FacturxInvoiceInput } from '../../src/domains/invoices/facturx/invoice-to-cii';
 
 const completeInvoice: FacturxInvoiceInput = {
   invoiceNumber: 'FA-2024-0042',

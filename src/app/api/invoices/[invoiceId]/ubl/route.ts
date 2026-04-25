@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { buildUblXml } from '@/lib/ubl-serializer';
+import { buildUblXml } from '@/domains/invoices/ubl-serializer';
 
 // GET /api/invoices/[invoiceId]/ubl — download UBL 2.1 XML for an invoice
 export async function GET(
