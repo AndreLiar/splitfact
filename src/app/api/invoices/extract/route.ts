@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import prisma from '@/lib/prisma';
 import { extractFromImage, extractFromText, isLLMConfigured } from '@/lib/llm-router';
+import { isPro } from '@/lib/subscription';
 
 const EXTRACTION_PROMPT = `Tu es un extracteur de données de facturation pour une plateforme de facturation française.
 
@@ -42,6 +43,14 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!(await isPro(session.user.id))) {
+    return NextResponse.json({
+      error: "L'extraction IA est réservée au plan Pro.",
+      upgrade: true,
+      upgradeUrl: '/dashboard/settings#billing',
+    }, { status: 402 });
   }
 
   if (!isLLMConfigured()) {
