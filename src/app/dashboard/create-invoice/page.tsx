@@ -26,6 +26,7 @@ interface Client {
   name: string;
   address: string;
   siret?: string;
+  siretValidated?: boolean;
   tvaNumber?: string;
   legalStatus?: string;
   shareCapital?: string;
@@ -116,6 +117,7 @@ export default function CreateInvoicePage() {
   const [suggestNewClient, setSuggestNewClient] = useState<{ name: string; address?: string; email?: string; siret?: string } | null>(null);
   const [creatingClient, setCreatingClient] = useState(false);
   const [quota, setQuota] = useState<{ plan: string; limit: number | null; used: number | null; remaining: number | null } | null>(null);
+  const [siretCheck, setSiretCheck] = useState<{ loading: boolean; result: { valid: boolean; active: boolean; companyName: string | null; error?: string } | null }>({ loading: false, result: null });
 
   const handleDocumentUpload = async (file: File) => {
     setExtracting(true);
@@ -228,10 +230,32 @@ export default function CreateInvoicePage() {
     }
   };
 
+  const verifySiret = async () => {
+    const clientSiret = formData.clientSiret;
+    if (!clientSiret) return;
+    setSiretCheck({ loading: true, result: null });
+    try {
+      const res = await fetch(`/api/siret?siret=${encodeURIComponent(clientSiret)}`);
+      const data = await res.json();
+      setSiretCheck({ loading: false, result: data });
+      if (data.valid && data.active && formData.clientId) {
+        await fetch('/api/siret', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siret: clientSiret, clientId: formData.clientId }),
+        });
+        setClients(prev => prev.map(c => c.id === formData.clientId ? { ...c, siretValidated: true } : c));
+      }
+    } catch {
+      setSiretCheck({ loading: false, result: { valid: false, active: false, companyName: null, error: 'Erreur réseau lors de la vérification.' } });
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === 'clientId') {
       const selectedClient = clients.find((client: Client) => client.id === value);
+      setSiretCheck({ loading: false, result: null });
       setFormData({
         ...formData,
         clientId: value,
@@ -673,6 +697,39 @@ export default function CreateInvoicePage() {
                         ))}
                       </select>
                       {errors.clientId && <div className="invalid-feedback">{errors.clientId}</div>}
+                      {/* SIRET validation warning */}
+                      {(() => {
+                        const sel = clients.find(c => c.id === formData.clientId);
+                        if (!sel || !sel.siret) return null;
+                        const validated = sel.siretValidated || (siretCheck.result?.valid && siretCheck.result?.active);
+                        if (validated) return (
+                          <div className="alert alert-success d-flex align-items-center gap-2 mt-2 py-2 mb-0" style={{ fontSize: '0.8rem' }}>
+                            <i className="bi bi-patch-check-fill"></i>
+                            <span>SIRET vérifié — {siretCheck.result?.companyName ?? sel.name} est actif dans le répertoire SIRENE.</span>
+                          </div>
+                        );
+                        return (
+                          <div className="alert alert-warning d-flex align-items-center gap-2 mt-2 py-2 mb-0" style={{ fontSize: '0.8rem' }}>
+                            <i className="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                            <div className="flex-grow-1">
+                              <strong>SIRET non vérifié</strong> — Une facture avec un SIRET invalide sera rejetée par le PPF.
+                              {siretCheck.result && !siretCheck.result.valid && (
+                                <div className="text-danger mt-1">{siretCheck.result.error}</div>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-warning text-nowrap flex-shrink-0"
+                              disabled={siretCheck.loading}
+                              onClick={verifySiret}
+                            >
+                              {siretCheck.loading
+                                ? <><span className="spinner-border spinner-border-sm me-1" role="status"></span>Vérification…</>
+                                : <><i className="bi bi-search me-1"></i>Vérifier SIRET</>}
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="col-lg-4 col-md-6 col-12">
