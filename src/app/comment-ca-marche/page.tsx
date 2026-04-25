@@ -25,7 +25,7 @@ const steps = [
   },
   {
     number: 2,
-    title: "Splitfact collecte et vérifie les données",
+    title: "InvoiceOps collecte et vérifie les données",
     subtitle: "Le travail d'admin est préparé avant l'émission",
     description: "Le produit rassemble les informations depuis les sources déjà utilisées par l'agence, détecte les champs manquants et vérifie l'état de préparation.",
     details: [
@@ -124,7 +124,7 @@ export default function CommentCaMarchePage() {
               Workflow détaillé
             </span>
             <h1 className="display-3 fw-bold mb-lg text-darkGray">
-              Comment Splitfact fait passer votre équipe
+              Comment InvoiceOps fait passer votre équipe
               <span className="text-primary"> du travail validé à la facture prête</span>
             </h1>
             <p className="lead text-mediumGray mb-xl" style={{ maxWidth: "760px", margin: "0 auto" }}>
@@ -232,7 +232,7 @@ export default function CommentCaMarchePage() {
       <section className="splitfact-section bg-white">
         <div className="main-container">
           <div className="text-center mb-xxl">
-            <h2 className="display-4 fw-semibold mb-lg text-darkGray">Avant / après le workflow Splitfact</h2>
+            <h2 className="display-4 fw-semibold mb-lg text-darkGray">Avant / après le workflow InvoiceOps</h2>
             <p className="lead text-mediumGray">La différence n'est pas cosmétique. Elle est opérationnelle.</p>
           </div>
 
@@ -242,7 +242,7 @@ export default function CommentCaMarchePage() {
                 <tr>
                   <th className="text-darkGray fw-bold">Aspect</th>
                   <th className="text-mediumGray fw-bold">Approche classique</th>
-                  <th className="text-primary fw-bold">Avec Splitfact</th>
+                  <th className="text-primary fw-bold">Avec InvoiceOps</th>
                 </tr>
               </thead>
               <tbody>
@@ -265,7 +265,7 @@ export default function CommentCaMarchePage() {
             <h2 className="display-5 fw-bold mb-lg text-darkGray">Tester le workflow sur votre cas réel</h2>
             <p className="lead text-mediumGray mb-xl" style={{ maxWidth: "760px", margin: "0 auto" }}>
               Le meilleur moyen de valider la promesse est de partir de votre vrai processus de billing et de voir où
-              Splitfact peut éliminer les frictions.
+              InvoiceOps peut éliminer les frictions.
             </p>
             <div className="d-flex flex-column flex-sm-row justify-content-center gap-3">
               <Link href="/#design-partner-form" className="btn btn-primary btn-lg rounded-pill px-4 py-3">
