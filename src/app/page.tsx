@@ -698,6 +698,162 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
+          MIGRATION SECTION — Henrri / Excel switchers
+      ══════════════════════════════════════════════════════ */}
+      <section id="migration" style={{ padding: "6rem 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="main-container">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4rem", alignItems: "center" }}
+               className="hero-grid">
+
+            {/* Left — urgency copy */}
+            <FadeUp>
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: "8px",
+                padding: "4px 12px", borderRadius: "9999px",
+                backgroundColor: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.2)",
+                fontSize: "0.6875rem", fontWeight: 590, letterSpacing: "0.08em",
+                textTransform: "uppercase", color: "#ef4444",
+                marginBottom: "1.5rem",
+              }}>
+                <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#ef4444", display: "inline-block", flexShrink: 0 }} />
+                Échéance légale — Septembre 2026
+              </div>
+
+              <h2 style={{
+                fontSize: "clamp(1.75rem, 3vw, 2.5rem)",
+                fontWeight: 590, letterSpacing: "-0.035em",
+                color: "#f7f8f8", lineHeight: 1.1, marginBottom: "1.25rem",
+              }}>
+                Vous quittez Henrri ou Excel ?<br />
+                <span style={{ color: "#D4921A" }}>Ne migrez pas à la veille du délai.</span>
+              </h2>
+
+              <p style={{ fontSize: "1rem", color: "#8a8f98", lineHeight: 1.7, marginBottom: "2rem", maxWidth: "480px" }}>
+                En septembre 2026, toutes les entreprises assujetties à la TVA doivent <strong style={{ color: "#d0d6e0" }}>accepter les factures électroniques</strong>. En 2027, vous devrez également les <strong style={{ color: "#d0d6e0" }}>émettre</strong> via une Plateforme de Dématérialisation Partenaire. Henrri et les tableurs Excel ne sont pas conformes à ce cadre.
+              </p>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", marginBottom: "2rem" }}>
+                {[
+                  { icon: "bi-file-earmark-check-fill", text: "Factur-X natif (PDF/A-3 + XML EN 16931) — prêt pour les PDP" },
+                  { icon: "bi-building-check", text: "Connexion Chorus Pro / PPF incluse dès le plan Pro" },
+                  { icon: "bi-shield-check", text: "SIRET validé via INSEE avant chaque émission" },
+                  { icon: "bi-arrow-left-right", text: "Import de votre historique Henrri en moins de 5 minutes" },
+                ].map(({ icon, text }) => (
+                  <div key={text} style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "0.9rem", color: "#c1c7d0" }}>
+                    <i className={`bi ${icon}`} style={{ color: "#10b981", fontSize: "1rem", flexShrink: 0, marginTop: "2px" }} />
+                    <span>{text}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                <Link href="/auth/signin" style={{
+                  display: "inline-flex", alignItems: "center", gap: "8px",
+                  padding: "10px 20px", backgroundColor: "#D4921A",
+                  color: "#08090a", borderRadius: "6px",
+                  fontSize: "0.9rem", fontWeight: 600,
+                  textDecoration: "none", letterSpacing: "-0.01em",
+                  transition: "all 120ms ease",
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "#F0AE38"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "#D4921A"; }}
+                >
+                  <i className="bi bi-arrow-right-circle-fill" />
+                  Migrer gratuitement
+                </Link>
+                <Link href="#design-partner-form" style={{
+                  display: "inline-flex", alignItems: "center", gap: "8px",
+                  padding: "10px 20px",
+                  backgroundColor: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "#d0d6e0", borderRadius: "6px",
+                  fontSize: "0.9rem", fontWeight: 510, textDecoration: "none",
+                  transition: "all 120ms ease",
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.05)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.03)"; }}
+                >
+                  Parler à un expert
+                </Link>
+              </div>
+            </FadeUp>
+
+            {/* Right — deadline countdown card */}
+            <FadeUp delay={0.1}>
+              <div style={{
+                backgroundColor: "rgba(239,68,68,0.04)",
+                border: "1px solid rgba(239,68,68,0.15)",
+                borderRadius: "12px", padding: "2rem",
+              }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: 590, letterSpacing: "0.08em", textTransform: "uppercase", color: "#ef4444", marginBottom: "1.5rem" }}>
+                  Calendrier réglementaire
+                </div>
+
+                {[
+                  {
+                    date: "Sep 2026", label: "Réception obligatoire",
+                    desc: "Toutes les entreprises assujetties à la TVA doivent être capables de recevoir des factures électroniques via PDP ou PPF.",
+                    urgent: true,
+                  },
+                  {
+                    date: "Sep 2027", label: "Émission obligatoire",
+                    desc: "PME et micro-entreprises doivent émettre leurs factures dans le format Factur-X ou UBL via une PDP agréée.",
+                    urgent: false,
+                  },
+                ].map((item, i) => (
+                  <div key={item.date} style={{
+                    display: "flex", gap: "1rem",
+                    paddingBottom: i === 0 ? "1.5rem" : "0",
+                    marginBottom: i === 0 ? "1.5rem" : "0",
+                    borderBottom: i === 0 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                  }}>
+                    <div style={{
+                      flexShrink: 0, width: "80px",
+                      fontSize: "0.8125rem", fontWeight: 700,
+                      color: item.urgent ? "#ef4444" : "#D4921A",
+                      paddingTop: "2px",
+                    }}>
+                      {item.date}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "0.9375rem", fontWeight: 590, color: "#f7f8f8", marginBottom: "0.375rem" }}>
+                        {item.label}
+                        {item.urgent && (
+                          <span style={{
+                            marginLeft: "8px", fontSize: "0.6875rem", fontWeight: 590,
+                            padding: "2px 8px", borderRadius: "9999px",
+                            backgroundColor: "rgba(239,68,68,0.12)",
+                            color: "#ef4444",
+                          }}>
+                            Dans ~17 mois
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: "0.8125rem", color: "#62666d", lineHeight: 1.65 }}>
+                        {item.desc}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{
+                  marginTop: "1.5rem", padding: "1rem",
+                  backgroundColor: "rgba(212,146,26,0.06)",
+                  border: "1px solid rgba(212,146,26,0.15)",
+                  borderRadius: "8px",
+                  fontSize: "0.8125rem", color: "#c1c7d0", lineHeight: 1.6,
+                }}>
+                  <i className="bi bi-info-circle me-2" style={{ color: "#D4921A" }} />
+                  Les outils non certifiés PDP (Henrri, Excel, Google Sheets) ne pourront pas émettre de factures après l&apos;échéance 2027.
+                </div>
+              </div>
+            </FadeUp>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
           PRICING
       ══════════════════════════════════════════════════════ */}
       <section id="pricing" style={{ padding: "6rem 0" }}>
