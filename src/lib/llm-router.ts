@@ -10,11 +10,25 @@
  * Routing logic per task:
  *  Vision (image OCR) → Groq llama-4-scout-17b  → Ollama gemma3:27b
  *  Text (PDF/French)  → Groq mistral-saba-24b   → Ollama ministral-3:8b
+ *
+ * Observability: each call is traced in Langfuse when LANGFUSE_SECRET_KEY is set.
  */
 
 import OpenAI from 'openai';
+import { Langfuse } from 'langfuse';
 
 export type LLMProvider = 'groq' | 'ollama';
+
+// Singleton Langfuse client — no-ops when env vars are absent
+function getLangfuse(): Langfuse | null {
+  if (!process.env.LANGFUSE_SECRET_KEY || !process.env.LANGFUSE_PUBLIC_KEY) return null;
+  return new Langfuse({
+    secretKey: process.env.LANGFUSE_SECRET_KEY,
+    publicKey: process.env.LANGFUSE_PUBLIC_KEY,
+    baseUrl: process.env.LANGFUSE_BASEURL ?? 'https://cloud.langfuse.com',
+    flushAt: 1, // flush immediately in serverless
+  });
+}
 
 // Which errors should trigger a fallback (not user errors)
 function isFallbackWorthy(err: unknown): boolean {
@@ -72,23 +86,83 @@ const TEXT_MODELS: Record<LLMProvider, string> = {
 
 type ChatMessages = OpenAI.Chat.ChatCompletionMessageParam[];
 
+interface RunOptions {
+  taskName: string; // shown as trace name in Langfuse
+  userId?: string;
+  usedFallback?: boolean;
+}
+
 async function runWithFallback(
   buildMessages: (provider: LLMProvider) => ChatMessages,
   modelMap: Record<LLMProvider, string>,
+  options: RunOptions,
 ): Promise<string> {
   const primary = getPrimaryProvider();
   const fallback = getFallbackProvider();
+  const langfuse = getLangfuse();
+
+  const trace = langfuse?.trace({
+    name: options.taskName,
+    userId: options.userId,
+    tags: ['llm-extraction'],
+  });
+
+  async function callProvider(provider: LLMProvider, isFallback: boolean): Promise<string> {
+    const model = modelMap[provider];
+    const messages = buildMessages(provider);
+    const client = buildClient(provider);
+
+    const generation = trace?.generation({
+      name: isFallback ? 'fallback-call' : 'primary-call',
+      model,
+      input: messages,
+      metadata: { provider, isFallback },
+    });
+
+    const start = Date.now();
+    try {
+      const response = await client.chat.completions.create({
+        model,
+        max_tokens: 1500,
+        messages,
+      });
+      const latencyMs = Date.now() - start;
+      const content = response.choices[0]?.message?.content ?? '';
+
+      generation?.end({
+        output: content,
+        usage: {
+          input: response.usage?.prompt_tokens,
+          output: response.usage?.completion_tokens,
+          total: response.usage?.total_tokens,
+          unit: 'TOKENS',
+        },
+        metadata: { latencyMs, provider, model, isFallback },
+      });
+
+      return content;
+    } catch (err) {
+      const latencyMs = Date.now() - start;
+      const errMsg = err instanceof Error ? err.message : String(err);
+      generation?.end({
+        output: { error: errMsg },
+        level: 'ERROR',
+        statusMessage: errMsg,
+        metadata: { latencyMs, provider, model, isFallback },
+      });
+      throw err;
+    }
+  }
 
   try {
-    const client = buildClient(primary);
-    const response = await client.chat.completions.create({
-      model: modelMap[primary],
-      max_tokens: 1500,
-      messages: buildMessages(primary),
-    });
-    return response.choices[0]?.message?.content ?? '';
+    const result = await callProvider(primary, false);
+    await langfuse?.shutdownAsync();
+    return result;
   } catch (primaryErr) {
-    if (!isFallbackWorthy(primaryErr)) throw primaryErr;
+    if (!isFallbackWorthy(primaryErr)) {
+      await langfuse?.shutdownAsync();
+      throw primaryErr;
+    }
 
     const reason = primaryErr instanceof OpenAI.APIError
       ? `status ${primaryErr.status}`
@@ -96,13 +170,14 @@ async function runWithFallback(
 
     console.warn(`[LLMRouter] Primary (${primary}) failed (${reason}), switching to fallback (${fallback})`);
 
-    const fallbackClient = buildClient(fallback);
-    const fallbackResponse = await fallbackClient.chat.completions.create({
-      model: modelMap[fallback],
-      max_tokens: 1500,
-      messages: buildMessages(fallback),
-    });
-    return fallbackResponse.choices[0]?.message?.content ?? '';
+    try {
+      const result = await callProvider(fallback, true);
+      await langfuse?.shutdownAsync();
+      return result;
+    } catch (fallbackErr) {
+      await langfuse?.shutdownAsync();
+      throw fallbackErr;
+    }
   }
 }
 
@@ -114,6 +189,7 @@ export async function extractFromImage(
   base64: string,
   mimeType: string,
   prompt: string,
+  userId?: string,
 ): Promise<string> {
   return runWithFallback(
     () => [
@@ -126,6 +202,7 @@ export async function extractFromImage(
       },
     ],
     VISION_MODELS,
+    { taskName: 'invoice-extraction-vision', userId },
   );
 }
 
@@ -136,10 +213,12 @@ export async function extractFromImage(
 export async function extractFromText(
   text: string,
   prompt: string,
+  userId?: string,
 ): Promise<string> {
   return runWithFallback(
     () => [{ role: 'user', content: `${prompt}\n\n---\n\n${text}` }],
     TEXT_MODELS,
+    { taskName: 'invoice-extraction-text', userId },
   );
 }
 
