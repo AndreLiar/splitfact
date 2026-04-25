@@ -353,6 +353,18 @@ function SettingsPageInner() {
                   </div>
 
 
+                  {/* Nature de l'activité — determines URSSAF rate */}
+                  <div className="col-md-6">
+                    <label className="form-label fw-medium">Nature de l&apos;activité <span className="text-danger">*</span></label>
+                    <select className="form-select" {...field('microEntrepreneurType')}>
+                      <option value="">-- Choisir --</option>
+                      <option value="COMMERCANT">Achat / revente (commerçant, artisan)</option>
+                      <option value="PRESTATAIRE">Prestataire de services</option>
+                      <option value="LIBERAL">Profession libérale (BNC)</option>
+                    </select>
+                    <small className="text-muted">Détermine votre taux URSSAF et le régime fiscal applicable</small>
+                  </div>
+
                   {/* TVA number — optional */}
                   <div className="col-md-6">
                     <label className="form-label fw-medium">Numéro TVA intracommunautaire</label>

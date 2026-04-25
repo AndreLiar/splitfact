@@ -60,6 +60,69 @@ test.describe('InvoiceOps — production smoke test', () => {
     console.log('✅ Login OK');
   });
 
+  // ── 2b. Complete issuer profile in Settings ────────────────────────────────
+  test('2b · Complete issuer profile', async ({ page }) => {
+    if (!PASSWORD) { test.skip(true, 'SMOKE_PASSWORD not set'); return; }
+    await login(page);
+    await page.goto(`${BASE}/dashboard/settings`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    await page.screenshot({ path: 'tests/e2e/screenshots/smoke-02b-settings.png', fullPage: true });
+
+    // Fill name if empty
+    const nameInput = page.locator('input').filter({ hasText: '' }).first();
+    const nameField = page.locator('input[placeholder*="Jean Dupont"], input[placeholder*="Dupont"]').first();
+    if (await nameField.isVisible()) {
+      await nameField.fill('Andre Kanmegne');
+    }
+
+    // SIRET
+    const siretField = page.locator('input[placeholder="12345678900012"]').first();
+    if (await siretField.isVisible()) {
+      const current = await siretField.inputValue();
+      if (!current || current.length < 14) {
+        await siretField.fill('89265544000017');
+      }
+    }
+
+    // APE code
+    const apeField = page.locator('input[placeholder="6202A"]').first();
+    if (await apeField.isVisible()) {
+      const current = await apeField.inputValue();
+      if (!current) await apeField.fill('6202A');
+    }
+
+    // Address
+    const addressField = page.locator('textarea[placeholder*="rue"]').first();
+    if (await addressField.isVisible()) {
+      const current = await addressField.inputValue();
+      if (!current) await addressField.fill('12 rue de la Paix, 75001 Paris');
+    }
+
+    // Fiscal regime
+    const fiscalSelect = page.locator('select').filter({ has: page.locator('option[value="EI"]') }).first();
+    if (await fiscalSelect.isVisible()) {
+      await fiscalSelect.selectOption('EI');
+    }
+
+    // Legal status
+    const legalSelect = page.locator('select').filter({ has: page.locator('option', { hasText: 'Micro-entreprise' }) }).first();
+    if (await legalSelect.isVisible()) {
+      await legalSelect.selectOption('Micro-entreprise');
+    }
+
+    // Save profile
+    const saveBtn = page.getByRole('button', { name: /enregistrer|sauvegarder|save/i }).first();
+    if (await saveBtn.isVisible()) {
+      await saveBtn.click();
+      await page.waitForTimeout(1500);
+    }
+
+    await page.screenshot({ path: 'tests/e2e/screenshots/smoke-02c-settings-saved.png', fullPage: true });
+    console.log('✅ Issuer profile saved');
+  });
+
   // ── 3. Create client ───────────────────────────────────────────────────────
   test('3 · Create a client', async ({ page }) => {
     if (!PASSWORD) { test.skip(true, 'SMOKE_PASSWORD not set'); return; }
