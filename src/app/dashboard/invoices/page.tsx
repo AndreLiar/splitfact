@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useInvoices, revalidateInvoices } from '@/app/hooks/useApi';
 
 function InvoicesPageInner() {
   const { data: session, status } = useSession();
@@ -25,10 +26,9 @@ function InvoicesPageInner() {
       currency: 'EUR'
     });
   };
-  const [invoices, setInvoices] = useState([]);
-  const [filteredInvoices, setFilteredInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { invoices: rawInvoices, isLoading: loading, error: swrError } = useInvoices();
+  const [filteredInvoices, setFilteredInvoices] = useState<typeof rawInvoices>([]);
+  const error = swrError?.message ?? null;
   const [pdfGenerating, setPdfGenerating] = useState<{[key: string]: boolean}>({});
   
   // Filter and pagination states
@@ -48,33 +48,12 @@ function InvoicesPageInner() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-    } else if (status === 'authenticated') {
-      fetchInvoices();
-    }
+    if (status === 'unauthenticated') router.push('/auth/signin');
   }, [status, router]);
-
-  const fetchInvoices = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/invoices');
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
-      const data = await response.json();
-      setInvoices(data);
-      setFilteredInvoices(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Filter invoices based on search and filters
   useEffect(() => {
-    let filtered = invoices.filter((invoice: any) => {
+    let filtered = rawInvoices.filter((invoice: any) => {
       const matchesSearch =
         invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (invoice.client?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -103,7 +82,7 @@ function InvoicesPageInner() {
 
     setFilteredInvoices(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [invoices, searchTerm, statusFilter, workflowStatusFilter, paymentStatusFilter, dateFilter]);
+  }, [rawInvoices, searchTerm, statusFilter, workflowStatusFilter, paymentStatusFilter, dateFilter]);
 
   const handleGeneratePdf = async (invoiceId: string) => {
     setPdfGenerating(prev => ({ ...prev, [invoiceId]: true }));
@@ -119,8 +98,7 @@ function InvoicesPageInner() {
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
       
-      // Refresh the invoices to get updated pdfUrl
-      await fetchInvoices();
+      await revalidateInvoices();
     } catch (err: any) {
       alert(`Erreur lors de la génération du PDF: ${err.message}`);
     } finally {
@@ -343,29 +321,29 @@ function InvoicesPageInner() {
             <div className="d-flex justify-content-between align-items-center">
               <small className="text-muted">
                 {filteredInvoices.length} facture{filteredInvoices.length !== 1 ? 's' : ''} trouvée{filteredInvoices.length !== 1 ? 's' : ''}
-                {invoices.length !== filteredInvoices.length && ` sur ${invoices.length} au total`}
+                {rawInvoices.length !== filteredInvoices.length && ` sur ${rawInvoices.length} au total`}
               </small>
               <div className="d-flex gap-2 flex-wrap">
                 <span className="badge bg-success">
-                  {invoices.filter((inv: any) => inv.paymentStatus === 'paid').length} Payées
+                  {rawInvoices.filter((inv: any) => inv.paymentStatus === 'paid').length} Payées
                 </span>
                 <span className="badge bg-warning text-dark">
-                  {invoices.filter((inv: any) => inv.paymentStatus === 'pending').length} En attente
+                  {rawInvoices.filter((inv: any) => inv.paymentStatus === 'pending').length} En attente
                 </span>
                 <span className="badge bg-danger">
-                  {invoices.filter((inv: any) => inv.paymentStatus === 'overdue').length} En retard
+                  {rawInvoices.filter((inv: any) => inv.paymentStatus === 'overdue').length} En retard
                 </span>
                 <span className="badge bg-info">
-                  {invoices.filter((inv: any) => inv.status === 'sent').length} Envoyées
+                  {rawInvoices.filter((inv: any) => inv.status === 'sent').length} Envoyées
                 </span>
                 <span className="badge bg-secondary">
-                  {invoices.filter((inv: any) => inv.status === 'draft').length} Brouillons
+                  {rawInvoices.filter((inv: any) => inv.status === 'draft').length} Brouillons
                 </span>
                 <span className="badge bg-danger">
-                  {invoices.filter((inv: any) => inv.workflowStatus === 'blocked').length} Bloquées
+                  {rawInvoices.filter((inv: any) => inv.workflowStatus === 'blocked').length} Bloquées
                 </span>
                 <span className="badge bg-success">
-                  {invoices.filter((inv: any) => inv.workflowStatus === 'issued').length} Émises
+                  {rawInvoices.filter((inv: any) => inv.workflowStatus === 'issued').length} Émises
                 </span>
               </div>
             </div>
@@ -380,12 +358,12 @@ function InvoicesPageInner() {
             <i className="bi bi-receipt display-1 text-muted mb-3"></i>
             <h4 className="text-muted">Aucune facture trouvée</h4>
             <p className="text-muted mb-4">
-              {invoices.length === 0 
+              {rawInvoices.length === 0 
                 ? "Vous n'avez pas encore créé de facture."
                 : "Aucune facture ne correspond aux critères de recherche."
               }
             </p>
-            {invoices.length === 0 && (
+            {rawInvoices.length === 0 && (
               <div className="d-flex gap-2 justify-content-center">
                 <Link href="/dashboard/create-invoice" className="btn btn-primary">
                   <i className="bi bi-plus-circle me-2"></i>

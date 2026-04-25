@@ -2,80 +2,42 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import PWAInstallPrompt from "@/app/components/PWAInstallPrompt";
 import ReformReadinessWidget from "@/app/components/ReformReadinessWidget";
+import { useRecentInvoices, useAllInvoices, useClients, useCurrentUser } from "@/app/hooks/useApi";
 
-interface UserInvoice {
-  id: string;
-  invoiceNumber?: string;
-  totalAmount: number;
-  invoiceDate: string;
-  dueDate: string;
-  status: string;
-  paymentStatus: string;
-  client?: { name: string | null };
-}
 
 export default function DashboardPage() {
   const { status } = useSession();
   const router = useRouter();
-  const [recentInvoices, setRecentInvoices] = useState<UserInvoice[]>([]);
-  const [allInvoices, setAllInvoices] = useState<UserInvoice[]>([]);
-  const [userProfile, setUserProfile] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const enabled = status === 'authenticated';
+  const { invoices: recentInvoices, isLoading: recentLoading, error: recentError } = useRecentInvoices(6);
+  const { invoices: allInvoices, isLoading: allLoading } = useAllInvoices();
+  const { clients, isLoading: clientsLoading } = useClients();
+  const { userProfile } = useCurrentUser();
+
+  const loading = recentLoading || allLoading || clientsLoading;
+  const error = recentError?.message ?? null;
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
-      return;
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
     }
-
-    if (status === "authenticated") {
-      void loadDashboard();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, router]);
 
-  const loadDashboard = async () => {
-    try {
-      setLoading(true);
-      const [recentInvoicesResponse, allInvoicesResponse, clientsResponse, profileResponse] = await Promise.all([
-        fetch("/api/users/me/invoices?page=1&limit=6"),
-        fetch("/api/users/me/invoices?all=true"),
-        fetch("/api/clients"),
-        fetch("/api/users/me"),
-      ]);
-
-      if (!recentInvoicesResponse.ok || !allInvoicesResponse.ok) {
-        throw new Error("Impossible de charger le tableau de bord.");
-      }
-
-      const recentInvoicesData = await recentInvoicesResponse.json();
-      const allInvoicesData = await allInvoicesResponse.json();
-      const clientsData = clientsResponse.ok ? await clientsResponse.json() : [];
-      const profileData = profileResponse.ok ? await profileResponse.json() : null;
-      setUserProfile(profileData);
-
-      const hasClients = Array.isArray(clientsData) ? clientsData.length > 0 : (clientsData?.clients?.length ?? 0) > 0;
-      const hasInvoices = (allInvoicesData.invoices?.length ?? 0) > 0;
-
-      if (!hasClients && !hasInvoices) {
-        router.push("/dashboard/onboarding");
-        return;
-      }
-
-      setRecentInvoices(recentInvoicesData.invoices || []);
-      setAllInvoices(allInvoicesData.invoices || []);
-    } catch (err: any) {
-      setError(err.message || "Une erreur est survenue.");
-    } finally {
-      setLoading(false);
+  // Redirect to onboarding when data loaded and user has no activity
+  useEffect(() => {
+    if (!enabled || loading) return;
+    const hasClients = clients.length > 0;
+    const hasInvoices = allInvoices.length > 0;
+    if (!hasClients && !hasInvoices) {
+      router.push('/dashboard/onboarding');
     }
-  };
+  }, [enabled, loading, clients.length, allInvoices.length, router]);
 
   const metrics = useMemo(() => {
     const today = new Date();

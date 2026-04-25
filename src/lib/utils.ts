@@ -1,7 +1,7 @@
 interface UserProfileForLegalMentions {
   name: string | null;
   fiscalRegime: string | null;
-  microEntrepreneurType: "COMMERCANT" | "PRESTATAIRE" | "LIBERAL" | null;
+  microEntrepreneurType: string | null;
   siret: string | null;
   address: string | null;
   legalStatus: string | null;
