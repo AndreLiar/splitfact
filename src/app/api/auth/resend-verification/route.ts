@@ -7,7 +7,7 @@ import { sendVerificationEmail } from '@/lib/email-service';
 // POST /api/auth/resend-verification  { email }
 export async function POST(req: NextRequest) {
   const ip = getIp(req);
-  const rl = rateLimit(`resend-verify:${ip}`, 3, 60 * 60 * 1000); // 3 per hour per IP
+  const rl = await rateLimit(`resend-verify:${ip}`, 3, 60 * 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Trop de demandes. Réessayez dans une heure.' }, { status: 429 });
   }

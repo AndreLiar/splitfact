@@ -45,6 +45,7 @@ jobs:
     - name: Set up environment variables
       run: |
         echo "DATABASE_URL=postgresql://test:test@localhost:5432/splitfact_test" >> $GITHUB_ENV
+        echo "DIRECT_URL=postgresql://test:test@localhost:5432/splitfact_test" >> $GITHUB_ENV
         echo "NEXTAUTH_SECRET=test-secret-for-ci-only" >> $GITHUB_ENV
         echo "NEXTAUTH_URL=http://localhost:3000" >> $GITHUB_ENV
         echo "NODE_ENV=test" >> $GITHUB_ENV
@@ -147,6 +148,7 @@ jobs:
     - name: Set up environment variables
       run: |
         echo "DATABASE_URL=postgresql://test:test@localhost:5432/splitfact_test" >> $GITHUB_ENV
+        echo "DIRECT_URL=postgresql://test:test@localhost:5432/splitfact_test" >> $GITHUB_ENV
         echo "NEXTAUTH_SECRET=test-secret-for-ci-only" >> $GITHUB_ENV
         echo "NEXTAUTH_URL=http://localhost:3000" >> $GITHUB_ENV
         echo "NODE_ENV=test" >> $GITHUB_ENV
