@@ -114,7 +114,15 @@ export async function POST(
       },
     });
 
-    const pdfBuffer = await renderInvoicePdfBuffer(invoice);
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await renderInvoicePdfBuffer(invoice);
+    } catch (e: unknown) {
+      let msg: string;
+      try { msg = JSON.stringify(e); } catch { msg = String(e); }
+      return NextResponse.json({ error: `PDF render failed: ${msg}`, step: 'pdf' }, { status: 500 });
+    }
+
     const deliveryAddr = invoice.deliveryAddress
       ? (invoice.deliveryAddress as any)?.address ?? null
       : null;
