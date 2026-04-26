@@ -15,18 +15,14 @@ export async function POST(request: Request) {
   }
 
   const userId = session.user.id;
-  console.log("Stripe Onboard: Processing for userId:", userId);
 
   try {
     let stripeAccountId = (await prisma.user.findUnique({ where: { id: userId } }))?.stripeAccountId;
-    console.log("Stripe Onboard: Existing stripeAccountId from DB:", stripeAccountId);
 
     if (!stripeAccountId) {
-      // Create a new Stripe Connect account for the user
-      console.log("Stripe Onboard: No existing Stripe account, creating new one...");
       const account = await stripe.accounts.create({
         type: "express",
-        country: "FR", // Assuming France for now, can be dynamic
+        country: "FR",
         email: session.user.email || undefined,
         capabilities: {
           card_payments: { requested: true },
@@ -34,14 +30,11 @@ export async function POST(request: Request) {
         },
       });
       stripeAccountId = account.id;
-      console.log("Stripe Onboard: New Stripe account created with ID:", stripeAccountId);
 
-      // Save the Stripe account ID to the user in your database
-      const updatedUser = await prisma.user.update({
+      await prisma.user.update({
         where: { id: userId },
         data: { stripeAccountId: stripeAccountId },
       });
-      console.log("Stripe Onboard: User updated in DB with stripeAccountId:", updatedUser.stripeAccountId);
     }
 
     // Create an account link for onboarding

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useInvoices, revalidateInvoices } from '@/app/hooks/useApi';
+import { useInvoices, revalidateInvoices, type Invoice } from '@/app/hooks/useApi';
 
 function InvoicesPageInner() {
   const { data: session, status } = useSession();
@@ -12,7 +12,7 @@ function InvoicesPageInner() {
   const searchParams = useSearchParams();
   
   // Safe currency formatting function
-  const formatCurrency = (value: any) => {
+  const formatCurrency = (value: number | string) => {
     // Clean any potential malformed string values
     let cleanValue = value;
     if (typeof value === 'string') {
@@ -27,7 +27,7 @@ function InvoicesPageInner() {
     });
   };
   const { invoices: rawInvoices, isLoading: loading, error: swrError } = useInvoices();
-  const [filteredInvoices, setFilteredInvoices] = useState<typeof rawInvoices>([]);
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const error = swrError?.message ?? null;
   const [pdfGenerating, setPdfGenerating] = useState<{[key: string]: boolean}>({});
   
@@ -53,9 +53,9 @@ function InvoicesPageInner() {
 
   // Filter invoices based on search and filters
   useEffect(() => {
-    let filtered = rawInvoices.filter((invoice: any) => {
+    let filtered = rawInvoices.filter((invoice: Invoice) => {
       const matchesSearch =
-        invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (invoice.invoiceNumber ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (invoice.client?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (invoice.issuerName || '').toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -325,25 +325,25 @@ function InvoicesPageInner() {
               </small>
               <div className="d-flex gap-2 flex-wrap">
                 <span className="badge bg-success">
-                  {rawInvoices.filter((inv: any) => inv.paymentStatus === 'paid').length} Payées
+                  {rawInvoices.filter((inv: Invoice) => inv.paymentStatus === 'paid').length} Payées
                 </span>
                 <span className="badge bg-warning text-dark">
-                  {rawInvoices.filter((inv: any) => inv.paymentStatus === 'pending').length} En attente
+                  {rawInvoices.filter((inv: Invoice) => inv.paymentStatus === 'pending').length} En attente
                 </span>
                 <span className="badge bg-danger">
-                  {rawInvoices.filter((inv: any) => inv.paymentStatus === 'overdue').length} En retard
+                  {rawInvoices.filter((inv: Invoice) => inv.paymentStatus === 'overdue').length} En retard
                 </span>
                 <span className="badge bg-info">
-                  {rawInvoices.filter((inv: any) => inv.status === 'sent').length} Envoyées
+                  {rawInvoices.filter((inv: Invoice) => inv.status === 'sent').length} Envoyées
                 </span>
                 <span className="badge bg-secondary">
-                  {rawInvoices.filter((inv: any) => inv.status === 'draft').length} Brouillons
+                  {rawInvoices.filter((inv: Invoice) => inv.status === 'draft').length} Brouillons
                 </span>
                 <span className="badge bg-danger">
-                  {rawInvoices.filter((inv: any) => inv.workflowStatus === 'blocked').length} Bloquées
+                  {rawInvoices.filter((inv: Invoice) => inv.workflowStatus === 'blocked').length} Bloquées
                 </span>
                 <span className="badge bg-success">
-                  {rawInvoices.filter((inv: any) => inv.workflowStatus === 'issued').length} Émises
+                  {rawInvoices.filter((inv: Invoice) => inv.workflowStatus === 'issued').length} Émises
                 </span>
               </div>
             </div>
@@ -395,7 +395,7 @@ function InvoicesPageInner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentInvoices.map((invoice: any) => (
+                  {currentInvoices.map((invoice: Invoice) => (
                     <tr key={invoice.id}>
                       <td>
                         <div>
@@ -490,7 +490,7 @@ function InvoicesPageInner() {
 
             {/* Mobile Card Layout */}
             <div className="d-lg-none">
-              {currentInvoices.map((invoice: any) => (
+              {currentInvoices.map((invoice: Invoice) => (
                 <div key={`mobile-${invoice.id}`} className="card mb-3 border-0 shadow-sm">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-start mb-3">
@@ -525,8 +525,8 @@ function InvoicesPageInner() {
                       <span className={`badge ${getWorkflowBadgeClass(invoice.workflowStatus || 'triggered')}`}>
                         {getWorkflowStatusText(invoice.workflowStatus || 'triggered')}
                       </span>
-                      <span className={`badge ${getPaymentStatusBadgeClass(invoice.paymentStatus)}`}>
-                        {getPaymentStatusText(invoice.paymentStatus)}
+                      <span className={`badge ${getPaymentStatusBadgeClass(invoice.paymentStatus ?? '')}`}>
+                        {getPaymentStatusText(invoice.paymentStatus ?? '')}
                       </span>
                     </div>
                     

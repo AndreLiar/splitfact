@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const submission = validation.data;
 
     if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === "fake-api-key-for-build" || !emailFrom) {
-      console.log("Skipping design partner email send (email env not configured):", submission);
+      // email not configured — silently skip
     } else {
       await resend.emails.send({
         from: emailFrom,

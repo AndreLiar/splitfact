@@ -238,7 +238,6 @@ export async function GET(request: Request) {
         );
       }
 
-      console.log(`✅ Generated URSSAF report for user ${user.name} (${user.email}): ${caTotal.toFixed(2)}€ CA`);
     }
 
     return NextResponse.json({ 
