@@ -190,23 +190,29 @@ export async function POST(
     let facturxXmlUrl: string | null = invoice.facturxXmlUrl ?? null;
 
     if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-      pdfUrl = await uploadRawAsset(
-        `data:application/pdf;base64,${pdfBuffer.toString('base64')}`,
-        'invoices',
-        `invoice-${invoice.id}`
-      );
+      try {
+        pdfUrl = await uploadRawAsset(
+          `data:application/pdf;base64,${pdfBuffer.toString('base64')}`,
+          'invoices',
+          `invoice-${invoice.id}`
+        );
 
-      facturxPdfUrl = await uploadRawAsset(
-        `data:application/pdf;base64,${facturx.pdf.toString('base64')}`,
-        'facturx',
-        `facturx-${invoice.id}`
-      );
+        facturxPdfUrl = await uploadRawAsset(
+          `data:application/pdf;base64,${facturx.pdf.toString('base64')}`,
+          'facturx',
+          `facturx-${invoice.id}`
+        );
 
-      facturxXmlUrl = await uploadRawAsset(
-        `data:text/xml;base64,${Buffer.from(facturx.xml, 'utf8').toString('base64')}`,
-        'facturx',
-        `facturx-${invoice.id}-xml`
-      );
+        facturxXmlUrl = await uploadRawAsset(
+          `data:text/xml;base64,${Buffer.from(facturx.xml, 'utf8').toString('base64')}`,
+          'facturx',
+          `facturx-${invoice.id}-xml`
+        );
+      } catch (e: unknown) {
+        let msg: string;
+        try { msg = JSON.stringify(e); } catch { msg = String(e); }
+        return NextResponse.json({ error: `Cloudinary upload failed: ${msg}`, step: 'cloudinary' }, { status: 500 });
+      }
     }
 
     const updatedInvoice = await prisma.invoice.update({
