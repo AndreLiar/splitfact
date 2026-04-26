@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useReceivedInvoices, revalidateReceivedInvoices } from '@/app/hooks/useApi';
 import type { ReceivedInvoice } from '@/app/hooks/useApi';
 
@@ -25,9 +26,9 @@ function fmtDate(iso: string | null) {
 
 export default function ReceivedInvoicesPage() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const { invoices, isLoading: loading } = useReceivedInvoices(filter === 'unread');
+  const { invoices, error, isLoading: loading } = useReceivedInvoices(filter === 'unread');
 
-  const unreadCount = invoices.filter((i) => !i.isRead).length;
+  const unreadCount = invoices.filter((i: ReceivedInvoice) => !i.isRead).length;
 
   const markRead = async (id: string) => {
     await fetch(`/api/received-invoices/${id}`, { method: 'PATCH' });
@@ -38,6 +39,25 @@ export default function ReceivedInvoicesPage() {
     await fetch('/api/received-invoices', { method: 'PATCH' });
     await revalidateReceivedInvoices();
   };
+
+  if (error?.status === 403) {
+    return (
+      <div className="container-fluid mt-4">
+        <div className="row justify-content-center">
+          <div className="col-12 col-lg-6 text-center py-5">
+            <i className="bi bi-lock-fill fs-1 text-warning mb-3 d-block"></i>
+            <h2 className="h4 mb-2">Factures reçues — Plan Pro requis</h2>
+            <p className="text-muted mb-4">
+              La réception de factures via Chorus Pro est disponible avec le plan Pro.
+            </p>
+            <Link href="/dashboard/settings#billing" className="btn btn-warning fw-semibold">
+              Passer au Pro — 14 jours offerts
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="main-container">
@@ -77,7 +97,7 @@ export default function ReceivedInvoicesPage() {
         <div className="col-md-4">
           <div className="card shadow-sm text-center py-3">
             <div className="h3 fw-bold text-success mb-0">
-              {invoices.filter((i) => i.ppfStatus === 'RECUE' || i.ppfStatus === 'APPROUVEE').length}
+              {invoices.filter((i: ReceivedInvoice) => i.ppfStatus === 'RECUE' || i.ppfStatus === 'APPROUVEE').length}
             </div>
             <small className="text-muted">Statut conforme</small>
           </div>
@@ -127,7 +147,7 @@ export default function ReceivedInvoicesPage() {
             </div>
           ) : (
             <div className="list-group list-group-flush">
-              {invoices.map((inv) => {
+              {invoices.map((inv: ReceivedInvoice) => {
                 const badge = STATUS_BADGE[inv.ppfStatus] ?? { label: inv.ppfStatus, color: 'bg-secondary' };
                 return (
                   <div
