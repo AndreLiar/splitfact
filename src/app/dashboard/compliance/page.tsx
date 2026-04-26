@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useCompliance } from '@/app/hooks/useApi';
+import { useCompliance, ComplianceEvent } from '@/app/hooks/useApi';
 
 const EVENT_LABELS: Record<string, string> = {
   missing_einvoice:    'Facture non soumise au PPF',
@@ -20,13 +20,40 @@ const fmt = (n: number) =>
 export default function CompliancePage() {
   const { status } = useSession();
   const router = useRouter();
-  const { score, events, isLoading: loading } = useCompliance();
+  const { score, events, isLoading: loading, error } = useCompliance();
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/signin');
   }, [status, router]);
 
-  if (loading || !score) {
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
+        <div className="spinner-border text-primary" />
+      </div>
+    );
+  }
+
+  if (error?.status === 403) {
+    return (
+      <div className="container-fluid mt-4">
+        <div className="row justify-content-center">
+          <div className="col-12 col-lg-6 text-center py-5">
+            <i className="bi bi-lock-fill fs-1 text-warning mb-3 d-block"></i>
+            <h2 className="h4 mb-2">Conformité — Plan Pro requis</h2>
+            <p className="text-muted mb-4">
+              Le moteur de conformité EN 16931 et le suivi des événements sont disponibles avec le plan Pro.
+            </p>
+            <Link href="/dashboard/settings#billing" className="btn btn-warning fw-semibold">
+              Passer au Pro — 14 jours offerts
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!score) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
         <div className="spinner-border text-primary" />
@@ -183,7 +210,7 @@ export default function CompliancePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {events.map((ev) => (
+                    {events.map((ev: ComplianceEvent) => (
                       <tr key={ev.id}>
                         <td><span className="badge bg-secondary">{EVENT_LABELS[ev.type] ?? ev.type}</span></td>
                         <td className="small">{ev.description}</td>
