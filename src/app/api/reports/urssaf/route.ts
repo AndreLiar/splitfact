@@ -2,33 +2,22 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { isPro } from "@/lib/subscription";
 
-// Helper to get URSSAF rates (simplified for example)
 const getUrssafRate = (microEntrepreneurType: string) => {
   switch (microEntrepreneurType) {
-    case "COMMERCANT": return 0.128; // 12.8%
-    case "PRESTATAIRE": return 0.22; // 22%
-    case "LIBERAL": return 0.22; // 22%
+    case "COMMERCANT": return 0.128;
+    case "PRESTATAIRE": return 0.22;
+    case "LIBERAL": return 0.22;
     default: return 0;
   }
 };
 
-// Helper to get Income Tax rates (simplified, assuming versement libératoire)
 const getIncomeTaxRate = (microEntrepreneurType: string) => {
   switch (microEntrepreneurType) {
-    case "COMMERCANT": return 0.01; // 1%
-    case "PRESTATAIRE": return 0.017; // 1.7%
-    case "LIBERAL": return 0.022; // 2.2%
-    default: return 0;
-  }
-};
-
-// Helper to get TVA thresholds (simplified, confirm actual values for current year)
-const getTvaThreshold = (microEntrepreneurType: string) => {
-  switch (microEntrepreneurType) {
-    case "COMMERCANT": return 91900; // Commercial activities
-    case "PRESTATAIRE": return 36800; // Service activities (BIC)
-    case "LIBERAL": return 36800; // Liberal activities (BNC)
+    case "COMMERCANT": return 0.01;
+    case "PRESTATAIRE": return 0.017;
+    case "LIBERAL": return 0.022;
     default: return 0;
   }
 };
@@ -38,6 +27,13 @@ export async function GET(request: Request) {
 
   if (!session || !session.user || !session.user.id) {
     return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  if (!(await isPro(session.user.id))) {
+    return NextResponse.json(
+      { error: 'URSSAF reports require an InvoiceOps Pro plan.', upgrade: true },
+      { status: 403 }
+    );
   }
 
   const userId = session.user.id;
@@ -55,7 +51,7 @@ export async function GET(request: Request) {
   try {
     const userProfile = await prisma.user.findUnique({
       where: { id: userId },
-      select: { name: true, siret: true, fiscalRegime: true, microEntrepreneurType: true, tvaNumber: true },
+      select: { name: true, siret: true, fiscalRegime: true, microEntrepreneurType: true },
     });
 
     if (!userProfile || (userProfile.fiscalRegime !== "MicroBIC" && userProfile.fiscalRegime !== "BNC")) {
@@ -71,10 +67,7 @@ export async function GET(request: Request) {
         status: 'paid',
         payments: {
           some: {
-            paidAt: {
-              gte: startDate,
-              lte: endDate,
-            },
+            paidAt: { gte: startDate, lte: endDate },
           },
         },
       },
@@ -90,20 +83,9 @@ export async function GET(request: Request) {
     const impotRevenu = caTotal * incomeTaxRate;
     const revenuNet = caTotal - cotisations - impotRevenu;
 
-    // Determine TVA status
-    const tvaThreshold = userProfile.microEntrepreneurType ? getTvaThreshold(userProfile.microEntrepreneurType) : 0;
-    const tvaApplicable = caTotal >= tvaThreshold;
-    let alerte = "Sous seuil de TVA";
-    if (tvaApplicable) {
-      alerte = "Seuil TVA dépassé";
-    } else if (caTotal >= tvaThreshold * 0.8) {
-      alerte = "Proche du seuil TVA";
-    }
-
-    // Determine URSSAF declaration message (simplified example)
     const nextDeclarationDate = new Date(endDate);
     nextDeclarationDate.setMonth(nextDeclarationDate.getMonth() + 1);
-    nextDeclarationDate.setDate(20); // Assuming declaration by 20th of next month
+    nextDeclarationDate.setDate(20);
     const message = `Déclaration à faire avant le ${nextDeclarationDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}`;
 
     const reportData = {
@@ -120,11 +102,9 @@ export async function GET(request: Request) {
       tauxImpot: parseFloat((incomeTaxRate * 100).toFixed(1)),
       impotRevenu: parseFloat(impotRevenu.toFixed(2)),
       revenuNet: parseFloat(revenuNet.toFixed(2)),
-      tvaApplicable: tvaApplicable,
-      alerte: alerte,
-      message: message,
+      message,
       disclaimer: 'Ce rapport est une estimation et ne remplace pas votre déclaration officielle sur autoentrepreneur.urssaf.fr.',
-      paidInvoicesDisclaimer: `Only invoices that were paid between ${startDate.toLocaleDateString('fr-FR')} and ${endDate.toLocaleDateString('fr-FR')} are included in this declaration. Unpaid invoices are excluded.`,
+      paidInvoicesDisclaimer: `Seules les factures payées entre le ${startDate.toLocaleDateString('fr-FR')} et le ${endDate.toLocaleDateString('fr-FR')} sont incluses.`,
     };
 
     const report = await prisma.urssafReport.create({

@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR, { mutate as globalMutate } from 'swr';
-import { fetcher } from '@/lib/fetcher';
+import { fetcher, ApiError } from '@/lib/fetcher';
 import type { UserProfile, Client } from '@/types/domain';
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -132,12 +132,12 @@ export function useClients() {
 }
 
 export function useInvoices() {
-  const { data, error, isLoading, mutate } = useSWR<{ invoices: Invoice[] }>(
+  const { data, error, isLoading, mutate } = useSWR<Invoice[]>(
     '/api/invoices',
     fetcher,
     SWR_DEFAULTS,
   );
-  return { invoices: data?.invoices ?? [], error, isLoading, mutate };
+  return { invoices: data ?? [], error, isLoading, mutate };
 }
 
 export function useRecentInvoices(limit = 6) {
@@ -196,7 +196,7 @@ export function useReceivedInvoices(unread = false) {
   const { data, error, isLoading, mutate } = useSWR<ReceivedInvoice[]>(
     key,
     fetcher,
-    SWR_DEFAULTS,
+    { ...SWR_DEFAULTS, shouldRetryOnError: false },
   );
   return { invoices: data ?? [], error, isLoading, mutate };
 }
@@ -205,7 +205,7 @@ export function useCompliance() {
   const { data, error, isLoading, mutate } = useSWR<{ score: ComplianceScore; events: ComplianceEvent[] }>(
     '/api/compliance',
     fetcher,
-    SWR_DEFAULTS,
+    { ...SWR_DEFAULTS, shouldRetryOnError: false },
   );
   return { score: data?.score ?? null, events: data?.events ?? [], error, isLoading, mutate };
 }
@@ -228,6 +228,11 @@ export function useEReportingPeriods(months: string[]) {
       const results = await Promise.all(
         periods.map(async (p) => {
           const res = await fetch(`/api/e-reporting?period=${p}`);
+          if (res.status === 403) {
+            let info: unknown;
+            try { info = await res.json(); } catch { /* empty */ }
+            throw new ApiError(403, 'E-reporting requires an InvoiceOps Pro plan.', info);
+          }
           if (!res.ok) return { period: p, status: 'draft', transactionCount: 0, totalHT: 0, totalTVA: 0, totalTTC: 0 } as EReportingPeriod;
           return res.json() as Promise<EReportingPeriod>;
         }),

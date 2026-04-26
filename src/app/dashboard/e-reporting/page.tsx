@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEReportingPeriods } from '@/app/hooks/useApi';
 import type { EReportingPeriod } from '@/app/hooks/useApi';
 
@@ -36,7 +37,7 @@ export default function EReportingPage() {
   const router = useRouter();
 
   const months = useMemo(() => getPreviousMonths(6), []);
-  const { periods, isLoading: loading, mutate: reloadPeriods } = useEReportingPeriods(
+  const { periods, error: periodsError, isLoading: loading, mutate: reloadPeriods } = useEReportingPeriods(
     status === 'authenticated' ? months : [],
   );
 
@@ -108,6 +109,25 @@ export default function EReportingPage() {
     );
   }
 
+  if (periodsError?.status === 403) {
+    return (
+      <div className="container-fluid mt-4">
+        <div className="row justify-content-center">
+          <div className="col-12 col-lg-6 text-center py-5">
+            <i className="bi bi-lock-fill fs-1 text-warning mb-3 d-block"></i>
+            <h2 className="h4 mb-2">E-Reporting B2C — Plan Pro requis</h2>
+            <p className="text-muted mb-4">
+              La déclaration mensuelle des transactions B2C à la DGFiP est disponible avec le plan Pro.
+            </p>
+            <Link href="/dashboard/settings#billing" className="btn btn-warning fw-semibold">
+              Passer au Pro — 14 jours offerts
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container-fluid mt-4">
       <div className="row justify-content-center">
@@ -171,7 +191,7 @@ export default function EReportingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {periods.map((p) => {
+                  {periods.map((p: EReportingPeriod) => {
                     const st = STATUS_LABELS[p.status] ?? { label: p.status, cls: 'bg-secondary' };
                     const isSubmitting = submitting === p.period;
                     const canSubmit = ['draft', 'ready', 'rejected'].includes(p.status);

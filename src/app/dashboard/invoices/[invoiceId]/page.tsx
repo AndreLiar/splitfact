@@ -193,7 +193,7 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
   const { invoiceId } = params;
 
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
-  const [activityLogs, setActivityLogs] = useState<Array<{ id: string; action: string; createdAt: string; metadata?: any; user?: { name?: string | null; email?: string | null } }>>([]);
+  const [activityLogs, setActivityLogs] = useState<Array<{ id: string; action: string; createdAt: string; metadata?: Record<string, unknown>; user?: { name?: string | null; email?: string | null } }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
@@ -933,7 +933,7 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
                     <div className="text-muted" style={{ fontSize: '0.75rem' }}>
                       {log.user?.name || log.user?.email || 'Système'} — {new Date(log.createdAt).toLocaleDateString('fr-FR')} {new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </div>
-                    {log.metadata?.note && (
+                    {typeof log.metadata?.note === 'string' && (
                       <div className="small text-muted fst-italic mt-1">"{log.metadata.note}"</div>
                     )}
                   </div>

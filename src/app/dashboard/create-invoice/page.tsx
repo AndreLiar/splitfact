@@ -81,7 +81,7 @@ export default function CreateInvoicePage() {
   });
   const { clients, mutate: refetchClients } = useApiClients();
   const { quota } = useQuota();
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,7 +116,7 @@ export default function CreateInvoicePage() {
         invoiceDate: e.invoiceDate ?? prev.invoiceDate,
         dueDate: e.dueDate ?? prev.dueDate,
         items: Array.isArray(e.items) && e.items.length > 0
-          ? e.items.map((item: any) => ({
+          ? e.items.map((item: FormData['items'][number]) => ({
               description: item.description ?? '',
               quantity: Number(item.quantity) || 1,
               unitPrice: Number(item.unitPrice) || 0,
@@ -129,7 +129,7 @@ export default function CreateInvoicePage() {
       (() => {
         if (e.clientName) {
           const match = clients.find(
-            (c) => c.name.toLowerCase() === (e.clientName as string).toLowerCase()
+            (c: Client) => c.name.toLowerCase() === (e.clientName as string).toLowerCase()
           );
           if (match) {
             setFormData((prev) => ({
@@ -247,7 +247,7 @@ export default function CreateInvoicePage() {
     setErrors({});
     const result = invoiceSchema.safeParse(formData);
     if (!result.success) {
-      const fieldErrors: any = {};
+      const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
         fieldErrors[err.path[0]] = err.message;
       });
@@ -289,7 +289,7 @@ export default function CreateInvoicePage() {
     return true; // Always true for Micro-Entrepreneurs
   };
 
-  const calculateItemTotal = (item: any) => {
+  const calculateItemTotal = (item: FormData['items'][number]) => {
     const quantity = Number(item.quantity) || 0;
     const unitPrice = Number(item.unitPrice) || 0;
     return quantity * unitPrice; // No VAT for Micro-Entrepreneurs
@@ -335,12 +335,21 @@ export default function CreateInvoicePage() {
   const readinessPreview = useMemo(() => {
     if (!userProfile) return null;
 
+    const selectedClient = clients?.find((c: Client) => c.id === formData.clientId);
+    const clientSiretValidated =
+      selectedClient?.siretValidated ||
+      (siretCheck.result?.valid === true && siretCheck.result?.active === true);
+
     return evaluateInvoiceReadiness({
       clientName: formData.clientName,
       clientAddress: formData.clientAddress,
+      clientSiret: formData.clientSiret,
+      clientSiretValidated,
+      transactionType: formData.transactionType,
       invoiceDate: formData.invoiceDate,
       dueDate: formData.dueDate,
       issuerName: userProfile.name,
+      issuerSiret: userProfile.siret,
       issuerAddress: userProfile.address,
       legalMentions: getLegalMentionsByFiscalRegime(userProfile),
       items: formData.items.map((item) => ({
@@ -349,7 +358,7 @@ export default function CreateInvoicePage() {
         unitPrice: item.unitPrice,
       })),
     });
-  }, [formData, userProfile]);
+  }, [formData, userProfile, siretCheck, clients]);
 
   if (status === 'loading' || loading) {
     return <div className="d-flex justify-content-center align-items-center vh-100">Chargement...</div>;
@@ -646,14 +655,14 @@ export default function CreateInvoicePage() {
                         onChange={handleInputChange}
                       >
                         <option value="">Sélectionner un client</option>
-                        {clients.map((c: any) => (
+                        {clients.map((c: Client) => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
                       {errors.clientId && <div className="invalid-feedback">{errors.clientId}</div>}
                       {/* SIRET validation warning */}
                       {(() => {
-                        const sel = clients.find(c => c.id === formData.clientId);
+                        const sel = clients.find((c: Client) => c.id === formData.clientId);
                         if (!sel || !sel.siret) return null;
                         const validated = sel.siretValidated || (siretCheck.result?.valid && siretCheck.result?.active);
                         if (validated) return (
@@ -924,7 +933,7 @@ export default function CreateInvoicePage() {
                       <div className="bg-light rounded-xl p-3">
                         <div className="mb-2">
                           <small className="text-mediumGray">Client</small>
-                          <div className="fw-semibold">{clients.find((c: any) => c.id === formData.clientId)?.name}</div>
+                          <div className="fw-semibold">{clients.find((c: Client) => c.id === formData.clientId)?.name}</div>
                         </div>
                         <div className="mb-2">
                           <small className="text-mediumGray">Date d'échéance</small>

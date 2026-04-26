@@ -8,18 +8,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log('[Notification Retries Cron] Starting notification retry processing...');
-    
     const stats = await NotificationService.getQueueStats();
-    console.log('[Notification Retries Cron] Queue stats before processing:', stats);
-
     const processResult = await NotificationService.processRetryQueue();
-    console.log(`[Notification Retries Cron] Processed ${processResult.processed} notifications: ${processResult.successful} successful, ${processResult.failed} failed`);
-
     const cleanupCount = await NotificationService.cleanupOldQueue(30);
-    if (cleanupCount > 0) {
-      console.log(`[Notification Retries Cron] Cleaned up ${cleanupCount} old queue items`);
-    }
 
     const finalStats = await NotificationService.getQueueStats();
 

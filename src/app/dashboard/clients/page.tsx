@@ -348,7 +348,7 @@ function ClientManagementPageInner() {
                                 <div className="flex-grow-1">
                                   <h6 className="mb-1 fw-bold text-dark">{client.name}</h6>
                                   <small className="text-muted">
-                                    Créé le {new Date(client.createdAt ?? '').toLocaleDateString('fr-FR')}
+                                    Créé le {client.createdAt ? new Date(client.createdAt).toLocaleDateString('fr-FR') : '—'}
                                   </small>
                                 </div>
                                 <div className="dropdown">

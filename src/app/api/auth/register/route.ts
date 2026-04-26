@@ -6,17 +6,17 @@ import { rateLimit, getIp } from '@/lib/rate-limit';
 import { sendVerificationEmail } from '@/lib/email-service';
 
 export async function POST(request: Request) {
-  // 5 registrations per hour per IP
-  const ip = getIp(request);
-  const rl = await rateLimit(`register:${ip}`, 5, 60 * 60 * 1000);
-  if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "Trop de tentatives d'inscription. Réessayez dans une heure." },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
-    );
-  }
-
   try {
+    // 5 registrations per hour per IP
+    const ip = getIp(request);
+    const rl = await rateLimit(`register:${ip}`, 5, 60 * 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Trop de tentatives d'inscription. Réessayez dans une heure." },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {

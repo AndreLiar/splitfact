@@ -28,11 +28,8 @@ export class NotificationService {
 
   static async queueNotification(data: NotificationData): Promise<NotificationResult> {
     try {
-      console.log(`[NotificationService] Queueing notification for user ${data.userId}: ${data.title}`);
-
       const existingDuplicate = await this.checkForDuplicates(data);
       if (existingDuplicate) {
-        console.log(`[NotificationService] Duplicate notification found, skipping: ${existingDuplicate.id}`);
         return {
           success: true,
           queueItemId: existingDuplicate.id,
@@ -54,7 +51,6 @@ export class NotificationService {
         }
       });
 
-      console.log(`[NotificationService] Notification queued with ID: ${queueItem.id}`);
 
       const processResult = await this.processQueueItem(queueItem.id);
 
@@ -134,7 +130,6 @@ export class NotificationService {
           }
         });
 
-        console.log(`[NotificationService] Successfully created notification ${notification.id} from queue item ${queueItemId}`);
 
         return {
           success: true,
@@ -144,7 +139,7 @@ export class NotificationService {
 
       } catch (createError) {
         const errorMessage = createError instanceof Error ? createError.message : 'Unknown error creating notification';
-        console.error(`[NotificationService] Failed to create notification from queue item ${queueItemId}:`, createError);
+        console.error('[NotificationService] Failed to create notification from queue item', queueItemId, createError);
 
         const nextRetryAt = queueItem.attemptCount < queueItem.maxAttempts - 1
           ? this.calculateNextRetryAt(queueItem.attemptCount)
@@ -179,8 +174,6 @@ export class NotificationService {
 
   static async processRetryQueue(): Promise<{ processed: number; successful: number; failed: number }> {
     try {
-      console.log('[NotificationService] Processing retry queue...');
-
       const pendingItems = await prisma.notificationQueue.findMany({
         where: {
           status: 'PENDING',
@@ -194,7 +187,6 @@ export class NotificationService {
         item.attemptCount < item.maxAttempts
       );
 
-      console.log(`[NotificationService] Found ${eligibleItems.length} eligible items to retry (${pendingItems.length} total pending)`);
 
       let successful = 0;
       let failed = 0;
@@ -209,7 +201,6 @@ export class NotificationService {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      console.log(`[NotificationService] Retry processing complete: ${successful} successful, ${failed} failed`);
 
       return {
         processed: eligibleItems.length,
@@ -254,7 +245,6 @@ export class NotificationService {
         }
       });
 
-      console.log(`[NotificationService] Cleaned up ${result.count} old queue items`);
       return result.count;
 
     } catch (error) {
