@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const FEATURES = [
@@ -11,8 +11,9 @@ const FEATURES = [
   { icon: "bi-graph-up-arrow", text: "Pilotage du workflow de bout en bout" },
 ];
 
-export default function Register() {
-  const [email, setEmail] = useState("");
+function RegisterContent() {
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState(searchParams.get('email') ?? "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -560,5 +561,19 @@ export default function Register() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function Register() {
+  return (
+    <Suspense fallback={
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Chargement...</span>
+        </div>
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   );
 }

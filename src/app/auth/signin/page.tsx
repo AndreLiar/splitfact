@@ -37,8 +37,12 @@ function SignInContent() {
       setError("Votre email n'est pas encore vérifié. Consultez votre boîte mail ou renvoyez le lien ci-dessous.");
     } else if (result?.error === 'RATE_LIMITED') {
       setError("Trop de tentatives. Attendez quelques minutes avant de réessayer.");
+    } else if (result?.error === 'USER_NOT_FOUND') {
+      setError("USER_NOT_FOUND");
+    } else if (result?.error === 'WRONG_PASSWORD') {
+      setError("Mot de passe incorrect. Veuillez réessayer ou réinitialisez votre mot de passe.");
     } else if (result?.error) {
-      setError("Email ou mot de passe incorrect. Veuillez réessayer.");
+      setError("Une erreur inattendue est survenue. Veuillez réessayer.");
     } else {
       router.push("/dashboard");
     }
@@ -241,7 +245,16 @@ function SignInContent() {
               Inscription réussie ! Un email de vérification a été envoyé. Vérifiez votre boîte mail.
             </div>
           )}
-          {error && (
+          {error === 'USER_NOT_FOUND' && (
+            <div className="alert alert-warning mb-4">
+              <i className="bi bi-person-x me-2"></i>
+              Aucun compte trouvé avec cette adresse email.{' '}
+              <Link href={`/auth/register?email=${encodeURIComponent(email)}`} style={{ color: 'inherit', fontWeight: 600 }}>
+                Créer un compte ?
+              </Link>
+            </div>
+          )}
+          {error && error !== 'USER_NOT_FOUND' && (
             <div className="alert alert-danger mb-4">
               <i className="bi bi-exclamation-triangle me-2"></i>
               {error}
