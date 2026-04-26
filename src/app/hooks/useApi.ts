@@ -205,7 +205,7 @@ export function useCompliance() {
   const { data, error, isLoading, mutate } = useSWR<{ score: ComplianceScore; events: ComplianceEvent[] }>(
     '/api/compliance',
     fetcher,
-    SWR_DEFAULTS,
+    { ...SWR_DEFAULTS, shouldRetryOnError: false },
   );
   return { score: data?.score ?? null, events: data?.events ?? [], error, isLoading, mutate };
 }
