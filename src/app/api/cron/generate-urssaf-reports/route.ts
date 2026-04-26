@@ -21,20 +21,10 @@ const getIncomeTaxRate = (microEntrepreneurType: string) => {
   }
 };
 
-// Helper to get TVA thresholds (2024 values)
-const getTvaThreshold = (microEntrepreneurType: string) => {
-  switch (microEntrepreneurType) {
-    case 'COMMERCANT': return 91900; // Commercial activities
-    case 'PRESTATAIRE': return 36800; // Service activities (BIC)
-    case 'LIBERAL': return 36800; // Liberal activities (BNC)
-    default: return 0;
-  }
-};
-
 // Helper to create in-app notifications
 const createNotification = async (
   userId: string, 
-  type: 'URSSAF_REMINDER' | 'TVA_THRESHOLD_WARNING' | 'TVA_THRESHOLD_EXCEEDED',
+  type: 'URSSAF_REMINDER',
   title: string,
   message: string,
   actionUrl?: string,
@@ -74,7 +64,6 @@ export async function GET(request: Request) {
         fiscalRegime: true,
         microEntrepreneurType: true,
         declarationFrequency: true,
-        tvaNumber: true,
       },
     });
 
@@ -150,17 +139,6 @@ export async function GET(request: Request) {
       const impotRevenu = caTotal * incomeTaxRate;
       const revenuNet = caTotal - cotisations - impotRevenu;
 
-      // Check TVA threshold status
-      const tvaThreshold = getTvaThreshold(user.microEntrepreneurType);
-      const tvaApplicable = caTotal >= tvaThreshold;
-      
-      let alerte = 'Sous seuil de TVA';
-      if (tvaApplicable) {
-        alerte = 'Seuil TVA dépassé - TVA applicable';
-      } else if (caTotal >= tvaThreshold * 0.8) {
-        alerte = 'Proche du seuil TVA (80% atteint)';
-      }
-
       // Calculate next declaration deadline
       const nextDeclarationDate = new Date(endDate);
       nextDeclarationDate.setMonth(nextDeclarationDate.getMonth() + 1);
@@ -184,8 +162,6 @@ export async function GET(request: Request) {
         tauxImpot: parseFloat((incomeTaxRate * 100).toFixed(1)),
         impotRevenu: parseFloat(impotRevenu.toFixed(2)),
         revenuNet: parseFloat(revenuNet.toFixed(2)),
-        tvaApplicable,
-        alerte,
         message,
         disclaimer: 'Ce rapport est une estimation basée sur vos factures payées. Vérifiez toujours sur autoentrepreneur.urssaf.fr.',
         paidInvoicesDisclaimer: `Seules les factures payées entre le ${startDate.toLocaleDateString('fr-FR')} et le ${endDate.toLocaleDateString('fr-FR')} sont incluses.`,
@@ -216,27 +192,6 @@ export async function GET(request: Request) {
           declarationType,
         }
       );
-
-      // Create TVA threshold notifications if needed
-      if (tvaApplicable && !user.tvaNumber) {
-        await createNotification(
-          user.id,
-          'TVA_THRESHOLD_EXCEEDED',
-          '🚨 Seuil TVA dépassé !',
-          `Votre CA annuel a dépassé ${tvaThreshold}€. Vous devez vous enregistrer à la TVA et mettre à jour votre profil.`,
-          '/dashboard/settings',
-          { threshold: tvaThreshold, currentCA: caTotal }
-        );
-      } else if (caTotal >= tvaThreshold * 0.8 && !user.tvaNumber) {
-        await createNotification(
-          user.id,
-          'TVA_THRESHOLD_WARNING', 
-          '⚠️ Seuil TVA proche',
-          `Attention: vous approchez du seuil TVA (${((caTotal / tvaThreshold) * 100).toFixed(1)}% atteint). Préparez-vous à devenir redevable de la TVA.`,
-          '/dashboard/reports',
-          { threshold: tvaThreshold, currentCA: caTotal, percentage: (caTotal / tvaThreshold) * 100 }
-        );
-      }
 
     }
 
