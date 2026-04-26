@@ -1,42 +1,51 @@
-type Entry = { count: number; resetAt: number };
-const store = new Map<string, Entry>();
-let lastCleanup = Date.now();
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
-function cleanup() {
-  const now = Date.now();
-  for (const [key, entry] of store.entries()) {
-    if (entry.resetAt < now) store.delete(key);
+// Lazily instantiated so missing env vars don't crash the module at import time.
+let redis: Redis | null = null;
+
+function getRedis(): Redis {
+  if (!redis) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    });
   }
+  return redis;
 }
 
-export function rateLimit(
+// Cache limiters by window so we don't recreate them on every request.
+const limiterCache = new Map<string, Ratelimit>();
+
+function getLimiter(maxRequests: number, windowMs: number): Ratelimit {
+  const key = `${maxRequests}:${windowMs}`;
+  if (!limiterCache.has(key)) {
+    limiterCache.set(
+      key,
+      new Ratelimit({
+        redis: getRedis(),
+        limiter: Ratelimit.slidingWindow(maxRequests, `${windowMs}ms`),
+        analytics: false,
+      }),
+    );
+  }
+  return limiterCache.get(key)!;
+}
+
+export async function rateLimit(
   key: string,
   maxRequests: number,
-  windowMs: number
-): { allowed: boolean; remaining: number; resetAt: number } {
-  const now = Date.now();
-
-  if (now - lastCleanup > 5 * 60 * 1000) {
-    cleanup();
-    lastCleanup = now;
-  }
-
-  const entry = store.get(key);
-  if (!entry || entry.resetAt < now) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
-  }
-
-  if (entry.count >= maxRequests) {
-    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
-  }
-
-  entry.count++;
-  return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
+  windowMs: number,
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  const limiter = getLimiter(maxRequests, windowMs);
+  const { success, remaining, reset } = await limiter.limit(key);
+  return { allowed: success, remaining, resetAt: Number(reset) };
 }
 
 export function getIp(req: Request): string {
-  const forwarded = (req as any).headers?.get?.('x-forwarded-for') ?? (req as any).headers?.['x-forwarded-for'];
+  const forwarded =
+    (req as any).headers?.get?.('x-forwarded-for') ??
+    (req as any).headers?.['x-forwarded-for'];
   if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
   return 'unknown';
 }
