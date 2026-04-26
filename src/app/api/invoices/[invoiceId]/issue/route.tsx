@@ -250,7 +250,8 @@ export async function POST(
       readiness,
     });
   } catch (error) {
-    console.error('Error issuing invoice:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Error issuing invoice:', msg, error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
