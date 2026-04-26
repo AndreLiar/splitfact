@@ -24,7 +24,7 @@ function getLimiter(maxRequests: number, windowMs: number): Ratelimit {
       key,
       new Ratelimit({
         redis: getRedis(),
-        limiter: Ratelimit.slidingWindow(maxRequests, `${windowMs}ms`),
+        limiter: Ratelimit.slidingWindow(maxRequests, `${windowMs} ms`),
         analytics: false,
       }),
     );
@@ -37,9 +37,18 @@ export async function rateLimit(
   maxRequests: number,
   windowMs: number,
 ): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
-  const limiter = getLimiter(maxRequests, windowMs);
-  const { success, remaining, reset } = await limiter.limit(key);
-  return { allowed: success, remaining, resetAt: Number(reset) };
+  // Fail-open: if Redis env vars are missing, skip rate limiting rather than crashing.
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return { allowed: true, remaining: maxRequests, resetAt: Date.now() + windowMs };
+  }
+  try {
+    const limiter = getLimiter(maxRequests, windowMs);
+    const { success, remaining, reset } = await limiter.limit(key);
+    return { allowed: success, remaining, resetAt: Number(reset) };
+  } catch {
+    // Redis unreachable — fail-open
+    return { allowed: true, remaining: maxRequests, resetAt: Date.now() + windowMs };
+  }
 }
 
 export function getIp(req: Request): string {
