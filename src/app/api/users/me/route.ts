@@ -76,12 +76,10 @@ export async function GET() {
   }
 
   try {
-    console.log("Session User ID:", session.user.id);
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { id: true, name: true, email: true, fiscalRegime: true, microEntrepreneurType: true, declarationFrequency: true, siret: true, tvaNumber: true, address: true, legalStatus: true, rcsNumber: true, shareCapital: true, apeCode: true, stripeAccountId: true },
     });
-    console.log("Fetched User:", user);
 
     if (!user) {
       return new NextResponse("User not found", { status: 404 });
@@ -103,20 +101,15 @@ export async function PUT(request: Request) {
 
   const userId = session.user.id;
   const body = await request.json();
-  console.log("Received body for profile update:", body);
-
   const validation = userProfileSchema.safeParse(body);
-  console.log("Validation result:", validation);
 
   if (!validation.success) {
-    console.error("Validation errors:", validation.error.format());
     return NextResponse.json({ errors: validation.error.format() }, { status: 400 });
   }
 
   const { name, fiscalRegime, microEntrepreneurType, declarationFrequency, siret, tvaNumber, address, legalStatus, rcsNumber, shareCapital, apeCode } = validation.data;
 
   try {
-    console.log("Updating user with data:", validation.data);
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
@@ -134,8 +127,6 @@ export async function PUT(request: Request) {
       },
       select: { id: true, name: true, email: true, fiscalRegime: true, microEntrepreneurType: true, declarationFrequency: true, siret: true, tvaNumber: true, address: true, legalStatus: true, rcsNumber: true, shareCapital: true, apeCode: true, stripeAccountId: true },
     });
-    console.log("User updated successfully:", updatedUser);
-
     return NextResponse.json(updatedUser);
   } catch (error) {
     console.error("Error updating user profile:", error);
