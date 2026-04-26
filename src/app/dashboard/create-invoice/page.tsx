@@ -335,12 +335,21 @@ export default function CreateInvoicePage() {
   const readinessPreview = useMemo(() => {
     if (!userProfile) return null;
 
+    const selectedClient = clients?.find((c: Client) => c.id === formData.clientId);
+    const clientSiretValidated =
+      selectedClient?.siretValidated ||
+      (siretCheck.result?.valid === true && siretCheck.result?.active === true);
+
     return evaluateInvoiceReadiness({
       clientName: formData.clientName,
       clientAddress: formData.clientAddress,
+      clientSiret: formData.clientSiret,
+      clientSiretValidated,
+      transactionType: formData.transactionType,
       invoiceDate: formData.invoiceDate,
       dueDate: formData.dueDate,
       issuerName: userProfile.name,
+      issuerSiret: userProfile.siret,
       issuerAddress: userProfile.address,
       legalMentions: getLegalMentionsByFiscalRegime(userProfile),
       items: formData.items.map((item) => ({
@@ -349,7 +358,7 @@ export default function CreateInvoicePage() {
         unitPrice: item.unitPrice,
       })),
     });
-  }, [formData, userProfile]);
+  }, [formData, userProfile, siretCheck, clients]);
 
   if (status === 'loading' || loading) {
     return <div className="d-flex justify-content-center align-items-center vh-100">Chargement...</div>;
