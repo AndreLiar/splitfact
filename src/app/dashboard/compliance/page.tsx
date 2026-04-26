@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useCompliance } from '@/app/hooks/useApi';
+import { useCompliance, ComplianceEvent } from '@/app/hooks/useApi';
 
 const EVENT_LABELS: Record<string, string> = {
   missing_einvoice:    'Facture non soumise au PPF',
@@ -49,6 +49,14 @@ export default function CompliancePage() {
             </Link>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!score) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
+        <div className="spinner-border text-primary" />
       </div>
     );
   }
@@ -202,7 +210,7 @@ export default function CompliancePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {events.map((ev) => (
+                    {events.map((ev: ComplianceEvent) => (
                       <tr key={ev.id}>
                         <td><span className="badge bg-secondary">{EVENT_LABELS[ev.type] ?? ev.type}</span></td>
                         <td className="small">{ev.description}</td>
