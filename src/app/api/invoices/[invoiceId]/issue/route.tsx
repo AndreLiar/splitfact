@@ -110,7 +110,7 @@ export async function POST(
       data: {
         workflowStatus: 'ready_to_issue',
         facturxStatus: 'generating',
-        facturxValidationErrors: undefined,
+        facturxValidationErrors: [],
       },
     });
 
