@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Account {
@@ -101,7 +102,7 @@ model Client {
   contactName         String?
   phone               String?
   userId              String
-  user                User       @relation(fields: [userId], references: [id])
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices            Invoice[]
 }
 
@@ -122,7 +123,7 @@ model Invoice {
   client            Client        @relation(fields: [clientId], references: [id])
   clientId          String
   userId            String
-  user              User   @relation(fields: [userId], references: [id])
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   clientName        String?
   clientAddress     String?
@@ -177,14 +178,14 @@ model InvoiceItem {
   quantity    Int
   unitPrice   Decimal
   tvaRate     Decimal
-  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   invoiceId   String
 }
 
 
 model Payment {
   id        String   @id @default(cuid())
-  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   invoiceId String
   paidBy    String
   amount    Decimal
@@ -288,7 +289,7 @@ enum PpfStatus {
 
 model UrssafReport {
   id              String    @id @default(cuid())
-  user            User      @relation(fields: [userId], references: [id])
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId          String
   reportData      Json
   periodStartDate DateTime
@@ -303,7 +304,7 @@ model UrssafReport {
 
 model Notification {
   id          String           @id @default(cuid())
-  user        User             @relation(fields: [userId], references: [id])
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
   type        NotificationType
   title       String
@@ -334,8 +335,8 @@ model NotificationQueue {
   processedAt       DateTime?
   notificationId    String?              @unique // Reference to created notification
   
-  user              User                 @relation(fields: [userId], references: [id])
-  notification      Notification?        @relation(fields: [notificationId], references: [id])
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification      Notification?        @relation(fields: [notificationId], references: [id], onDelete: SetNull)
   
   @@index([status, nextRetryAt])
   @@index([userId, createdAt])
@@ -344,9 +345,9 @@ model NotificationQueue {
 model ActivityLog {
   id          String   @id @default(cuid())
   invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   action      String   // e.g. "issued", "blocked", "exception_resolved", "reminder_sent", "readiness_changed"
   metadata    Json?
   createdAt   DateTime @default(now())
@@ -357,9 +358,9 @@ model ActivityLog {
 model BillingTrigger {
   id                String   @id @default(cuid())
   invoiceId         String?
-  invoice           Invoice? @relation(fields: [invoiceId], references: [id])
+  invoice           Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   userId            String
-  user              User     @relation(fields: [userId], references: [id])
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   triggerType       String   // "manual" | "recurring" | "uploaded_doc"
   sourceDescription String?
   createdAt         DateTime @default(now())
@@ -370,7 +371,7 @@ model BillingTrigger {
 model ComplianceEvent {
   id            String              @id @default(cuid())
   userId        String
-  user          User                @relation(fields: [userId], references: [id])
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoiceId     String?
   type          ComplianceEventType
   penaltyAmount Decimal             @default(0)
@@ -393,7 +394,7 @@ enum ComplianceEventType {
 model EReportingPeriod {
   id               String            @id @default(cuid())
   userId           String
-  user             User              @relation(fields: [userId], references: [id])
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   period           String            // "YYYY-MM"
   status           EReportingStatus  @default(draft)
   transactionCount Int               @default(0)
@@ -423,7 +424,7 @@ enum EReportingStatus {
 model ReceivedInvoice {
   id              String    @id @default(cuid())
   userId          String
-  user            User      @relation(fields: [userId], references: [id])
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   cppId           String    @unique  // identifiantFactureCPP from Chorus Pro
   invoiceNumber   String
   supplierName    String
