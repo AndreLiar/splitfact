@@ -40,8 +40,7 @@ const createNotification = async (
   });
 
   if (!result.success) {
-    console.error(`[URSSAF Reminders] Failed to queue notification for user ${userId}:`, result.error);
-    
+    console.error('[URSSAF Reminders] Failed to queue notification for user', userId, result.error);
     try {
       await prisma.notification.create({
         data: {
@@ -53,13 +52,10 @@ const createNotification = async (
           metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null,
         },
       });
-      console.log(`[URSSAF Reminders] Fallback: Created notification directly for user ${userId}`);
     } catch (fallbackError) {
-      console.error(`[URSSAF Reminders] Fallback failed for user ${userId}:`, fallbackError);
+      console.error('[URSSAF Reminders] Fallback failed for user', userId, fallbackError);
       throw fallbackError;
     }
-  } else {
-    console.log(`[URSSAF Reminders] Successfully queued notification ${result.queueItemId} for user ${userId}`);
   }
 };
 
@@ -144,9 +140,8 @@ export async function GET(request: Request) {
                 reminderType: 'quarterly'
               }
             );
-            console.log(`📧 Created quarterly URSSAF reminder for ${user.name || user.email}`);
           } catch (error) {
-            console.error(`❌ Failed to create quarterly URSSAF reminder for ${user.name || user.email}:`, error);
+            console.error('❌ Failed to create quarterly URSSAF reminder for user', user.id, error);
           }
         }
       } 
@@ -182,9 +177,8 @@ export async function GET(request: Request) {
                 reminderType: 'monthly'
               }
             );
-            console.log(`📧 Created monthly URSSAF reminder for ${user.name || user.email}`);
           } catch (error) {
-            console.error(`❌ Failed to create monthly URSSAF reminder for ${user.name || user.email}:`, error);
+            console.error('❌ Failed to create monthly URSSAF reminder for user', user.id, error);
           }
         }
       }
@@ -195,7 +189,6 @@ export async function GET(request: Request) {
 
       // TVA threshold exceeded alert
       if (cumulativeTurnover >= tvaThreshold && !user.tvaNumber) {
-        // Check if alert already sent this year
         const existingAlert = await prisma.notification.findFirst({
           where: {
             userId: user.id,
@@ -215,32 +208,21 @@ export async function GET(request: Request) {
               '🚨 URGENT: Seuil TVA dépassé !',
               `Votre CA annuel (${cumulativeTurnover.toFixed(2)}€) dépasse le seuil TVA (${tvaThreshold.toLocaleString()}€). Vous devez vous enregistrer à la TVA immédiatement.`,
               '/dashboard/settings',
-              { 
-                threshold: tvaThreshold, 
-                currentCA: cumulativeTurnover,
-                overageAmount: cumulativeTurnover - tvaThreshold
-              }
+              { threshold: tvaThreshold, currentCA: cumulativeTurnover, overageAmount: cumulativeTurnover - tvaThreshold }
             );
-            console.log(`🚨 Created TVA threshold EXCEEDED alert for ${user.name || user.email}`);
           } catch (error) {
-            console.error(`❌ Failed to create TVA threshold EXCEEDED alert for ${user.name || user.email}:`, error);
+            console.error('❌ Failed to create TVA threshold EXCEEDED alert for user', user.id, error);
           }
         }
-      } 
-      // TVA threshold approaching warning
-      else if (cumulativeTurnover >= tvaThresholdWarning && cumulativeTurnover < tvaThreshold && !user.tvaNumber) {
-        // Check if warning already sent this quarter
+      } else if (cumulativeTurnover >= tvaThresholdWarning && cumulativeTurnover < tvaThreshold && !user.tvaNumber) {
         const currentQuarter = Math.floor(currentMonth / 3);
-        const quarterStart = new Date(currentYear, currentQuarter * 3, 1);
-        const quarterEnd = new Date(currentYear, (currentQuarter + 1) * 3, 1);
-        
         const existingWarning = await prisma.notification.findFirst({
           where: {
             userId: user.id,
             type: 'TVA_THRESHOLD_WARNING',
             createdAt: {
-              gte: quarterStart,
-              lt: quarterEnd,
+              gte: new Date(currentYear, currentQuarter * 3, 1),
+              lt: new Date(currentYear, (currentQuarter + 1) * 3, 1),
             },
           },
         });
@@ -254,16 +236,10 @@ export async function GET(request: Request) {
               '⚠️ Seuil TVA proche',
               `Attention: vous êtes à ${percentage}% du seuil TVA (${cumulativeTurnover.toFixed(2)}€/${tvaThreshold.toLocaleString()}€). Préparez-vous à devenir redevable de la TVA.`,
               '/dashboard/reports',
-              { 
-                threshold: tvaThreshold, 
-                currentCA: cumulativeTurnover, 
-                percentage: parseFloat(percentage),
-                remainingAmount: tvaThreshold - cumulativeTurnover
-              }
+              { threshold: tvaThreshold, currentCA: cumulativeTurnover, percentage: parseFloat(percentage), remainingAmount: tvaThreshold - cumulativeTurnover }
             );
-            console.log(`⚠️ Created TVA threshold WARNING for ${user.name || user.email} (${percentage}%)`);
           } catch (error) {
-            console.error(`❌ Failed to create TVA threshold WARNING for ${user.name || user.email}:`, error);
+            console.error('❌ Failed to create TVA threshold WARNING for user', user.id, error);
           }
         }
       }

@@ -18,8 +18,6 @@ export async function POST(req: Request) {
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  console.log(`Received Stripe event type: ${event.type}`);
-
   switch (event.type) {
     case "checkout.session.completed":
     case "payment_intent.succeeded": {
@@ -27,15 +25,12 @@ export async function POST(req: Request) {
       const invoiceId = session.metadata?.invoiceId;
       const paymentIntentId = session.payment_intent?.toString() || null;
 
-      console.log(`[Webhook] Processing invoiceId: ${invoiceId}, PaymentIntentId: ${paymentIntentId}`);
-
       if (invoiceId) {
         try {
           await prisma.invoice.update({
             where: { id: invoiceId },
             data: { paymentStatus: "paid", status: "paid", stripePaymentIntentId: paymentIntentId },
           });
-          console.log(`[Webhook] Invoice ${invoiceId} updated to paid.`);
         } catch (dbError: any) {
           console.error("[Webhook] Database update error for invoice", invoiceId, dbError.message || dbError);
           return new NextResponse("Database update error", { status: 500 });
@@ -44,7 +39,6 @@ export async function POST(req: Request) {
       break;
     }
     default:
-      console.log(`Unhandled event type ${event.type}`);
   }
 
   return new NextResponse("ok", { status: 200 });

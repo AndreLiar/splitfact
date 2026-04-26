@@ -63,33 +63,16 @@ export function formatCurrencyRobust(value: any): string {
   // Clean any potential malformed string values
   let cleanValue = value;
   if (typeof value === 'string') {
-    console.log('formatCurrencyRobust - Original value:', value);
-    
-    // Handle multiple slash patterns
-    // Pattern: "8/000,00" -> "8000.00"
     cleanValue = cleanValue.replace(/(\d+)\/(\d{3}),(\d{2})/g, '$1$2.$3');
-    // Pattern: "8/000" -> "8000"  
     cleanValue = cleanValue.replace(/(\d+)\/(\d{3})/g, '$1$2');
-    // Pattern: "1 8/000,00" -> "18000.00" (space before number with slash)
     cleanValue = cleanValue.replace(/(\d+)\s+(\d+)\/(\d{3}),(\d{2})/g, '$1$2$3.$4');
-    // Pattern: "1 8/000" -> "18000"
     cleanValue = cleanValue.replace(/(\d+)\s+(\d+)\/(\d{3})/g, '$1$2$3');
-    
-    // Convert French decimal comma to dot for parsing
     cleanValue = cleanValue.replace(',', '.');
-    // Remove any remaining non-numeric characters except dots and minus
     cleanValue = cleanValue.replace(/[^0-9.-]/g, '');
-    
-    console.log('formatCurrencyRobust - Cleaned value:', cleanValue);
   }
-  
+
   const numValue = Number(cleanValue || 0);
-  if (isNaN(numValue)) {
-    console.warn('Invalid currency value:', value, 'cleaned to:', cleanValue);
-    return '0,00 €';
-  }
-  
-  const result = formatCurrency(numValue);
-  console.log('formatCurrencyRobust - Final result:', result);
-  return result;
+  if (isNaN(numValue)) return '0,00 €';
+
+  return formatCurrency(numValue);
 }
