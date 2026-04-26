@@ -2,12 +2,20 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { isPro } from '@/lib/subscription';
 
 // GET /api/received-invoices?unread=true&limit=50&page=1
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 });
+  }
+
+  if (!(await isPro(session.user.id))) {
+    return NextResponse.json(
+      { error: 'Received invoices (Chorus Pro) require an InvoiceOps Pro plan.', upgrade: true },
+      { status: 403 }
+    );
   }
 
   const { searchParams } = new URL(request.url);
@@ -52,6 +60,13 @@ export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 });
+  }
+
+  if (!(await isPro(session.user.id))) {
+    return NextResponse.json(
+      { error: 'Received invoices (Chorus Pro) require an InvoiceOps Pro plan.', upgrade: true },
+      { status: 403 }
+    );
   }
 
   await prisma.receivedInvoice.updateMany({

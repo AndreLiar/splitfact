@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 import { NextResponse } from 'next/server';
+import { isPro } from '@/lib/subscription';
 
 
 export async function GET(
@@ -12,6 +13,13 @@ export async function GET(
 
   if (!session || !session.user || !session.user.id) {
     return new NextResponse('Unauthorized', { status: 401 });
+  }
+
+  if (!(await isPro(session.user.id))) {
+    return NextResponse.json(
+      { error: 'URSSAF reports require an InvoiceOps Pro plan.', upgrade: true },
+      { status: 403 }
+    );
   }
 
   const userId = session.user.id;
