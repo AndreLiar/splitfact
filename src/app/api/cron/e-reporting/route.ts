@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { aggregateEReportingData, buildEReportingXml } from '@/domains/compliance/e-reporting/generate';
 import { submitInvoiceToPpf } from '@/lib/piste-api';
+import { isPro } from '@/lib/subscription';
 
 // POST /api/cron/e-reporting
 // Runs on the 1st of each month — auto-submits e-reporting for the previous month.
@@ -16,6 +17,10 @@ export async function POST(req: NextRequest) {
   const now = new Date();
   const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const period = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+
+  if (!process.env.PISTE_CLIENT_ID || !process.env.PISTE_CLIENT_SECRET) {
+    return NextResponse.json({ error: 'PISTE credentials not configured' }, { status: 500 });
+  }
 
   // Find all users who have B2C invoices in the period that haven't been reported yet
   const users = await prisma.user.findMany({
@@ -44,6 +49,8 @@ export async function POST(req: NextRequest) {
 
   for (const user of users) {
     try {
+      if (!(await isPro(user.id))) continue;
+
       const data = await aggregateEReportingData(user.id, period);
       if (!data || data.transactionCount === 0) continue;
 

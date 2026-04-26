@@ -12,6 +12,13 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  if (!(await isPro(session.user.id))) {
+    return NextResponse.json(
+      { error: 'E-reporting requires an InvoiceOps Pro plan.', upgrade: true },
+      { status: 403 }
+    );
+  }
+
   const period = req.nextUrl.searchParams.get('period');
   if (!period || !/^\d{4}-\d{2}$/.test(period)) {
     return NextResponse.json({ error: 'period param required (YYYY-MM)' }, { status: 400 });
