@@ -132,12 +132,12 @@ export function useClients() {
 }
 
 export function useInvoices() {
-  const { data, error, isLoading, mutate } = useSWR<{ invoices: Invoice[] }>(
+  const { data, error, isLoading, mutate } = useSWR<Invoice[]>(
     '/api/invoices',
     fetcher,
     SWR_DEFAULTS,
   );
-  return { invoices: data?.invoices ?? [], error, isLoading, mutate };
+  return { invoices: data ?? [], error, isLoading, mutate };
 }
 
 export function useRecentInvoices(limit = 6) {
