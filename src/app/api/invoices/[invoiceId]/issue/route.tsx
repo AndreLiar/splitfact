@@ -114,14 +114,7 @@ export async function POST(
       },
     });
 
-    let pdfBuffer: Buffer;
-    try {
-      pdfBuffer = await renderInvoicePdfBuffer(invoice);
-    } catch (e: unknown) {
-      let msg: string;
-      try { msg = JSON.stringify(e); } catch { msg = String(e); }
-      return NextResponse.json({ error: `PDF render failed: ${msg}`, step: 'pdf' }, { status: 500 });
-    }
+    const pdfBuffer = await renderInvoicePdfBuffer(invoice);
 
     const deliveryAddr = invoice.deliveryAddress
       ? (invoice.deliveryAddress as any)?.address ?? null
@@ -209,9 +202,9 @@ export async function POST(
           `facturx-${invoice.id}-xml`
         );
       } catch (e: unknown) {
-        let msg: string;
-        try { msg = JSON.stringify(e); } catch { msg = String(e); }
-        return NextResponse.json({ error: `Cloudinary upload failed: ${msg}`, step: 'cloudinary' }, { status: 500 });
+        // Non-fatal: log but don't block invoice issuance — URLs will remain null
+        const detail = (() => { try { return JSON.stringify(e); } catch { return String(e); } })();
+        console.error('Cloudinary upload failed (non-fatal):', detail);
       }
     }
 
@@ -264,7 +257,9 @@ export async function POST(
       readiness,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = error instanceof Error
+      ? error.message
+      : (() => { try { return JSON.stringify(error); } catch { return String(error); } })();
     console.error('Error issuing invoice:', msg, error);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
