@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     if (!process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json({ error: 'Billing not configured' }, { status: 503 });
     }
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-06-30.basil' });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-11-20.acacia' });
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

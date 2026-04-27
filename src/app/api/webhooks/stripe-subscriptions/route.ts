@@ -43,7 +43,7 @@ async function handleDeleted(sub: Stripe.Subscription) {
 }
 
 export async function POST(request: Request) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-06-30.basil' });
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-11-20.acacia' });
   const sig = request.headers.get('stripe-signature');
   const webhookSecret = process.env.STRIPE_PLATFORM_WEBHOOK_SECRET;
 

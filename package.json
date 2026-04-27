@@ -60,7 +60,7 @@
     "react-datepicker": "^8.4.0",
     "react-dom": "^19.0.0",
     "resend": "^4.6.0",
-    "stripe": "^18.3.0",
+    "stripe": "^17.7.0",
     "swr": "^2.4.1",
     "uuid": "^11.1.0",
     "workbox-webpack-plugin": "^7.0.0",
