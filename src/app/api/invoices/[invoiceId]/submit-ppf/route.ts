@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { submitInvoiceToPpf, mapPpfStatus } from '@/lib/piste-api';
 import { buildFacturxXml } from '@/domains/invoices/facturx';
+import { generateFacturxInMemory } from '@/lib/facturx-pdf-generator';
 import { logActivity } from '@/domains/invoices/activity-log';
 import { getUserPisteCredentials } from '@/lib/user-piste-credentials';
 import { isPro } from '@/lib/subscription';
@@ -41,13 +42,6 @@ export async function POST(
   if (invoice.workflowStatus !== 'issued') {
     return NextResponse.json(
       { error: 'La facture doit être émise avant dépôt sur Chorus Pro' },
-      { status: 400 }
-    );
-  }
-
-  if (!invoice.facturxPdfUrl) {
-    return NextResponse.json(
-      { error: 'Le PDF Factur-X doit être généré avant le dépôt' },
       { status: 400 }
     );
   }
@@ -110,18 +104,22 @@ export async function POST(
     recoveryIndemnity: invoice.recoveryIndemnity != null ? Number(invoice.recoveryIndemnity) : null,
   });
 
-  // Fetch the stored Factur-X PDF
+  // Get Factur-X PDF: use stored URL if available, otherwise generate in-memory
   let pdfBuffer: Buffer;
   try {
-    const pdfRes = await fetch(invoice.facturxPdfUrl);
-    if (!pdfRes.ok) throw new Error(`PDF fetch failed: ${pdfRes.status}`);
-    pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+    if (invoice.facturxPdfUrl) {
+      const pdfRes = await fetch(invoice.facturxPdfUrl);
+      if (!pdfRes.ok) throw new Error(`PDF fetch failed: ${pdfRes.status}`);
+      pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+    } else {
+      pdfBuffer = await generateFacturxInMemory(invoice);
+    }
   } catch (err: any) {
     await prisma.invoice.update({
       where: { id: invoiceId },
-      data: { ppfStatus: 'pending_retry', ppfError: `PDF fetch error: ${err.message}` },
+      data: { ppfStatus: 'pending_retry', ppfError: `PDF error: ${err.message}` },
     });
-    return NextResponse.json({ error: `Impossible de récupérer le PDF: ${err.message}` }, { status: 500 });
+    return NextResponse.json({ error: `Impossible d'obtenir le PDF: ${err.message}` }, { status: 500 });
   }
 
   // Resolve per-user credentials; fall back to platform env vars if not configured
