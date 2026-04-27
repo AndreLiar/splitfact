@@ -10,14 +10,13 @@ export async function POST(request: Request) {
     if (!stripeKey) {
       return NextResponse.json({ error: 'Billing not configured' }, { status: 503 });
     }
-    console.log('[billing/checkout] key prefix:', stripeKey.substring(0, 8));
     const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' });
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const priceId = process.env.STRIPE_PRO_PRICE_ID;
+    const priceId = process.env.STRIPE_PRO_PRICE_ID?.trim();
     if (!priceId) {
       return NextResponse.json({ error: 'Billing not configured' }, { status: 503 });
     }
