@@ -193,12 +193,12 @@ export function useReceivedInvoices(unread = false) {
   const key = unread
     ? '/api/received-invoices?unread=true&limit=100'
     : '/api/received-invoices?limit=100';
-  const { data, error, isLoading, mutate } = useSWR<ReceivedInvoice[]>(
+  const { data, error, isLoading, mutate } = useSWR<{ invoices: ReceivedInvoice[]; total: number }>(
     key,
     fetcher,
     { ...SWR_DEFAULTS, shouldRetryOnError: false },
   );
-  return { invoices: data ?? [], error, isLoading, mutate };
+  return { invoices: data?.invoices ?? [], error, isLoading, mutate };
 }
 
 export function useCompliance() {
