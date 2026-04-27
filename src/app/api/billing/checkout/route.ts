@@ -6,10 +6,12 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const stripeKey = process.env.STRIPE_SECRET_KEY?.trim();
+    if (!stripeKey) {
       return NextResponse.json({ error: 'Billing not configured' }, { status: 503 });
     }
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-02-24.acacia' });
+    console.log('[billing/checkout] key prefix:', stripeKey.substring(0, 8));
+    const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' });
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
