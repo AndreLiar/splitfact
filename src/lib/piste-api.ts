@@ -28,10 +28,10 @@ function normalizePisteEnv(value: string | undefined): 'sandbox' | 'production' 
 }
 
 function getPlatformCredentials(): PisteCredentials | null {
-  const pisteClientId = process.env.PISTE_CLIENT_ID;
-  const pisteClientSecret = process.env.PISTE_CLIENT_SECRET;
-  const cproTechLogin = process.env.CPRO_TECH_LOGIN;
-  const cproTechPassword = process.env.CPRO_TECH_PASSWORD;
+  const pisteClientId = process.env.PISTE_CLIENT_ID?.trim();
+  const pisteClientSecret = process.env.PISTE_CLIENT_SECRET?.trim();
+  const cproTechLogin = process.env.CPRO_TECH_LOGIN?.trim();
+  const cproTechPassword = process.env.CPRO_TECH_PASSWORD?.trim();
   if (!pisteClientId || !pisteClientSecret || !cproTechLogin || !cproTechPassword) {
     return null;
   }
