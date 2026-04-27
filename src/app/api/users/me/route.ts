@@ -78,7 +78,7 @@ export async function GET() {
   try {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, name: true, email: true, fiscalRegime: true, microEntrepreneurType: true, declarationFrequency: true, siret: true, tvaNumber: true, address: true, legalStatus: true, rcsNumber: true, shareCapital: true, apeCode: true, stripeAccountId: true },
+      select: { id: true, name: true, email: true, fiscalRegime: true, microEntrepreneurType: true, declarationFrequency: true, siret: true, tvaNumber: true, address: true, legalStatus: true, rcsNumber: true, shareCapital: true, apeCode: true, stripeAccountId: true, subscriptionStatus: true, planId: true },
     });
 
     if (!user) {
@@ -125,7 +125,7 @@ export async function PUT(request: Request) {
         shareCapital: shareCapital || null,
         apeCode: apeCode,
       },
-      select: { id: true, name: true, email: true, fiscalRegime: true, microEntrepreneurType: true, declarationFrequency: true, siret: true, tvaNumber: true, address: true, legalStatus: true, rcsNumber: true, shareCapital: true, apeCode: true, stripeAccountId: true },
+      select: { id: true, name: true, email: true, fiscalRegime: true, microEntrepreneurType: true, declarationFrequency: true, siret: true, tvaNumber: true, address: true, legalStatus: true, rcsNumber: true, shareCapital: true, apeCode: true, stripeAccountId: true, subscriptionStatus: true, planId: true },
     });
     return NextResponse.json(updatedUser);
   } catch (error) {

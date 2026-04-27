@@ -669,6 +669,7 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
         </div>
 
         <div className="col-lg-4">
+          {invoice.workflowStatus !== 'issued' && (
           <div className="card border-0 shadow-sm rounded-xl p-4 mb-4">
             <h2 className="h5 mb-3">Préparation à l'émission</h2>
             {readiness && (
@@ -693,6 +694,7 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
               </div>
             )}
           </div>
+          )}
 
           <div className="card border-0 shadow-sm rounded-xl p-4 mb-4">
             <h2 className="h5 mb-3">Sortie Factur-X</h2>
