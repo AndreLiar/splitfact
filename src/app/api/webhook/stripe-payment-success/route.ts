@@ -4,7 +4,7 @@ import Stripe from "stripe";
 
 export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-    apiVersion: "2024-11-20.acacia",
+    apiVersion: "2025-02-24.acacia",
   });
   const body = await req.text();
   const signature = req.headers.get("stripe-signature") as string;
