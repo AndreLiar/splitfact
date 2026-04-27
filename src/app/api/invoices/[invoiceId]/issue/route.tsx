@@ -189,7 +189,7 @@ export async function POST(
     let facturxPdfUrl: string | null = invoice.facturxPdfUrl ?? null;
     let facturxXmlUrl: string | null = invoice.facturxXmlUrl ?? null;
 
-    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+    if (process.env.CLOUDINARY_CLOUD_NAME?.trim() && process.env.CLOUDINARY_API_KEY?.trim() && process.env.CLOUDINARY_API_SECRET?.trim()) {
       try {
         pdfUrl = await uploadRawAsset(
           `data:application/pdf;base64,${pdfBuffer.toString('base64')}`,
