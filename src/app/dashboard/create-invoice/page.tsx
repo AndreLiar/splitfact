@@ -167,7 +167,7 @@ export default function CreateInvoicePage() {
     } else if (status === 'authenticated') {
       fetchUserProfile();
     }
-  }, [status, router]);
+  }, [status, router, fetchUserProfile]);
 
   const verifySiret = async () => {
     const clientSiret = formData.clientSiret;
