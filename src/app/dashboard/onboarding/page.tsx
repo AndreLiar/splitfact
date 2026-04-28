@@ -1,16 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
-type Step = 'profile' | 'client' | 'invoice';
+type Step = 'profile' | 'client' | 'invoice' | 'chorus';
 
-const STEPS: { id: Step; label: string; description: string; icon: string }[] = [
+const STEPS: { id: Step; label: string; description: string; icon: string; optional?: boolean }[] = [
   { id: 'profile', label: 'Profil émetteur', description: 'Renseignez vos informations légales (SIRET, TVA, adresse).', icon: 'bi-building' },
   { id: 'client', label: 'Premier client', description: 'Ajoutez un client pour pouvoir créer votre première facture.', icon: 'bi-person-vcard' },
   { id: 'invoice', label: 'Première facture', description: 'Créez votre première facture et émettez-la en conformité.', icon: 'bi-receipt' },
+  {
+    id: 'chorus',
+    label: 'Chorus Pro (dépôt PPF)',
+    description: 'Configurez vos identifiants Chorus Pro pour déposer des factures B2G sur le Portail Public de Facturation. Obligatoire pour les marchés publics.',
+    icon: 'bi-shield-lock',
+    optional: true,
+  },
 ];
 
 export default function OnboardingPage() {
@@ -18,6 +25,23 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('profile');
   const [completed, setCompleted] = useState<Set<Step>>(new Set());
+
+  // Auto-detect if Chorus Pro credentials are already configured
+  useEffect(() => {
+    fetch('/api/settings/piste-credentials')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (
+          data?.pisteClientSecretSet &&
+          data?.cproTechPasswordSet &&
+          data?.pisteClientId &&
+          data?.cproTechLogin
+        ) {
+          setCompleted((prev) => new Set([...prev, 'chorus' as Step]));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const markComplete = (step: Step) => {
     setCompleted((prev) => new Set([...prev, step]));
@@ -27,12 +51,14 @@ export default function OnboardingPage() {
     }
   };
 
-  const allDone = STEPS.every((s) => completed.has(s.id));
+  // All required steps (non-optional) done
+  const requiredDone = STEPS.filter((s) => !s.optional).every((s) => completed.has(s.id));
 
   const stepAction: Record<Step, { label: string; href: string }> = {
     profile: { label: 'Configurer mon profil', href: '/dashboard/settings' },
     client: { label: 'Ajouter un client', href: '/dashboard/clients' },
     invoice: { label: 'Créer une facture', href: '/dashboard/create-invoice' },
+    chorus: { label: 'Configurer Chorus Pro', href: '/dashboard/settings#chorus-pro' },
   };
 
   return (
@@ -43,7 +69,7 @@ export default function OnboardingPage() {
         </div>
         <h1 className="h3 fw-bold">Bienvenue sur InvoiceOps</h1>
         <p className="text-muted">
-          Suivez ces 3 étapes pour émettre votre première facture conforme à la réglementation française.
+          Suivez ces étapes pour émettre votre première facture conforme à la réglementation française.
         </p>
       </div>
 
@@ -72,11 +98,23 @@ export default function OnboardingPage() {
                     <i className={`bi ${step.icon} text-muted`}></i>
                     <span className="fw-semibold">{step.label}</span>
                     {done && <span className="badge bg-success-subtle text-success ms-1">Terminé</span>}
+                    {step.optional && !done && (
+                      <span className="badge bg-secondary-subtle text-secondary ms-1">Optionnel</span>
+                    )}
                   </div>
                   <p className="text-muted small mb-0">{step.description}</p>
+                  {step.id === 'chorus' && !done && (
+                    <p className="text-muted small mb-0 mt-1">
+                      Créez votre compte technique sur{' '}
+                      <a href="https://cpro.gouv.fr" target="_blank" rel="noreferrer" className="text-decoration-none">
+                        cpro.gouv.fr
+                      </a>
+                      , puis renseignez vos identifiants ici.
+                    </p>
+                  )}
                 </div>
                 {active && !done && (
-                  <div className="d-flex gap-2">
+                  <div className="d-flex gap-2 flex-shrink-0">
                     <Link href={stepAction[step.id].href} className="btn btn-primary btn-sm">
                       {stepAction[step.id].label}
                     </Link>
@@ -84,7 +122,7 @@ export default function OnboardingPage() {
                       className="btn btn-outline-secondary btn-sm"
                       onClick={() => markComplete(step.id)}
                     >
-                      Marquer fait
+                      {step.optional ? 'Passer' : 'Marquer fait'}
                     </button>
                   </div>
                 )}
@@ -94,11 +132,13 @@ export default function OnboardingPage() {
         })}
       </div>
 
-      {allDone ? (
+      {requiredDone ? (
         <div className="text-center">
           <div className="alert alert-success mb-4">
             <i className="bi bi-check-circle me-2"></i>
-            Tout est prêt. Vous pouvez commencer à gérer vos factures.
+            {completed.has('chorus')
+              ? 'Tout est prêt, y compris le dépôt Chorus Pro. Vous pouvez commencer à gérer vos factures.'
+              : 'Les étapes essentielles sont terminées. Vous pouvez configurer Chorus Pro plus tard dans Paramètres.'}
           </div>
           <button className="btn btn-primary btn-lg" onClick={() => router.push('/dashboard')}>
             Accéder au tableau de bord
