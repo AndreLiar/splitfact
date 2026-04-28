@@ -972,7 +972,7 @@ export default function LandingPage() {
                       borderRadius: "4px",
                       color: "#D4921A",
                     }}>
-                      14 jours offerts
+                      30 jours offerts
                     </span>
                   </div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginBottom: "0.5rem" }}>

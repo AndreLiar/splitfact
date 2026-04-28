@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       success_url: successUrl ?? `${process.env.NEXTAUTH_URL}/dashboard/settings?billing=success`,
       cancel_url: cancelUrl ?? `${process.env.NEXTAUTH_URL}/dashboard/settings?billing=cancelled`,
       subscription_data: {
-        trial_period_days: 14,
+        trial_period_days: 30,
         metadata: { userId: session.user.id },
       },
     });
