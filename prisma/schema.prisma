@@ -170,6 +170,16 @@ model Invoice {
   ppfSubmittedAt      DateTime?
   ppfLastEventAt      DateTime?
   ppfError            String?
+
+  // ── BTP sub-contractor fields ─────────────────────────────
+  btpInvoiceType          BtpInvoiceType @default(standard)
+  isAutoliquidation       Boolean        @default(false)
+  retenueGarantieRate     Decimal?       @db.Decimal(5, 2)
+  retenueGarantieAmount   Decimal?       @db.Decimal(12, 2)
+  situationNumber         Int?
+  referenceContract       String?
+  previousCumulativeAmount Decimal?      @db.Decimal(12, 2)
+  cumulativeAmount        Decimal?       @db.Decimal(12, 2)
 }
 
 model InvoiceItem {
@@ -273,6 +283,12 @@ enum TransactionType {
   B2B
   B2C
   B2G
+}
+
+enum BtpInvoiceType {
+  standard
+  situation
+  autoliquidation
 }
 
 enum PpfStatus {
