@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { getPpfInvoiceStatus, mapPpfStatus, getPlatformCredentials, type PpfLifecycleStatus } from '@/lib/piste-api';
+import { getPpfInvoiceStatus, mapPpfStatus, type PpfLifecycleStatus } from '@/lib/piste-api';
 import { getUserPisteCredentials } from '@/lib/user-piste-credentials';
 import { logActivity } from '@/domains/invoices/activity-log';
 import { isPro } from '@/lib/subscription';
@@ -48,12 +48,10 @@ export async function GET(
     });
   }
 
-  const userCreds = await getUserPisteCredentials(session.user.id);
-  const platformCreds = getPlatformCredentials();
-  const creds = userCreds ?? platformCreds;
+  const creds = await getUserPisteCredentials(session.user.id);
 
   if (!creds) {
-    return NextResponse.json({ error: 'Aucun credential PISTE configuré.' }, { status: 400 });
+    return NextResponse.json({ error: 'Aucun credential Chorus Pro configuré. Renseignez-les dans Paramètres → Chorus Pro.' }, { status: 400 });
   }
 
   const result = await getPpfInvoiceStatus(invoice.ppfTrackingId, creds);

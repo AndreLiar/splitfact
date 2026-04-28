@@ -501,7 +501,7 @@ function SettingsPageInner() {
           </div>
 
           {/* ── Chorus Pro / PISTE ───────────────────────────── */}
-          <div className="card mb-4 shadow-sm">
+          <div id="chorus-pro" className="card mb-4 shadow-sm">
             <div className="card-header bg-white">
               <h5 className="mb-0 fw-semibold">
                 <i className="bi bi-shield-lock me-2 text-primary"></i>

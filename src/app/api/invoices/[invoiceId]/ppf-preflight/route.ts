@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { testPisteConnection, getPlatformCredentials } from '@/lib/piste-api';
+import { testPisteConnection } from '@/lib/piste-api';
 import { getUserPisteCredentials } from '@/lib/user-piste-credentials';
 import { isPro } from '@/lib/subscription';
 
@@ -102,12 +102,10 @@ export async function GET(
 
   // ── PISTE credentials ────────────────────────────────────────────────────
   let pisteEnv: 'sandbox' | 'production' | null = null;
-  const userCreds = await getUserPisteCredentials(session.user.id);
-  const platformCreds = getPlatformCredentials();
-  const creds = userCreds ?? platformCreds;
+  const creds = await getUserPisteCredentials(session.user.id);
 
   if (!creds) {
-    blockers.push('Aucun credential PISTE configuré. Renseignez-les dans Paramètres → Chorus Pro.');
+    blockers.push('Aucun credential Chorus Pro configuré. Renseignez-les dans Paramètres → Chorus Pro.');
   } else {
     pisteEnv = creds.pisteEnv;
     if (creds.pisteEnv === 'sandbox') {
