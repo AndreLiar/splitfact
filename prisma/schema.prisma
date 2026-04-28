@@ -57,6 +57,9 @@ model User {
   subscriptionStatus        String    @default("free")  // free | trialing | active | past_due | canceled
   planId                    String    @default("free")  // free | pro
   subscriptionPeriodEnd     DateTime?
+  // Automatic payment reminder preferences
+  reminderEnabled           Boolean   @default(true)
+  reminderSchedule          Json?     // [{ triggerDays: number, label: string }] — null = use default ladder
   // Per-tenant Chorus Pro / PISTE credentials (passwords AES-256-GCM encrypted)
   cproTechLogin       String?
   cproTechPassword    String?
@@ -170,6 +173,11 @@ model Invoice {
   ppfSubmittedAt      DateTime?
   ppfLastEventAt      DateTime?
   ppfError            String?
+  // Automatic payment reminder tracking
+  reminderEnabled     Boolean   @default(true)
+  reminderCount       Int       @default(0)
+  lastReminderSentAt  DateTime?
+  nextReminderAt      DateTime?
 
   // ── BTP sub-contractor fields ─────────────────────────────
   btpInvoiceType          BtpInvoiceType @default(standard)
