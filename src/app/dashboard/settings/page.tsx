@@ -39,7 +39,7 @@ function SettingsPageInner() {
   const [stripeConnecting, setStripeConnecting] = useState(false);
   const [siretLookup, setSiretLookup] = useState<{ loading: boolean; result: string | null; error: string | null }>({ loading: false, result: null, error: null });
 
-  const [subscription, setSubscription] = useState<{ planId: string; subscriptionStatus: string; subscriptionPeriodEnd: string | null } | null>(null);
+  const [subscription, setSubscription] = useState<{ planId: string; subscriptionStatus: string; subscriptionPeriodEnd: string | null; hasStripeCustomer?: boolean } | null>(null);
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingError, setBillingError] = useState<string | null>(null);
 
@@ -626,7 +626,7 @@ function SettingsPageInner() {
           <div className="card mb-4 shadow-sm">
             <div className="card-header bg-white">
               <h5 className="mb-0 fw-semibold">
-                <i className="bi bi-credit-card me-2 text-primary"></i>
+                <i className="bi bi-lightning-charge-fill me-2 text-primary"></i>
                 Abonnement InvoiceOps
               </h5>
               <small className="text-muted">PPF, e-reporting et fonctionnalités avancées requièrent le plan Pro.</small>
@@ -651,71 +651,77 @@ function SettingsPageInner() {
                 </div>
               )}
 
-              {subscription ? (
-                <div className="d-flex align-items-center justify-content-between py-2">
-                  <div>
-                    <div className="fw-medium d-flex align-items-center gap-2">
-                      Plan actuel
-                      {subscription.planId === 'pro' ? (
-                        <span className="badge bg-primary"><i className="bi bi-lightning-fill me-1"></i>Pro</span>
-                      ) : (
-                        <span className="badge bg-secondary">Gratuit</span>
-                      )}
-                      {subscription.subscriptionStatus === 'trialing' && (
-                        <span className="badge bg-info text-dark">Période d'essai</span>
-                      )}
-                      {subscription.subscriptionStatus === 'past_due' && (
-                        <span className="badge bg-danger">Paiement en retard</span>
-                      )}
-                    </div>
-                    {subscription.subscriptionPeriodEnd && (
-                      <small className="text-muted">
-                        {subscription.subscriptionStatus === 'trialing'
-                          ? `Essai gratuit jusqu'au`
-                          : 'Renouvellement le'}{' '}
-                        {new Date(subscription.subscriptionPeriodEnd).toLocaleDateString('fr-FR')}
-                      </small>
+              {/* Plan status */}
+              <div className="d-flex align-items-center justify-content-between py-2 mb-3">
+                <div>
+                  <div className="fw-medium d-flex align-items-center gap-2 mb-1">
+                    Plan actuel
+                    {subscription?.planId === 'pro' ? (
+                      <span className="badge bg-primary"><i className="bi bi-lightning-fill me-1"></i>Pro</span>
+                    ) : (
+                      <span className="badge bg-secondary">Gratuit</span>
+                    )}
+                    {subscription?.subscriptionStatus === 'trialing' && (
+                      <span className="badge bg-info text-dark">Période d'essai</span>
+                    )}
+                    {subscription?.subscriptionStatus === 'past_due' && (
+                      <span className="badge bg-danger">Paiement en retard</span>
                     )}
                   </div>
-                  {subscription.planId === 'pro' ? (
-                    <button className="btn btn-sm btn-outline-secondary" onClick={handleManageBilling} disabled={billingLoading}>
-                      {billingLoading ? <span className="spinner-border spinner-border-sm me-1" /> : <i className="bi bi-gear me-1"></i>}
-                      Gérer l'abonnement
-                    </button>
-                  ) : (
+                  {subscription?.subscriptionPeriodEnd && (
+                    <small className="text-muted">
+                      {subscription.subscriptionStatus === 'trialing'
+                        ? `Essai gratuit jusqu'au`
+                        : subscription.planId === 'pro' ? 'Renouvellement le' : 'Expiré le'}{' '}
+                      {new Date(subscription.subscriptionPeriodEnd).toLocaleDateString('fr-FR')}
+                    </small>
+                  )}
+                  {!subscription && (
+                    <small className="text-muted">10 factures/mois, clients illimités, lien de paiement Stripe.</small>
+                  )}
+                </div>
+
+                {/* CTA buttons */}
+                <div className="d-flex flex-column gap-2 align-items-end">
+                  {subscription?.planId !== 'pro' && (
                     <button className="btn btn-sm btn-primary" onClick={handleUpgrade} disabled={billingLoading}>
                       {billingLoading ? <span className="spinner-border spinner-border-sm me-1" /> : <i className="bi bi-lightning-fill me-1"></i>}
                       Passer au Pro — 30 jours gratuits
                     </button>
                   )}
+                  {(subscription?.planId === 'pro' || subscription?.hasStripeCustomer) && (
+                    <button className="btn btn-sm btn-outline-secondary" onClick={handleManageBilling} disabled={billingLoading}>
+                      {billingLoading ? <span className="spinner-border spinner-border-sm me-1" /> : <i className="bi bi-gear me-1"></i>}
+                      Gérer l'abonnement
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="d-flex align-items-center justify-content-between py-2">
-                  <div>
-                    <div className="fw-medium">Plan Gratuit</div>
-                    <small className="text-muted">Créez des factures et gérez vos clients sans limite.</small>
-                  </div>
-                  <button className="btn btn-sm btn-primary" onClick={handleUpgrade} disabled={billingLoading}>
-                    {billingLoading ? <span className="spinner-border spinner-border-sm me-1" /> : <i className="bi bi-lightning-fill me-1"></i>}
-                    Passer au Pro
-                  </button>
+              </div>
+
+              {/* Portal feature list */}
+              {(subscription?.planId === 'pro' || subscription?.hasStripeCustomer) && (
+                <div className="text-muted small mb-3" style={{ fontSize: '0.8125rem' }}>
+                  <i className="bi bi-info-circle me-1"></i>
+                  Le portail de gestion vous permet de changer de plan, mettre à jour votre moyen de paiement et télécharger vos factures Stripe.
                 </div>
               )}
 
               <hr className="my-3" />
               <div className="row g-2 text-center">
                 <div className="col-4">
-                  <small className="text-muted d-block">Factures illimitées</small>
-                  <i className="bi bi-check-circle-fill text-success"></i>
+                  <small className="text-muted d-block mb-1">Factures illimitées</small>
+                  {subscription?.planId === 'pro'
+                    ? <i className="bi bi-check-circle-fill text-success"></i>
+                    : <span className="small text-muted">10/mois</span>}
                 </div>
                 <div className="col-4">
-                  <small className="text-muted d-block">Dépôt PPF / Chorus Pro</small>
+                  <small className="text-muted d-block mb-1">Dépôt PPF / Chorus Pro</small>
                   {subscription?.planId === 'pro'
                     ? <i className="bi bi-check-circle-fill text-success"></i>
                     : <i className="bi bi-lock-fill text-warning"></i>}
                 </div>
                 <div className="col-4">
-                  <small className="text-muted d-block">E-reporting B2C</small>
+                  <small className="text-muted d-block mb-1">E-reporting B2C</small>
                   {subscription?.planId === 'pro'
                     ? <i className="bi bi-check-circle-fill text-success"></i>
                     : <i className="bi bi-lock-fill text-warning"></i>}

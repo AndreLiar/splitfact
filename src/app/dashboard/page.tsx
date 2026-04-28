@@ -43,6 +43,7 @@ export default function DashboardPage() {
     const today = new Date();
     const inSevenDays = new Date();
     inSevenDays.setDate(today.getDate() + 7);
+    const PPF_TERMINAL = new Set(['approuvee', 'payee', 'rejetee']);
 
     return allInvoices.reduce(
       (acc, invoice) => {
@@ -69,9 +70,14 @@ export default function DashboardPage() {
           acc.dueSoon += 1;
         }
 
+        // Issued invoices not yet accepted/rejected by Chorus Pro
+        if (invoice.workflowStatus === 'issued' && !PPF_TERMINAL.has(invoice.ppfStatus ?? '')) {
+          acc.pendingPpf += 1;
+        }
+
         return acc;
       },
-      { total: 0, received: 0, pending: 0, drafts: 0, overdue: 0, dueSoon: 0 }
+      { total: 0, received: 0, pending: 0, drafts: 0, overdue: 0, dueSoon: 0, pendingPpf: 0 }
     );
   }, [allInvoices]);
 
@@ -210,10 +216,21 @@ export default function DashboardPage() {
               <span className="text-muted">Factures à risque</span>
               <strong className="text-danger">{metrics.overdue}</strong>
             </div>
-            <div className="d-flex justify-content-between py-2">
+            <div className="d-flex justify-content-between py-2 border-bottom">
               <span className="text-muted">Échéance sous 7 jours</span>
               <strong className="text-warning">{metrics.dueSoon}</strong>
             </div>
+            {metrics.pendingPpf > 0 && (
+              <div className="d-flex justify-content-between align-items-center py-2">
+                <span className="text-muted d-flex align-items-center gap-1">
+                  <i className="bi bi-building-check" style={{ color: '#D4921A' }}></i>
+                  En attente Chorus Pro
+                </span>
+                <Link href="/dashboard/invoices" className="badge text-decoration-none" style={{ backgroundColor: 'rgba(212,146,26,0.15)', color: '#D4921A', fontWeight: 600 }}>
+                  {metrics.pendingPpf} à soumettre
+                </Link>
+              </div>
+            )}
           </div>
         </div>
         <div className="col-lg-4">

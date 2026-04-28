@@ -27,6 +27,7 @@ export interface Invoice {
   currency?: string;
   ppfStatus?: string | null;
   ppfDepositId?: string | null;
+  facturxStatus?: string | null;
   pdfUrl?: string | null;
 }
 

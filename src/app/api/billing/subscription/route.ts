@@ -15,6 +15,7 @@ export async function GET() {
       planId: true,
       subscriptionStatus: true,
       subscriptionPeriodEnd: true,
+      stripePlatformCustomerId: true,
     },
   });
 
@@ -26,5 +27,6 @@ export async function GET() {
     planId: user.planId,
     subscriptionStatus: user.subscriptionStatus,
     subscriptionPeriodEnd: user.subscriptionPeriodEnd,
+    hasStripeCustomer: !!user.stripePlatformCustomerId,
   });
 }
