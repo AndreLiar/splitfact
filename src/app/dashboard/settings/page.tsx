@@ -3,6 +3,8 @@
 import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { ReminderStep } from '@/domains/invoices/reminder-schedule';
+import { DEFAULT_REMINDER_SCHEDULE } from '@/domains/invoices/reminder-schedule';
 
 // Form-state shape: all strings (empty string = unset), not nullable
 interface ProfileFormData {
@@ -52,6 +54,13 @@ function SettingsPageInner() {
   const [stripeInvoices, setStripeInvoices] = useState<StripeInvoiceItem[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
 
+  // Auto-reminders
+  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [reminderSchedule, setReminderSchedule] = useState<ReminderStep[]>(DEFAULT_REMINDER_SCHEDULE);
+  const [reminderCustom, setReminderCustom] = useState(false);
+  const [reminderSaving, setReminderSaving] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   // Chorus Pro / PISTE credentials
   const [pisteForm, setPisteForm] = useState({
     pisteEnv: 'sandbox',
@@ -72,6 +81,7 @@ function SettingsPageInner() {
       fetchProfile();
       fetchPisteCredentials();
       fetchSubscription();
+      fetchReminders();
     }
   }, [status, router]);
 
@@ -164,6 +174,48 @@ function SettingsPageInner() {
       // silently ignore fetch error — form will be empty
     } finally {
       setProfileLoading(false);
+    }
+  };
+
+  const fetchReminders = async () => {
+    try {
+      const res = await fetch('/api/settings/reminders');
+      if (res.ok) {
+        const data = await res.json();
+        setReminderEnabled(data.enabled ?? true);
+        setReminderSchedule(data.schedule ?? DEFAULT_REMINDER_SCHEDULE);
+        setReminderCustom(data.isCustom ?? false);
+      }
+    } catch { /* ignore */ }
+  };
+
+  const handleReminderSave = async (opts: { enabled?: boolean; schedule?: ReminderStep[] | null }) => {
+    setReminderSaving(true);
+    setReminderMessage(null);
+    try {
+      const body: Record<string, unknown> = {};
+      if (opts.enabled !== undefined) body.enabled = opts.enabled;
+      if (opts.schedule !== undefined) body.schedule = opts.schedule;
+
+      const res = await fetch('/api/settings/reminders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReminderEnabled(data.enabled ?? true);
+        setReminderSchedule(data.schedule ?? DEFAULT_REMINDER_SCHEDULE);
+        setReminderCustom(data.isCustom ?? false);
+        setReminderMessage({ type: 'success', text: 'Préférences de relance enregistrées.' });
+      } else {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        setReminderMessage({ type: 'error', text: err.error ?? 'Erreur lors de la sauvegarde.' });
+      }
+    } catch {
+      setReminderMessage({ type: 'error', text: 'Erreur réseau.' });
+    } finally {
+      setReminderSaving(false);
     }
   };
 
@@ -855,6 +907,121 @@ function SettingsPageInner() {
               </div>
             </div>
           )}
+
+          {/* ── Auto-reminders ───────────────────────────────── */}
+          <div className="card mb-4 shadow-sm">
+            <div className="card-header bg-white">
+              <h5 className="mb-0 fw-semibold">
+                <i className="bi bi-bell me-2 text-primary"></i>
+                Relances automatiques
+              </h5>
+              <small className="text-muted">InvoiceOps envoie des rappels de paiement à vos clients selon votre calendrier.</small>
+            </div>
+            <div className="card-body">
+              {reminderMessage && (
+                <div className={`alert alert-${reminderMessage.type === 'success' ? 'success' : 'danger'} alert-dismissible`}>
+                  {reminderMessage.text}
+                  <button type="button" className="btn-close" onClick={() => setReminderMessage(null)}></button>
+                </div>
+              )}
+
+              {/* Global toggle */}
+              <div className="d-flex align-items-center justify-content-between py-2 mb-4 border-bottom">
+                <div>
+                  <div className="fw-medium">Activer les relances automatiques</div>
+                  <small className="text-muted">
+                    {reminderEnabled
+                      ? 'Les rappels de paiement sont envoyés automatiquement selon le calendrier ci-dessous.'
+                      : 'Les relances automatiques sont désactivées pour toutes vos factures.'}
+                  </small>
+                </div>
+                <div className="form-check form-switch ms-3 mb-0" style={{ fontSize: '1.3rem' }}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    id="reminderGlobalToggle"
+                    checked={reminderEnabled}
+                    disabled={reminderSaving}
+                    onChange={(e) => {
+                      setReminderEnabled(e.target.checked);
+                      void handleReminderSave({ enabled: e.target.checked });
+                    }}
+                  />
+                  <label className="form-check-label visually-hidden" htmlFor="reminderGlobalToggle">Activer</label>
+                </div>
+              </div>
+
+              {/* Schedule editor */}
+              <div className={reminderEnabled ? '' : 'opacity-50 pe-none'}>
+                <div className="d-flex align-items-center justify-content-between mb-2">
+                  <div className="fw-medium small text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Calendrier des relances
+                  </div>
+                  {reminderCustom && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-link text-muted p-0"
+                      disabled={reminderSaving}
+                      onClick={() => void handleReminderSave({ schedule: null })}
+                    >
+                      <i className="bi bi-arrow-counterclockwise me-1"></i>Restaurer le calendrier par défaut
+                    </button>
+                  )}
+                </div>
+
+                <div className="list-group list-group-flush mb-3">
+                  {reminderSchedule.map((step, idx) => (
+                    <div key={idx} className="list-group-item px-0 py-2 d-flex align-items-center gap-2">
+                      <span className="badge bg-light text-dark border fw-normal" style={{ minWidth: 90, textAlign: 'center' }}>
+                        {step.triggerDays < 0
+                          ? `J${step.triggerDays} avant`
+                          : step.triggerDays === 0
+                          ? "Jour J (échéance)"
+                          : `J+${step.triggerDays} après`}
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        value={step.label}
+                        disabled={reminderSaving}
+                        onChange={(e) => {
+                          const updated = reminderSchedule.map((s, i) =>
+                            i === idx ? { ...s, label: e.target.value } : s
+                          );
+                          setReminderSchedule(updated);
+                          setReminderCustom(true);
+                        }}
+                      />
+                      {idx === reminderSchedule.length - 1 && (
+                        <span className="badge bg-danger-subtle text-danger border border-danger-subtle small">
+                          Mise en demeure
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="d-flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    disabled={reminderSaving}
+                    onClick={() => void handleReminderSave({ schedule: reminderSchedule })}
+                  >
+                    {reminderSaving
+                      ? <><span className="spinner-border spinner-border-sm me-2" />Enregistrement…</>
+                      : <><i className="bi bi-check-lg me-2" />Enregistrer le calendrier</>}
+                  </button>
+                </div>
+
+                <div className="alert alert-light border mt-3 small">
+                  <i className="bi bi-info-circle me-1 text-primary" />
+                  Les relances s'arrêtent automatiquement dès que la facture est marquée payée. La mise en demeure (dernière étape) constitue un courrier légal au sens de l'art. 1344 du Code civil.
+                </div>
+              </div>
+            </div>
+          </div>
 
         </div>
       </div>
