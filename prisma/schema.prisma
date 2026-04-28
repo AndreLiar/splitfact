@@ -66,9 +66,6 @@ model User {
   pisteClientId       String?
   pisteClientSecret   String?
   pisteEnv            String   @default("sandbox")
-  // Automatic payment reminder preferences
-  reminderEnabled           Boolean   @default(true)
-  reminderSchedule          Json?     // [{ triggerDays: number, label: string }] — null = use default ladder
   accounts            Account[]
   sessions            Session[]
   clients               Client[]
@@ -316,12 +313,6 @@ enum PpfStatus {
   refusee
   approuvee
   payee
-}
-
-enum BtpInvoiceType {
-  standard
-  situation
-  autoliquidation
 }
 
 model UrssafReport {
