@@ -55,6 +55,10 @@ export default function DashboardPage() {
           acc.received += amount;
         } else {
           acc.pending += amount;
+          // Outstanding = issued invoices that are unpaid (money actually owed)
+          if (invoice.workflowStatus === 'issued') {
+            acc.outstanding += amount;
+          }
         }
 
         if (invoice.status === "draft") {
@@ -64,6 +68,9 @@ export default function DashboardPage() {
         const dueDate = new Date(invoice.dueDate);
         if (invoice.paymentStatus !== "paid" && dueDate < today) {
           acc.overdue += 1;
+          if (invoice.workflowStatus === 'issued') {
+            acc.overdueAmount += amount;
+          }
         }
 
         if (invoice.paymentStatus !== "paid" && dueDate >= today && dueDate <= inSevenDays) {
@@ -77,7 +84,7 @@ export default function DashboardPage() {
 
         return acc;
       },
-      { total: 0, received: 0, pending: 0, drafts: 0, overdue: 0, dueSoon: 0, pendingPpf: 0 }
+      { total: 0, received: 0, pending: 0, outstanding: 0, overdueAmount: 0, drafts: 0, overdue: 0, dueSoon: 0, pendingPpf: 0 }
     );
   }, [allInvoices]);
 
@@ -192,8 +199,14 @@ export default function DashboardPage() {
         </div>
         <div className="col-lg-3 col-md-6">
           <div className="card h-100 p-4 stat-card-warning">
-            <div className="section-label mb-2">En attente</div>
-            <div className="metric-value text-warning">{formatCurrency(metrics.pending)}</div>
+            <div className="section-label mb-2">Créances en cours</div>
+            <div className="metric-value text-warning">{formatCurrency(metrics.outstanding)}</div>
+            {metrics.overdueAmount > 0 && (
+              <div className="text-danger small mt-1">
+                <i className="bi bi-exclamation-triangle-fill me-1"></i>
+                {formatCurrency(metrics.overdueAmount)} en retard
+              </div>
+            )}
           </div>
         </div>
         <div className="col-lg-3 col-md-6">

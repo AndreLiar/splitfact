@@ -93,8 +93,17 @@ export async function PATCH(
       data: {
         ...editableFields,
         paymentStatus: body.paymentStatus,
-        // If marking as paid, also update status
-        ...(body.paymentStatus === 'paid' && { status: 'paid' }),
+        // If marking as paid: update status and kill the reminder ladder
+        ...(body.paymentStatus === 'paid' && {
+          status: 'paid',
+          nextReminderAt: null,
+          reminderEnabled: false,
+        }),
+        // If un-marking as paid: re-enable reminders but don't auto-restart ladder
+        // (user can manually send if needed)
+        ...(body.paymentStatus === 'pending' && {
+          reminderEnabled: true,
+        }),
       },
       include: {
         client: true,

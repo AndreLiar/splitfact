@@ -58,6 +58,19 @@ type InvoiceDetail = {
   issuerLegalStatus?: string | null;
   issuerShareCapital?: string | null;
   issuerApeCode?: string | null;
+  btpInvoiceType?: string | null;
+  retenueGarantieRate?: number | string | null;
+  retenueGarantieAmount?: number | string | null;
+  situationNumber?: number | null;
+  referenceContract?: string | null;
+  previousCumulativeAmount?: number | string | null;
+  previousInvoiceNumber?: string | null;
+  codeService?: string | null;
+  numeroEngagement?: string | null;
+  reminderEnabled?: boolean;
+  reminderCount?: number;
+  nextReminderAt?: string | null;
+  lastReminderSentAt?: string | null;
 };
 
 const formatCurrency = (value: unknown) => {
@@ -205,6 +218,7 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
   const [preflightLoading, setPreflightLoading] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
   const [reminderSent, setReminderSent] = useState(false);
+  const [togglingReminder, setTogglingReminder] = useState(false);
   const [stripeConnected, setStripeConnected] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -696,6 +710,114 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
           </div>
           )}
 
+          {/* BTP card — shown when invoice has a BTP type */}
+          {invoice.btpInvoiceType && invoice.btpInvoiceType !== 'standard' && (
+            <div className="card border-0 shadow-sm rounded-xl p-4 mb-4">
+              <h2 className="h5 mb-3">
+                <i className="bi bi-building-gear me-2 text-primary"></i>BTP
+              </h2>
+              <div className="vstack gap-2 small">
+                <div className="d-flex justify-content-between">
+                  <span className="text-muted">Type</span>
+                  <span className="fw-semibold">
+                    {invoice.btpInvoiceType === 'autoliquidation'
+                      ? 'Autoliquidation TVA'
+                      : 'Facture de situation'}
+                  </span>
+                </div>
+                {invoice.btpInvoiceType === 'autoliquidation' && (
+                  <div className="alert alert-warning py-2 mb-0" style={{ fontSize: '0.75rem' }}>
+                    TVA autoliquidée — art. 283, 2 nonies CGI
+                  </div>
+                )}
+                {invoice.btpInvoiceType === 'situation' && (
+                  <>
+                    {invoice.situationNumber != null && (
+                      <div className="d-flex justify-content-between">
+                        <span className="text-muted">N° de situation</span>
+                        <span>{invoice.situationNumber}</span>
+                      </div>
+                    )}
+                    {invoice.referenceContract && (
+                      <div className="d-flex justify-content-between">
+                        <span className="text-muted">Réf. contrat</span>
+                        <span className="text-truncate ms-3" style={{ maxWidth: 160 }}>{invoice.referenceContract}</span>
+                      </div>
+                    )}
+                    {invoice.previousInvoiceNumber && (
+                      <div className="d-flex justify-content-between">
+                        <span className="text-muted">Facture précédente</span>
+                        <span>{invoice.previousInvoiceNumber}</span>
+                      </div>
+                    )}
+                    {invoice.previousCumulativeAmount != null && Number(invoice.previousCumulativeAmount) > 0 && (
+                      <div className="d-flex justify-content-between">
+                        <span className="text-muted">Cumul précédent</span>
+                        <span>{formatCurrency(invoice.previousCumulativeAmount)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                {invoice.retenueGarantieAmount != null && Number(invoice.retenueGarantieAmount) > 0 && (
+                  <>
+                    <hr className="my-1" />
+                    <div className="d-flex justify-content-between">
+                      <span className="text-muted">Retenue de garantie</span>
+                      <span className="text-warning fw-semibold">
+                        {invoice.retenueGarantieRate
+                          ? `${Number(invoice.retenueGarantieRate) * 100} %`
+                          : ''} — {formatCurrency(invoice.retenueGarantieAmount)}
+                      </span>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <span className="text-muted">Net à payer</span>
+                      <span className="fw-semibold text-primary">
+                        {formatCurrency(Number(invoice.totalAmount) - Number(invoice.retenueGarantieAmount))}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {/* B2G Chorus Pro routing — shown when codeService or numeroEngagement is set */}
+                {(invoice.codeService || invoice.numeroEngagement) && (
+                  <>
+                    <hr className="my-1" />
+                    <div className="text-muted fw-semibold" style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Routage Chorus Pro
+                    </div>
+                    {invoice.codeService && (
+                      <div className="d-flex justify-content-between">
+                        <span className="text-muted">Code Service</span>
+                        <span className="font-monospace">{invoice.codeService}</span>
+                      </div>
+                    )}
+                    {!invoice.codeService && invoice.transactionType === 'B2G' && (
+                      <div className="d-flex justify-content-between">
+                        <span className="text-muted">Code Service</span>
+                        <span className="text-danger small"><i className="bi bi-exclamation-triangle me-1"></i>Manquant</span>
+                      </div>
+                    )}
+                    {invoice.numeroEngagement && (
+                      <div className="d-flex justify-content-between">
+                        <span className="text-muted">N° Engagement</span>
+                        <span className="font-monospace">{invoice.numeroEngagement}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                {/* Show B2G routing section even when both fields are empty, for B2G invoices */}
+                {!invoice.codeService && !invoice.numeroEngagement && invoice.transactionType === 'B2G' && (
+                  <>
+                    <hr className="my-1" />
+                    <div className="alert alert-warning py-2 mb-0 small">
+                      <i className="bi bi-exclamation-triangle me-1"></i>
+                      Code Service manquant — requis pour le dépôt Chorus Pro.
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="card border-0 shadow-sm rounded-xl p-4 mb-4">
             <h2 className="h5 mb-3">Sortie Factur-X</h2>
             <div className="d-flex justify-content-between align-items-center mb-3">
@@ -890,6 +1012,73 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
             )}
           </div>
 
+          {/* Auto-reminder status card — only shown on issued, unpaid invoices */}
+          {invoice.workflowStatus === 'issued' && invoice.paymentStatus !== 'paid' && (
+            <div className="card border-0 shadow-sm rounded-xl p-4 mb-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h2 className="h5 mb-0">
+                  <i className="bi bi-bell me-2 text-primary"></i>Relances automatiques
+                </h2>
+                <div className="form-check form-switch mb-0">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    id="invoiceReminderToggle"
+                    checked={invoice.reminderEnabled ?? true}
+                    disabled={togglingReminder}
+                    onChange={async (e) => {
+                      setTogglingReminder(true);
+                      try {
+                        const res = await fetch(`/api/invoices/${invoiceId}/reminders`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ enabled: e.target.checked }),
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setInvoice((prev) => prev ? { ...prev, reminderEnabled: data.reminderEnabled, nextReminderAt: data.nextReminderAt } : prev);
+                        }
+                      } finally {
+                        setTogglingReminder(false);
+                      }
+                    }}
+                  />
+                  <label className="form-check-label visually-hidden" htmlFor="invoiceReminderToggle">Activer</label>
+                </div>
+              </div>
+
+              {invoice.reminderEnabled ? (
+                <div className="vstack gap-2 small">
+                  {invoice.nextReminderAt ? (
+                    <div className="d-flex justify-content-between">
+                      <span className="text-muted">Prochain rappel</span>
+                      <span className="fw-semibold">
+                        {new Date(invoice.nextReminderAt).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-muted">Calendrier de relance épuisé.</div>
+                  )}
+                  {invoice.reminderCount !== undefined && invoice.reminderCount > 0 && (
+                    <div className="d-flex justify-content-between">
+                      <span className="text-muted">Rappels envoyés</span>
+                      <span>{invoice.reminderCount}</span>
+                    </div>
+                  )}
+                  {invoice.lastReminderSentAt && (
+                    <div className="d-flex justify-content-between">
+                      <span className="text-muted">Dernier envoi</span>
+                      <span>{new Date(invoice.lastReminderSentAt).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-muted small">Les relances automatiques sont désactivées pour cette facture.</div>
+              )}
+            </div>
+          )}
+
           <div className="card border-0 shadow-sm rounded-xl p-4 mb-4">
             <h2 className="h5 mb-3">Client</h2>
             <div className="mb-2 fw-semibold">{invoice.client?.name || invoice.clientName || 'Client non renseigné'}</div>
@@ -918,7 +1107,11 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
                       style={{
                         width: 10, height: 10,
                         borderRadius: '50%',
-                        background: log.action === 'issued' ? '#198754' : log.action === 'blocked' ? '#dc3545' : '#6c757d',
+                        background: log.action === 'issued' ? '#198754'
+                        : log.action === 'blocked' ? '#dc3545'
+                        : log.action === 'mise_en_demeure_sent' ? '#7f1d1d'
+                        : log.action === 'reminder_sent' ? '#0d6efd'
+                        : '#6c757d',
                         position: 'absolute', left: '-1.4rem', top: 4,
                       }}
                     />
@@ -926,11 +1119,17 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
                       {log.action === 'issued' && '✓ Facture émise'}
                       {log.action === 'blocked' && '⚠ Facture bloquée'}
                       {log.action === 'exception_resolved' && '↩ Exception résolue'}
-                      {log.action === 'reminder_sent' && '📧 Rappel envoyé'}
+                      {log.action === 'reminder_sent' && (
+                        log.metadata?.auto
+                          ? '📧 Rappel automatique envoyé'
+                          : '📧 Rappel envoyé (manuel)'
+                      )}
+                      {log.action === 'mise_en_demeure_sent' && '⚖ Mise en demeure envoyée'}
                       {log.action === 'facturx_generated' && '✓ Factur-X généré'}
                       {log.action === 'facturx_failed' && '✗ Génération Factur-X échouée'}
                       {log.action === 'workflow_updated' && '→ Workflow mis à jour'}
                       {log.action === 'readiness_changed' && '→ Readiness modifiée'}
+                      {!['issued','blocked','exception_resolved','reminder_sent','mise_en_demeure_sent','facturx_generated','facturx_failed','workflow_updated','readiness_changed'].includes(log.action) && `→ ${log.action}`}
                     </div>
                     <div className="text-muted" style={{ fontSize: '0.75rem' }}>
                       {log.user?.name || log.user?.email || 'Système'} — {new Date(log.createdAt).toLocaleDateString('fr-FR')} {new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}

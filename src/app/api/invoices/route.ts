@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth-options';
 import { getLegalMentionsByFiscalRegime } from '@/lib/utils';
 import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
 import { getUserPlan, getMonthlyInvoiceCount, FREE_INVOICE_LIMIT } from '@/lib/subscription';
+import { computeNextReminderDate, parseReminderSchedule } from '@/domains/invoices/reminder-schedule';
 
 const invoiceSchema = z.object({
   clientId: z.string(),
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, siret: true, tvaNumber: true, fiscalRegime: true, address: true, legalStatus: true, rcsNumber: true, shareCapital: true, apeCode: true, microEntrepreneurType: true },
+    select: { name: true, siret: true, tvaNumber: true, fiscalRegime: true, address: true, legalStatus: true, rcsNumber: true, shareCapital: true, apeCode: true, microEntrepreneurType: true, reminderEnabled: true, reminderSchedule: true },
   });
 
   // Completeness Check for Micro-Entrepreneurs
@@ -202,6 +203,14 @@ export async function POST(req: NextRequest) {
         latePenaltyRate: latePenaltyRate || "3 fois le taux d'intérêt légal",
         recoveryIndemnity: recoveryIndemnity || 40.0,
         legalMentions,
+        // Pre-schedule first reminder based on user's ladder
+        nextReminderAt: user?.reminderEnabled !== false
+          ? computeNextReminderDate(
+              new Date(dueDate),
+              0,
+              parseReminderSchedule(user?.reminderSchedule)
+            )
+          : null,
         items: {
           create: items.map(item => ({
             description: item.description,
