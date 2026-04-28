@@ -10,6 +10,7 @@ import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
 import { generateFacturxDocument } from '@/domains/invoices/facturx';
 import { logActivity } from '@/domains/invoices/activity-log';
 import { sendInvoiceEmail } from '@/lib/email-service';
+import { computeNextReminderDate, parseReminderSchedule } from '@/domains/invoices/reminder-schedule';
 
 
 const safeToNumber = (value: unknown) => {
@@ -53,10 +54,16 @@ export async function POST(
   const { invoiceId } = await params;
 
   try {
-    const invoice = await prisma.invoice.findFirst({
-      where: { id: invoiceId, userId: session.user.id },
-      include: { client: true, items: true },
-    });
+    const [invoice, issuer] = await Promise.all([
+      prisma.invoice.findFirst({
+        where: { id: invoiceId, userId: session.user.id },
+        include: { client: true, items: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { reminderEnabled: true, reminderSchedule: true },
+      }),
+    ]);
 
     if (!invoice) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
@@ -215,6 +222,12 @@ export async function POST(
       }
     }
 
+    // Compute first reminder date from user's schedule (resets on issuance)
+    const reminderSchedule = parseReminderSchedule(issuer?.reminderSchedule);
+    const nextReminderAt = issuer?.reminderEnabled !== false && invoice.reminderEnabled
+      ? computeNextReminderDate(invoice.dueDate, 0, reminderSchedule)
+      : null;
+
     const updatedInvoice = await prisma.invoice.update({
       where: { id: invoice.id },
       data: {
@@ -227,6 +240,8 @@ export async function POST(
         facturxStatus: 'generated',
         facturxGeneratedAt: new Date(),
         facturxValidationErrors: [],
+        reminderCount: 0,
+        nextReminderAt,
       },
       include: { client: true, items: true },
     });
