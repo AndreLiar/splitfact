@@ -6,25 +6,26 @@ import { useState, useRef } from "react";
 
 /* ── Data ─────────────────────────────────────────────────── */
 const painPoints = [
-  { icon: "bi-files", title: "Données éclatées", text: "Les infos client vivent entre email, CRM, devis PDF et Notion. Personne ne sait où est la version à jour." },
-  { icon: "bi-clock-history", title: "Saisie manuelle répétitive", text: "Chaque facture exige de recopier les mêmes champs entre outils. 30–45 min par facture en moyenne." },
-  { icon: "bi-exclamation-diamond", title: "Erreurs coûteuses", text: "Un SIRET incorrect, une mention TVA manquante ou un mauvais taux bloque l'encaissement." },
-  { icon: "bi-shield-exclamation", title: "Réforme 2026-2027", text: "Le passage à la facturation électronique ajoute une couche technique que peu d'agences ont anticipée." },
+  { icon: "bi-x-circle", title: "Facture rejetée = pas payé", text: "Chorus Pro rejette sans explication. La trésorerie est bloquée jusqu'à correction et re-soumission — parfois des semaines." },
+  { icon: "bi-percent", title: "TVA autoliquidation mal encodée", text: "Sur les marchés publics en sous-traitance, c'est le donneur d'ordre qui paie la TVA. La moindre erreur de code provoque un rejet immédiat." },
+  { icon: "bi-list-ol", title: "Factures de situation complexes", text: "Les avancement de travaux exigent un cumul, une référence au marché, un numéro de situation. Aucun logiciel généraliste ne le gère correctement." },
+  { icon: "bi-shield-exclamation", title: "Retenue de garantie ignorée", text: "Le 5 % RG doit figurer sur la facture et être encodé dans le XML Factur-X. La plupart des outils l'oublient, ce qui invalide le dépôt Chorus Pro." },
 ];
 
 const steps = [
-  { n: "01", title: "Déclencheur capturé", text: "Devis signé, jalon validé, récurrence mensuelle ou timesheet approuvé — InvoiceOps reçoit le signal.", icon: "bi-lightning-charge" },
-  { n: "02", title: "Agent collecte les données", text: "L'IA enrichit la facture : SIRET, TVA, mentions légales, adresse. Elle détecte les champs manquants.", icon: "bi-robot" },
-  { n: "03", title: "Exceptions remontées", text: "Seuls les cas ambigus apparaissent dans l'inbox. Le reste s'écoule automatiquement vers l'émission.", icon: "bi-funnel" },
-  { n: "04", title: "Émission avec confiance", text: "Facture conforme, traçable, prête pour la plateforme de dématérialisation partenaire 2026.", icon: "bi-send-check" },
+  { n: "01", title: "Créez la facture", text: "Renseignez votre chantier, le donneur d'ordre et les lignes de travaux. InvoiceOps pré-remplit le SIRET, les mentions légales et la TVA.", icon: "bi-pencil-square" },
+  { n: "02", title: "Validation automatique", text: "Le moteur vérifie autoliquidation, numéro de situation, retenue de garantie et conformité EN 16931 avant que vous cliquiez sur Émettre.", icon: "bi-clipboard2-check" },
+  { n: "03", title: "Factur-X généré", text: "PDF/A-3 avec XML embarqué — le seul format accepté par Chorus Pro. Généré en un clic, sans logiciel métier à 3 000 €/an.", icon: "bi-file-earmark-check" },
+  { n: "04", title: "Dépôt Chorus Pro direct", text: "Soumission via PISTE API en un clic. Suivi du statut en temps réel : déposée, approuvée, rejetée avec le motif exact.", icon: "bi-building-check" },
 ];
 
 const icpTypes = [
-  { icon: "bi-palette", label: "Agences créatives" },
-  { icon: "bi-briefcase", label: "Cabinets de conseil" },
-  { icon: "bi-code-square", label: "Dev shops" },
-  { icon: "bi-people", label: "Sociétés de staffing" },
-  { icon: "bi-lightbulb", label: "Boutiques d'expertise" },
+  { icon: "bi-lightning-charge", label: "Électriciens" },
+  { icon: "bi-droplet", label: "Plombiers" },
+  { icon: "bi-bricks", label: "Maçons" },
+  { icon: "bi-tools", label: "Menuisiers" },
+  { icon: "bi-grid", label: "Carreleurs" },
+  { icon: "bi-house-gear", label: "Tous artisans BTP" },
 ];
 
 const features = [
@@ -37,7 +38,7 @@ const features = [
 ];
 
 const freeFeatures = [
-  "Jusqu'à 5 factures / mois",
+  "Jusqu'à 10 factures / mois",
   "Création manuelle",
   "Clients illimités",
   "Tableau de bord basique",
@@ -65,9 +66,9 @@ const timeline = [
 ];
 
 const stats = [
-  { value: "30–45 min", label: "par facture manuelle" },
-  { value: "68 %", label: "des erreurs proviennent de données client" },
-  { value: "2026", label: "réforme e-invoicing France" },
+  { value: "300 000+", label: "artisans BTP sous-traitants en France" },
+  { value: "1 rejet / 3", label: "dépôts Chorus Pro refusés, faute d'encodage" },
+  { value: "Sep 2026", label: "réception e-invoicing obligatoire" },
 ];
 
 /* ── Helpers ──────────────────────────────────────────────── */
@@ -219,7 +220,7 @@ export default function LandingPage() {
                 color: "#f7f8f8",
                 marginBottom: "1.5rem",
               }}>
-                L'IA qui transforme
+                Fini les factures
                 <br />
                 <span style={{
                   background: "linear-gradient(90deg, #D4921A, #F0AE38, #D4921A)",
@@ -229,10 +230,10 @@ export default function LandingPage() {
                   backgroundClip: "text",
                   animation: "shimmer 4s linear infinite",
                 }}>
-                  le travail validé
+                  rejetées par
                 </span>
                 <br />
-                en facture conforme.
+                Chorus Pro.
               </h1>
 
               <p style={{
@@ -242,7 +243,7 @@ export default function LandingPage() {
                 marginBottom: "2rem",
                 maxWidth: "480px",
               }}>
-                InvoiceOps automatise le chemin entre devis signé, données client incomplètes et facture prête à émettre. Votre équipe ne traite plus que les exceptions.
+                InvoiceOps génère vos factures Factur-X conformes — autoliquidation, situations, retenue de garantie — et les dépose sur Chorus Pro en un clic. Zéro rejet, trésorerie débloquée.
               </p>
 
               {/* CTAs */}
@@ -286,7 +287,7 @@ export default function LandingPage() {
 
               {/* Trust signals */}
               <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-                {["Agences et sociétés de services", "Conformité TVA & URSSAF", "E-invoicing 2026 ready"].map(t => (
+                {["Artisans BTP sous-traitants", "Conformité Chorus Pro / Factur-X", "E-invoicing 2026 ready"].map(t => (
                   <div key={t} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8125rem", color: "#62666d" }}>
                     <i className="bi bi-check2" style={{ color: "#10b981", fontSize: "0.875rem" }} />
                     {t}
@@ -317,7 +318,7 @@ export default function LandingPage() {
                     fontSize: "0.6875rem", fontWeight: 590, letterSpacing: "0.07em", textTransform: "uppercase",
                     color: "#62666d",
                   }}>
-                    Pipeline · Agence Polaris
+                    Dépôt Chorus Pro · Élec Martin
                   </div>
                   <span style={{
                     fontSize: "0.6875rem", fontWeight: 590, padding: "3px 8px",
@@ -341,10 +342,10 @@ export default function LandingPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.875rem" }}>
                     <div>
                       <div style={{ fontSize: "0.8125rem", fontWeight: 590, color: "#f7f8f8", marginBottom: "2px" }}>
-                        Acme Corp — Développement Mai
+                        Mairie de Lyon — Situation n°3
                       </div>
                       <div style={{ fontSize: "0.6875rem", color: "#62666d", fontFamily: "'JetBrains Mono', monospace" }}>
-                        INV-2025-047 · Jalon validé 12 juin
+                        INV-2025-047 · Autoliquidation TVA · RG 5 %
                       </div>
                     </div>
                     <div style={{
@@ -358,7 +359,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                    {["Devis signé", "SIRET vérifié", "Mentions légales ✓"].map(tag => (
+                    {["Autoliquidation ✓", "SIRET vérifié", "RG 5 % encodée"].map(tag => (
                       <span key={tag} style={{
                         fontSize: "0.6rem", fontWeight: 590, letterSpacing: "0.05em", textTransform: "uppercase",
                         padding: "3px 7px",
@@ -375,9 +376,9 @@ export default function LandingPage() {
 
                 {/* Status items */}
                 {[
-                  { label: "Données client complétées", status: "ok", badge: "Automatique" },
-                  { label: "TVA sur les débits — à confirmer", status: "warn", badge: "Action requise" },
-                  { label: "PDF/A-3 Factur-X prêt", status: "ok", badge: "Prêt" },
+                  { label: "Autoliquidation TVA — art. 283 CGI", status: "ok", badge: "Encodée" },
+                  { label: "Retenue de garantie 5 %", status: "ok", badge: "Incluse" },
+                  { label: "PDF/A-3 Factur-X prêt Chorus Pro", status: "ok", badge: "Prêt" },
                 ].map((item) => (
                   <div key={item.label} style={{
                     display: "flex",
@@ -483,10 +484,10 @@ export default function LandingPage() {
                 color: "#f7f8f8",
                 marginBottom: "0.75rem",
               }}>
-                Agences et sociétés de services françaises, 5–50 personnes.
+                Artisans BTP qui travaillent en sous-traitance sur marchés publics.
               </h2>
               <p data-testid="pour-qui-description" style={{ fontSize: "0.9375rem", color: "#8a8f98", maxWidth: "520px", margin: "0 auto" }}>
-                Celles qui facturent souvent, gèrent des données client éparpillées, et n'ont pas de DAF interne pour absorber la réforme 2026-2027.
+                Ceux qui soumettent à Chorus Pro, se heurtent à des rejets inexpliqués, et attendent d'être payés pendant que leur comptable cherche l'erreur.
               </p>
             </div>
 
@@ -530,10 +531,10 @@ export default function LandingPage() {
                   color: "#f7f8f8",
                   marginBottom: "1.25rem",
                 }}>
-                  Votre équipe ne manque pas d'un outil de plus. Elle manque d'un système.
+                  Une facture rejetée par Chorus Pro, c'est votre trésorerie bloquée.
                 </h2>
                 <p style={{ fontSize: "1rem", color: "#8a8f98", lineHeight: 1.7, maxWidth: "420px", marginBottom: "1.5rem" }}>
-                  Chaque agence a déjà un CRM, un logiciel de facturation et une boîte mail. Le problème, c'est que rien ne relie ces sources au moment d'émettre.
+                  Les artisans BTP en sous-traitance sur marchés publics doivent soumettre via Chorus Pro. Le problème : autoliquidation TVA, factures de situation et retenue de garantie exigent un encodage précis que les logiciels généralistes ignorent.
                 </p>
                 <div style={{
                   padding: "1.25rem 1.5rem",
@@ -542,7 +543,7 @@ export default function LandingPage() {
                   borderRadius: "0 8px 8px 0",
                 }}>
                   <p style={{ fontSize: "0.9375rem", color: "#d0d6e0", lineHeight: 1.65, fontStyle: "italic", margin: 0 }}>
-                    "La vraie douleur n'est pas de créer la facture. C'est de finir le processus sans aller-retour."
+                    "Chorus Pro a rejeté ma facture sans m'expliquer pourquoi. J'ai attendu 3 semaines avant d'être payé."
                   </p>
                 </div>
               </div>
@@ -589,10 +590,10 @@ export default function LandingPage() {
               color: "#f7f8f8",
               marginBottom: "0.75rem",
             }}>
-              Du travail approuvé à la facture émise.
+              Du chantier terminé au dépôt Chorus Pro accepté.
             </h2>
             <p style={{ fontSize: "1rem", color: "#8a8f98", marginBottom: "3rem", maxWidth: "520px" }}>
-              Un workflow en 4 étapes que vous configurez une fois, et qui tourne en continu.
+              4 étapes pour émettre une facture BTP conforme sans connaître le Factur-X ni le PISTE API.
             </p>
           </FadeUp>
 

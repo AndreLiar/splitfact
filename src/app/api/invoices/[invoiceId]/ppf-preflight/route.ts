@@ -70,8 +70,9 @@ export async function GET(
   }
 
   // ── Factur-X PDF ─────────────────────────────────────────────────────────
-  if (!invoice.facturxPdfUrl) {
-    blockers.push('Le PDF Factur-X n\'a pas encore été généré. Générez-le avant la soumission.');
+  // null facturxPdfUrl is fine — submit-ppf regenerates in-memory when Cloudinary is not configured
+  if (!invoice.facturxPdfUrl && invoice.facturxStatus !== 'generated') {
+    warnings.push('Le PDF Factur-X sera régénéré à la soumission (Cloudinary non configuré).');
   }
 
   if (invoice.facturxStatus === 'validation_failed') {

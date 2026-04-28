@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 
 export type PlanId = 'free' | 'pro';
 
-export const FREE_INVOICE_LIMIT = 5;
+export const FREE_INVOICE_LIMIT = 10;
 
 export async function getUserPlan(userId: string): Promise<PlanId> {
   const user = await prisma.user.findUnique({
