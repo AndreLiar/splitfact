@@ -43,6 +43,15 @@ function SettingsPageInner() {
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingError, setBillingError] = useState<string | null>(null);
 
+  type StripeInvoiceItem = {
+    id: string; number: string | null; status: string | null;
+    amountPaid: number; amountDue: number; currency: string;
+    created: number; periodStart: number; periodEnd: number;
+    invoicePdf: string | null; hostedUrl: string | null;
+  };
+  const [stripeInvoices, setStripeInvoices] = useState<StripeInvoiceItem[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+
   // Chorus Pro / PISTE credentials
   const [pisteForm, setPisteForm] = useState({
     pisteEnv: 'sandbox',
@@ -69,8 +78,25 @@ function SettingsPageInner() {
   const fetchSubscription = async () => {
     try {
       const res = await fetch('/api/billing/subscription');
-      if (res.ok) setSubscription(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setSubscription(data);
+        if (data.hasStripeCustomer) fetchStripeInvoices();
+      }
     } catch { /* ignore */ }
+  };
+
+  const fetchStripeInvoices = async () => {
+    setInvoicesLoading(true);
+    try {
+      const res = await fetch('/api/billing/invoices');
+      if (res.ok) {
+        const data = await res.json();
+        setStripeInvoices(data.invoices ?? []);
+      }
+    } catch { /* ignore */ } finally {
+      setInvoicesLoading(false);
+    }
   };
 
   const handleUpgrade = async () => {
@@ -729,6 +755,106 @@ function SettingsPageInner() {
               </div>
             </div>
           </div>
+
+          {/* ── Billing History ──────────────────────────────── */}
+          {(subscription?.hasStripeCustomer || stripeInvoices.length > 0) && (
+            <div className="card mb-4 shadow-sm">
+              <div className="card-header bg-white d-flex align-items-center justify-content-between">
+                <div>
+                  <h5 className="mb-0 fw-semibold">
+                    <i className="bi bi-receipt me-2 text-primary"></i>
+                    Historique de facturation
+                  </h5>
+                  <small className="text-muted">Vos factures Stripe — consultez et téléchargez vos justificatifs.</small>
+                </div>
+              </div>
+              <div className="card-body p-0">
+                {invoicesLoading ? (
+                  <div className="text-center py-4">
+                    <span className="spinner-border spinner-border-sm text-primary" />
+                    <span className="ms-2 text-muted small">Chargement…</span>
+                  </div>
+                ) : stripeInvoices.length === 0 ? (
+                  <div className="text-center py-4 text-muted small">
+                    <i className="bi bi-receipt me-1"></i>
+                    Aucune facture pour le moment.
+                  </div>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="table table-sm align-middle mb-0">
+                      <thead className="table-light">
+                        <tr>
+                          <th className="ps-3">Numéro</th>
+                          <th>Période</th>
+                          <th>Montant</th>
+                          <th>Statut</th>
+                          <th className="pe-3 text-end">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stripeInvoices.map((inv) => {
+                          const amount = (inv.status === 'paid' ? inv.amountPaid : inv.amountDue) / 100;
+                          const currency = inv.currency.toUpperCase();
+                          const date = new Date(inv.created * 1000).toLocaleDateString('fr-FR');
+                          const periodStart = new Date(inv.periodStart * 1000).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+                          const periodEnd = new Date(inv.periodEnd * 1000).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+                          const statusMap: Record<string, { label: string; cls: string }> = {
+                            paid: { label: 'Payée', cls: 'bg-success' },
+                            open: { label: 'En attente', cls: 'bg-warning text-dark' },
+                            void: { label: 'Annulée', cls: 'bg-secondary' },
+                            uncollectible: { label: 'Irrécouv.', cls: 'bg-danger' },
+                            draft: { label: 'Brouillon', cls: 'bg-light text-dark' },
+                          };
+                          const s = statusMap[inv.status ?? ''] ?? { label: inv.status ?? '—', cls: 'bg-secondary' };
+                          return (
+                            <tr key={inv.id}>
+                              <td className="ps-3">
+                                <span className="font-monospace small">{inv.number ?? '—'}</span>
+                                <div className="text-muted" style={{ fontSize: '0.75rem' }}>{date}</div>
+                              </td>
+                              <td className="text-muted small">{periodStart} – {periodEnd}</td>
+                              <td className="fw-semibold">
+                                {amount.toLocaleString('fr-FR', { style: 'currency', currency })}
+                              </td>
+                              <td>
+                                <span className={`badge ${s.cls}`} style={{ fontSize: '0.7rem' }}>{s.label}</span>
+                              </td>
+                              <td className="pe-3 text-end">
+                                <div className="d-flex gap-2 justify-content-end">
+                                  {inv.invoicePdf && (
+                                    <a
+                                      href={inv.invoicePdf}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="btn btn-sm btn-outline-primary"
+                                      title="Télécharger PDF"
+                                    >
+                                      <i className="bi bi-download me-1"></i>PDF
+                                    </a>
+                                  )}
+                                  {inv.hostedUrl && (
+                                    <a
+                                      href={inv.hostedUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="btn btn-sm btn-outline-secondary"
+                                      title="Voir en ligne"
+                                    >
+                                      <i className="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
