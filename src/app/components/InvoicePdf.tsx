@@ -2,9 +2,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
-// Register a font to support special characters if needed
-// Font.register({ family: 'Roboto', src: '/fonts/Roboto-Regular.ttf' });
-
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
@@ -24,6 +21,10 @@ const styles = StyleSheet.create({
     color: '#2563eb',
     marginBottom: 5,
   },
+  headerSubtitle: {
+    fontSize: 10,
+    color: '#666',
+  },
   invoiceDetails: {
     textAlign: 'right',
   },
@@ -37,6 +38,52 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#666',
   },
+  // BTP situation banner
+  situationBanner: {
+    backgroundColor: '#eff6ff',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#2563eb',
+    borderStyle: 'solid',
+    padding: 12,
+    marginBottom: 20,
+  },
+  situationBannerTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#1d4ed8',
+    marginBottom: 6,
+  },
+  situationBannerRow: {
+    flexDirection: 'row',
+    marginBottom: 3,
+  },
+  situationBannerLabel: {
+    fontSize: 9,
+    color: '#374151',
+    width: '40%',
+  },
+  situationBannerValue: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#111827',
+    width: '60%',
+  },
+  // Autoliquidation banner
+  autoliqBanner: {
+    backgroundColor: '#fef9c3',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ca8a04',
+    borderStyle: 'solid',
+    padding: 10,
+    marginBottom: 20,
+  },
+  autoliqBannerText: {
+    fontSize: 9,
+    color: '#713f12',
+    lineHeight: 1.5,
+  },
   partiesSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -49,19 +96,19 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   partyTitle: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#374151',
     textTransform: 'uppercase',
   },
   partyText: {
-    fontSize: 10,
+    fontSize: 9,
     marginBottom: 3,
     color: '#4b5563',
   },
   partyName: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
     marginBottom: 5,
     color: '#111827',
@@ -70,14 +117,14 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 12,
     color: '#374151',
     borderBottomWidth: 2,
     borderBottomColor: '#2563eb',
     borderBottomStyle: 'solid',
-    paddingBottom: 5,
+    paddingBottom: 4,
   },
   table: {
     width: 'auto',
@@ -89,7 +136,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   tableRow: {
-    margin: 'auto',
     flexDirection: 'row',
   },
   tableColHeader: {
@@ -99,7 +145,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     borderTopWidth: 0,
     backgroundColor: '#f3f4f6',
-    padding: 8,
+    padding: 7,
   },
   tableCol: {
     borderStyle: 'solid',
@@ -107,25 +153,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderLeftWidth: 0,
     borderTopWidth: 0,
-    padding: 8,
+    padding: 7,
   },
-  tableColDesc: { width: '40%' },
-  tableColQty: { width: '12%' },
+  tableColDesc:  { width: '40%' },
+  tableColQty:   { width: '12%' },
   tableColPrice: { width: '16%' },
-  tableColTva: { width: '12%' },
+  tableColTva:   { width: '12%' },
   tableColTotal: { width: '20%' },
   tableCellHeader: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#374151',
   },
   tableCell: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#4b5563',
   },
   tableCellRight: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#4b5563',
+    textAlign: 'right',
+  },
+  tableCellMuted: {
+    fontSize: 9,
+    color: '#9ca3af',
     textAlign: 'right',
   },
   totalSection: {
@@ -133,7 +184,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   totalBox: {
-    width: '50%',
+    width: '52%',
     padding: 15,
     backgroundColor: '#eff6ff',
     borderRadius: 5,
@@ -145,206 +196,229 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 7,
   },
   totalLabel: {
-    fontSize: 12,
+    fontSize: 10,
+    color: '#374151',
+  },
+  totalLabelBold: {
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#374151',
   },
   totalAmount: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#2563eb',
   },
   totalAmountFinal: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#2563eb',
   },
+  totalAmountDeduction: {
+    fontSize: 10,
+    color: '#b45309',
+  },
+  totalDivider: {
+    borderTopWidth: 1,
+    borderTopColor: '#bfdbfe',
+    borderTopStyle: 'solid',
+    marginBottom: 7,
+    marginTop: 2,
+  },
   bankSection: {
-    marginBottom: 20,
-    padding: 15,
+    marginBottom: 15,
+    padding: 12,
     backgroundColor: '#f9fafb',
     borderRadius: 5,
   },
   paymentTermsSection: {
-    marginBottom: 20,
-    padding: 15,
+    marginBottom: 15,
+    padding: 12,
     backgroundColor: '#f9fafb',
     borderRadius: 5,
   },
-  paymentTermsTitle: {
-    fontSize: 14,
+  sectionSubTitle: {
+    fontSize: 11,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 8,
     color: '#374151',
   },
   paymentTermsText: {
-    fontSize: 10,
+    fontSize: 9,
     lineHeight: 1.5,
     color: '#4b5563',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   legalMentionsSection: {
-    marginTop: 30,
-    paddingTop: 20,
+    marginTop: 20,
+    paddingTop: 15,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     borderTopStyle: 'solid',
   },
   legalMentionsText: {
-    fontSize: 8,
-    lineHeight: 1.4,
+    fontSize: 7.5,
+    lineHeight: 1.5,
     color: '#6b7280',
   },
   footer: {
-    fontSize: 8,
-    marginTop: 30,
+    fontSize: 7.5,
+    marginTop: 20,
     textAlign: 'center',
     color: '#9ca3af',
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     borderTopStyle: 'solid',
-    paddingTop: 15,
+    paddingTop: 12,
   },
 });
 
-const InvoicePdf = ({ invoice }: any) => {
-  // Custom PDF-safe French currency formatter (bypasses toLocaleString issues)
-  const formatCurrency = (value: any) => {
-    // Handle null, undefined, empty values
-    if (value === null || value === undefined || value === '') {
-      return '0,00 €';
-    }
+const safeNum = (v: unknown): number => {
+  if (v === null || v === undefined || v === '') return 0;
+  const n = Number(v);
+  return isNaN(n) ? 0 : n;
+};
 
-    const numValue = Number(value);
-    if (isNaN(numValue)) {
-      console.warn('Invalid currency value for PDF:', value);
-      return '0,00 €';
-    }
-    
-    // Custom formatting to avoid toLocaleString issues
-    const absoluteValue = Math.abs(numValue);
-    const [integer, decimal = '00'] = absoluteValue.toFixed(2).split('.');
-    
-    // Add thousands separators with regular spaces (not non-breaking spaces)
-    const formattedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    
-    // Handle negative numbers
-    const sign = numValue < 0 ? '-' : '';
-    
-    // Use French decimal comma format
-    const result = `${sign}${formattedInteger},${decimal} €`;
-    
-    console.log('InvoicePDF formatCurrency - Input:', value, 'Output:', result);
-    return result;
-  };
+const fmt = (v: number): string => {
+  const abs = Math.abs(v);
+  const [int, dec = '00'] = abs.toFixed(2).split('.');
+  const intFmt = int.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${v < 0 ? '-' : ''}${intFmt},${dec} €`;
+};
 
-  // Helper function to safely convert any value to number
-  const safeToNumber = (value: any) => {
-    if (value === null || value === undefined || value === '') {
-      return 0;
-    }
-    
-    let cleanValue = value;
-    if (typeof value === 'string') {
-      console.log('InvoicePDF safeToNumber - Original value:', value);
-      
-      // Handle multiple slash patterns
-      // Pattern: "8/000,00" -> "8000.00"
-      cleanValue = cleanValue.replace(/(\d+)\/(\d{3}),(\d{2})/g, '$1$2.$3');
-      // Pattern: "8/000" -> "8000"  
-      cleanValue = cleanValue.replace(/(\d+)\/(\d{3})/g, '$1$2');
-      // Pattern: "1 8/000,00" -> "18000.00" (space before number)
-      cleanValue = cleanValue.replace(/(\d+)\s+(\d+)\/(\d{3}),(\d{2})/g, '$1$2$3.$4');
-      // Pattern: "1 8/000" -> "18000"
-      cleanValue = cleanValue.replace(/(\d+)\s+(\d+)\/(\d{3})/g, '$1$2$3');
-      
-      // Convert French decimal comma to dot for parsing
-      cleanValue = cleanValue.replace(',', '.');
-      // Remove any remaining non-numeric characters except dots and minus
-      cleanValue = cleanValue.replace(/[^0-9.-]/g, '');
-      
-      console.log('InvoicePDF safeToNumber - Cleaned value:', cleanValue);
-    }
-    
-    const numValue = Number(cleanValue || 0);
-    const result = isNaN(numValue) ? 0 : numValue;
-    console.log('InvoicePDF safeToNumber - Final result:', result);
-    return result;
-  };
+const fmtDate = (d: string | Date | undefined): string => {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('fr-FR');
+};
 
-  const totalTVA = invoice.items?.reduce((acc: number, item: any) => {
-    const quantity = safeToNumber(item.quantity || 1);
-    const unitPrice = safeToNumber(item.unitPrice);
-    const tvaRate = safeToNumber(item.tvaRate || 0);
-    const itemTotal = quantity * unitPrice;
-    return acc + itemTotal * tvaRate;
-  }, 0) || 0;
+const InvoicePdf = ({ invoice }: { invoice: any }) => {
+  const btpType: 'standard' | 'situation' | 'autoliquidation' | null =
+    invoice.btpInvoiceType ?? null;
+  const isAutoliq  = btpType === 'autoliquidation';
+  const isSituation = btpType === 'situation';
+  const retenueAmount = safeNum(invoice.retenueGarantieAmount);
+  const retenueRate   = safeNum(invoice.retenueGarantieRate);
 
-  const totalHT = safeToNumber(invoice.totalAmount);
-  const totalTTC = totalHT + totalTVA;
+  const lineHT = (invoice.items ?? []).reduce((acc: number, item: any) => {
+    return acc + safeNum(item.quantity || 1) * safeNum(item.unitPrice);
+  }, 0);
+
+  // For autoliquidation invoices TVA is always 0
+  const totalTVA = isAutoliq
+    ? 0
+    : (invoice.items ?? []).reduce((acc: number, item: any) => {
+        const qty  = safeNum(item.quantity || 1);
+        const pu   = safeNum(item.unitPrice);
+        const rate = safeNum(item.tvaRate || 0);
+        return acc + qty * pu * rate;
+      }, 0);
+
+  const totalTTC    = lineHT + totalTVA;
+  const netAPayer   = totalTTC - retenueAmount;
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header with Invoice Title and Details */}
+
+        {/* ── Header ────────────────────────────────────────── */}
         <View style={styles.headerSection}>
           <View>
             <Text style={styles.header}>FACTURE</Text>
-            <Text style={styles.invoiceDate}>
-              Facture professionnelle
+            <Text style={styles.headerSubtitle}>
+              {isAutoliq   ? 'Autoliquidation TVA — art. 283, 2 nonies CGI'
+                : isSituation ? `Facture de situation n° ${invoice.situationNumber ?? '—'}`
+                : 'Facture professionnelle'}
             </Text>
           </View>
           <View style={styles.invoiceDetails}>
-            <Text style={styles.invoiceNumber}>N° {invoice.invoiceNumber}</Text>
-            <Text style={styles.invoiceDate}>
-              Date : {new Date(invoice.invoiceDate).toLocaleDateString('fr-FR')}
-            </Text>
-            <Text style={styles.invoiceDate}>
-              Échéance : {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}
-            </Text>
+            <Text style={styles.invoiceNumber}>N° {invoice.invoiceNumber}</Text>
+            <Text style={styles.invoiceDate}>Date : {fmtDate(invoice.invoiceDate)}</Text>
+            <Text style={styles.invoiceDate}>Échéance : {fmtDate(invoice.dueDate)}</Text>
           </View>
         </View>
 
-        {/* Parties Section */}
+        {/* ── Situation banner ──────────────────────────────── */}
+        {isSituation && (
+          <View style={styles.situationBanner}>
+            <Text style={styles.situationBannerTitle}>Détails de la situation de travaux</Text>
+            {invoice.referenceContract && (
+              <View style={styles.situationBannerRow}>
+                <Text style={styles.situationBannerLabel}>Référence contrat :</Text>
+                <Text style={styles.situationBannerValue}>{invoice.referenceContract}</Text>
+              </View>
+            )}
+            <View style={styles.situationBannerRow}>
+              <Text style={styles.situationBannerLabel}>N° de situation :</Text>
+              <Text style={styles.situationBannerValue}>{invoice.situationNumber ?? '—'}</Text>
+            </View>
+            {safeNum(invoice.previousCumulativeAmount) > 0 && (
+              <View style={styles.situationBannerRow}>
+                <Text style={styles.situationBannerLabel}>Cumul précédent :</Text>
+                <Text style={styles.situationBannerValue}>
+                  {fmt(safeNum(invoice.previousCumulativeAmount))}
+                </Text>
+              </View>
+            )}
+            <View style={styles.situationBannerRow}>
+              <Text style={styles.situationBannerLabel}>Montant de cette situation :</Text>
+              <Text style={styles.situationBannerValue}>{fmt(lineHT)}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* ── Autoliquidation banner ────────────────────────── */}
+        {isAutoliq && (
+          <View style={styles.autoliqBanner}>
+            <Text style={styles.autoliqBannerText}>
+              {'TVA autoliquidée par le preneur assujetti — Article 283, 2 nonies du CGI\n'}
+              {'(Sous-traitance dans le cadre de travaux de construction pour le compte d\'un donneur d\'ordre assujetti)'}
+            </Text>
+          </View>
+        )}
+
+        {/* ── Parties ───────────────────────────────────────── */}
         <View style={styles.partiesSection}>
           <View style={styles.partyBox}>
             <Text style={styles.partyTitle}>Émetteur</Text>
-            <Text style={styles.partyName}>{invoice.issuerName || 'Non fourni'}</Text>
-            {invoice.issuerAddress && <Text style={styles.partyText}>Adresse : {invoice.issuerAddress}</Text>}
-            {invoice.issuerSiret && <Text style={styles.partyText}>SIRET : {invoice.issuerSiret}</Text>}
-            {invoice.issuerTva && <Text style={styles.partyText}>N° TVA : {invoice.issuerTva}</Text>}
-            {invoice.issuerRcs && <Text style={styles.partyText}>RCS : {invoice.issuerRcs}</Text>}
+            <Text style={styles.partyName}>{invoice.issuerName || '—'}</Text>
+            {invoice.issuerAddress     && <Text style={styles.partyText}>Adresse : {invoice.issuerAddress}</Text>}
+            {invoice.issuerSiret       && <Text style={styles.partyText}>SIRET : {invoice.issuerSiret}</Text>}
+            {invoice.issuerTva         && <Text style={styles.partyText}>N° TVA : {invoice.issuerTva}</Text>}
+            {invoice.issuerRcs         && <Text style={styles.partyText}>RCS : {invoice.issuerRcs}</Text>}
             {invoice.issuerLegalStatus && <Text style={styles.partyText}>Statut : {invoice.issuerLegalStatus}</Text>}
             {invoice.issuerShareCapital && <Text style={styles.partyText}>Capital : {invoice.issuerShareCapital}</Text>}
-            {invoice.issuerApeCode && <Text style={styles.partyText}>Code APE : {invoice.issuerApeCode}</Text>}
+            {invoice.issuerApeCode     && <Text style={styles.partyText}>Code APE : {invoice.issuerApeCode}</Text>}
           </View>
-          
+
           <View style={styles.partyBox}>
             <Text style={styles.partyTitle}>Client</Text>
             <Text style={styles.partyName}>
-              {invoice.client?.name || invoice.clientName || 'Non fourni'}
+              {invoice.client?.name || invoice.clientName || '—'}
             </Text>
             {(invoice.client?.email || invoice.clientEmail) && (
               <Text style={styles.partyText}>Email : {invoice.client?.email || invoice.clientEmail}</Text>
             )}
-            {invoice.clientAddress && <Text style={styles.partyText}>Adresse : {invoice.clientAddress}</Text>}
-            {invoice.clientSiret && <Text style={styles.partyText}>SIRET : {invoice.clientSiret}</Text>}
-            {invoice.clientTvaNumber && <Text style={styles.partyText}>N° TVA : {invoice.clientTvaNumber}</Text>}
-            {invoice.clientLegalStatus && <Text style={styles.partyText}>Statut : {invoice.clientLegalStatus}</Text>}
-            {invoice.clientShareCapital && <Text style={styles.partyText}>Capital : {invoice.clientShareCapital}</Text>}
-            {invoice.clientContactName && <Text style={styles.partyText}>Contact : {invoice.clientContactName}</Text>}
-            {invoice.clientPhone && <Text style={styles.partyText}>Téléphone : {invoice.clientPhone}</Text>}
+            {(invoice.clientAddress || invoice.client?.address) && (
+              <Text style={styles.partyText}>Adresse : {invoice.clientAddress || invoice.client?.address}</Text>
+            )}
+            {(invoice.clientSiret || invoice.client?.siret) && (
+              <Text style={styles.partyText}>SIRET : {invoice.clientSiret || invoice.client?.siret}</Text>
+            )}
+            {(invoice.clientTvaNumber || invoice.client?.tvaNumber) && (
+              <Text style={styles.partyText}>N° TVA : {invoice.clientTvaNumber || invoice.client?.tvaNumber}</Text>
+            )}
           </View>
         </View>
 
-        {/* Services Section */}
+        {/* ── Line items ────────────────────────────────────── */}
         <View style={styles.servicesSection}>
           <Text style={styles.sectionTitle}>Prestations et services</Text>
-          
+
           <View style={styles.table}>
+            {/* Header row */}
             <View style={styles.tableRow}>
               <View style={[styles.tableColHeader, styles.tableColDesc]}>
                 <Text style={styles.tableCellHeader}>Description</Text>
@@ -362,113 +436,144 @@ const InvoicePdf = ({ invoice }: any) => {
                 <Text style={styles.tableCellHeader}>Total HT</Text>
               </View>
             </View>
-            
-            {invoice.items?.map((item: any, index: number) => (
-              <View style={styles.tableRow} key={index}>
-                <View style={[styles.tableCol, styles.tableColDesc]}>
-                  <Text style={styles.tableCell}>{item.description || 'Service'}</Text>
+
+            {/* Data rows */}
+            {(invoice.items ?? []).map((item: any, idx: number) => {
+              const qty   = safeNum(item.quantity || 1);
+              const pu    = safeNum(item.unitPrice);
+              const rate  = safeNum(item.tvaRate || 0);
+              const total = qty * pu;
+              return (
+                <View style={styles.tableRow} key={idx}>
+                  <View style={[styles.tableCol, styles.tableColDesc]}>
+                    <Text style={styles.tableCell}>{item.description || 'Prestation'}</Text>
+                  </View>
+                  <View style={[styles.tableCol, styles.tableColQty]}>
+                    <Text style={styles.tableCellRight}>{item.quantity ?? 1}</Text>
+                  </View>
+                  <View style={[styles.tableCol, styles.tableColPrice]}>
+                    <Text style={styles.tableCellRight}>{fmt(pu)}</Text>
+                  </View>
+                  <View style={[styles.tableCol, styles.tableColTva]}>
+                    {isAutoliq
+                      ? <Text style={styles.tableCellMuted}>Autoliq.</Text>
+                      : <Text style={styles.tableCellRight}>{(rate * 100).toFixed(0)} %</Text>}
+                  </View>
+                  <View style={[styles.tableCol, styles.tableColTotal]}>
+                    <Text style={styles.tableCellRight}>{fmt(total)}</Text>
+                  </View>
                 </View>
-                <View style={[styles.tableCol, styles.tableColQty]}>
-                  <Text style={styles.tableCellRight}>{item.quantity || 1}</Text>
-                </View>
-                <View style={[styles.tableCol, styles.tableColPrice]}>
-                  <Text style={styles.tableCellRight}>
-                    {formatCurrency(safeToNumber(item.unitPrice))}
-                  </Text>
-                </View>
-                <View style={[styles.tableCol, styles.tableColTva]}>
-                  <Text style={styles.tableCellRight}>
-                    {(safeToNumber(item.tvaRate || 0) * 100).toFixed(0)}%
-                  </Text>
-                </View>
-                <View style={[styles.tableCol, styles.tableColTotal]}>
-                  <Text style={styles.tableCellRight}>
-                    {formatCurrency(safeToNumber(item.quantity || 1) * safeToNumber(item.unitPrice))}
-                  </Text>
-                </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </View>
 
-        {/* Total Section */}
+        {/* ── Totals ────────────────────────────────────────── */}
         <View style={styles.totalSection}>
           <View style={styles.totalBox}>
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total HT :</Text>
-              <Text style={styles.totalAmount}>
-                {formatCurrency(totalHT)}
-              </Text>
+              <Text style={styles.totalAmount}>{fmt(lineHT)}</Text>
             </View>
+
+            {isAutoliq ? (
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>TVA (autoliquidée) :</Text>
+                <Text style={[styles.totalAmount, { color: '#b45309' }]}>0,00 €</Text>
+              </View>
+            ) : (
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total TVA :</Text>
+                <Text style={styles.totalAmount}>{fmt(totalTVA)}</Text>
+              </View>
+            )}
+
+            <View style={styles.totalDivider} />
+
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total TVA :</Text>
-              <Text style={styles.totalAmount}>
-                {formatCurrency(totalTVA)}
+              <Text style={styles.totalLabelBold}>Total TTC :</Text>
+              <Text style={retenueAmount > 0 ? styles.totalAmount : styles.totalAmountFinal}>
+                {fmt(totalTTC)}
               </Text>
             </View>
-            <View style={[styles.totalRow, { borderTopWidth: 1, borderTopColor: '#2563eb', paddingTop: 8 }]}>
-              <Text style={styles.totalLabel}>Total TTC :</Text>
-              <Text style={styles.totalAmountFinal}>
-                {formatCurrency(totalTTC)}
-              </Text>
-            </View>
+
+            {retenueAmount > 0 && (
+              <>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>
+                    Retenue de garantie ({retenueRate > 0 ? `${(retenueRate * 100).toFixed(0)} %` : 'forfait'}) :
+                  </Text>
+                  <Text style={styles.totalAmountDeduction}>- {fmt(retenueAmount)}</Text>
+                </View>
+                <View style={styles.totalDivider} />
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabelBold}>Net à payer :</Text>
+                  <Text style={styles.totalAmountFinal}>{fmt(netAPayer)}</Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
-        {/* Bank Details Section */}
+        {/* ── Bank details ──────────────────────────────────── */}
         {(invoice.issuerIban || invoice.issuerBic) && (
           <View style={styles.bankSection}>
-            <Text style={styles.paymentTermsTitle}>Coordonnées bancaires</Text>
-            {invoice.issuerIban && (
-              <Text style={styles.paymentTermsText}>IBAN : {invoice.issuerIban}</Text>
-            )}
-            {invoice.issuerBic && (
-              <Text style={styles.paymentTermsText}>BIC : {invoice.issuerBic}</Text>
-            )}
-            {invoice.issuerBankName && (
-              <Text style={styles.paymentTermsText}>Banque : {invoice.issuerBankName}</Text>
-            )}
+            <Text style={styles.sectionSubTitle}>Coordonnées bancaires</Text>
+            {invoice.issuerIban     && <Text style={styles.paymentTermsText}>IBAN : {invoice.issuerIban}</Text>}
+            {invoice.issuerBic      && <Text style={styles.paymentTermsText}>BIC : {invoice.issuerBic}</Text>}
+            {invoice.issuerBankName && <Text style={styles.paymentTermsText}>Banque : {invoice.issuerBankName}</Text>}
           </View>
         )}
 
-        {/* Payment Terms Section */}
+        {/* ── Payment conditions ────────────────────────────── */}
         <View style={styles.paymentTermsSection}>
-          <Text style={styles.paymentTermsTitle}>Conditions de paiement</Text>
-          <Text style={styles.paymentTermsText}>
-            Date d'échéance : {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}
-          </Text>
+          <Text style={styles.sectionSubTitle}>Conditions de paiement</Text>
+          <Text style={styles.paymentTermsText}>Date d'échéance : {fmtDate(invoice.dueDate)}</Text>
           {invoice.paymentTerms && (
-            <Text style={styles.paymentTermsText}>
-              Délai de règlement : {invoice.paymentTerms}
-            </Text>
+            <Text style={styles.paymentTermsText}>Délai de règlement : {invoice.paymentTerms}</Text>
           )}
           {invoice.latePenaltyRate && (
             <Text style={styles.paymentTermsText}>
               Taux de pénalité de retard : {invoice.latePenaltyRate}
             </Text>
           )}
-          {invoice.recoveryIndemnity && (
+          {invoice.recoveryIndemnity && safeNum(invoice.recoveryIndemnity) > 0 && (
             <Text style={styles.paymentTermsText}>
-              Indemnité forfaitaire de recouvrement : {formatCurrency(invoice.recoveryIndemnity)}
+              Indemnité forfaitaire de recouvrement : {fmt(safeNum(invoice.recoveryIndemnity))}
+            </Text>
+          )}
+          {retenueAmount > 0 && (
+            <Text style={styles.paymentTermsText}>
+              Retenue de garantie libérable dans les conditions de l'article 2318 du Code civil.
             </Text>
           )}
         </View>
 
-        {/* Legal Mentions Section */}
+        {/* ── Legal mentions ────────────────────────────────── */}
         <View style={styles.legalMentionsSection}>
           <Text style={styles.sectionTitle}>Mentions légales</Text>
           <Text style={styles.legalMentionsText}>
-            {invoice.legalMentions ||
-            `Paiement à réception de facture. Aucun escompte consenti pour paiement anticipé.\n\nEn cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal ainsi qu'une indemnité forfaitaire de recouvrement de 40€ seront automatiquement appliquées.\n\n${totalTVA === 0 ? 'TVA non applicable, art. 293 B du CGI.\n\n' : ''}Facture émise conformément à la réglementation française en vigueur.`}
+            {invoice.legalMentions || [
+              'Paiement à réception de facture. Aucun escompte consenti pour paiement anticipé.',
+              '',
+              "En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal ainsi qu'une indemnité forfaitaire de recouvrement de 40 € seront automatiquement appliquées (art. L441-10 du Code de commerce).",
+              '',
+              isAutoliq
+                ? "Opération soumise à l'autoliquidation de la TVA — le preneur est redevable de la TVA en lieu et place du prestataire (art. 283, 2 nonies du CGI). Facture établie hors TVA."
+                : totalTVA === 0
+                  ? 'TVA non applicable, art. 293 B du CGI.'
+                  : null,
+              '',
+              'Facture émise en conformité avec la réglementation française de facturation électronique (EN 16931 — Factur-X).',
+            ].filter(Boolean).join('\n')}
           </Text>
         </View>
 
-        {/* Footer */}
+        {/* ── Footer ────────────────────────────────────────── */}
         <Text style={styles.footer}>
-          Document généré par InvoiceOps - Plateforme de facturation professionnelle
-          {'\n'}
-          {invoice.issuerName} - {invoice.issuerAddress || 'Adresse non fournie'}
+          {`Document généré par InvoiceOps — ${invoice.issuerName || ''}${invoice.issuerAddress ? ` — ${invoice.issuerAddress}` : ''}`}
         </Text>
+
       </Page>
     </Document>
   );

@@ -69,6 +69,16 @@ export async function GET(
     }
   }
 
+  // ── B2G Chorus Pro routing fields ────────────────────────────────────────
+  if (invoice.transactionType === 'B2G') {
+    if (!(invoice as any).codeService) {
+      blockers.push('Code Service manquant — obligatoire pour le routage Chorus Pro vers une entité publique.');
+    }
+    if (!(invoice as any).numeroEngagement) {
+      warnings.push('N° Engagement (bon de commande) absent — peut entraîner un rejet ou un blocage de paiement par l\'entité publique.');
+    }
+  }
+
   // ── Factur-X PDF ─────────────────────────────────────────────────────────
   // null facturxPdfUrl is fine — submit-ppf regenerates in-memory when Cloudinary is not configured
   if (!invoice.facturxPdfUrl && invoice.facturxStatus !== 'generated') {

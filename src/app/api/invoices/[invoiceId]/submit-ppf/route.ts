@@ -72,6 +72,14 @@ export async function POST(
     ? (invoice.deliveryAddress as any)?.address ?? null
     : null;
 
+  const btpType = (invoice as any).btpInvoiceType as 'standard' | 'situation' | 'autoliquidation' | null ?? null;
+  const isB2G = invoice.transactionType === 'B2G';
+
+  // Chorus Pro "Cadre de Facturation": A2 = BTP sous-traitance B2G, A1 = marché public standard B2G
+  const cadreDeTravail = isB2G
+    ? (btpType === 'situation' || btpType === 'autoliquidation' ? 'A2' : 'A1')
+    : null;
+
   const xml = buildFacturxXml({
     invoiceNumber: invoice.invoiceNumber,
     invoiceDate: invoice.invoiceDate.toISOString(),
@@ -102,6 +110,17 @@ export async function POST(
     paymentTerms: invoice.paymentTerms,
     latePenaltyRate: invoice.latePenaltyRate,
     recoveryIndemnity: invoice.recoveryIndemnity != null ? Number(invoice.recoveryIndemnity) : null,
+    // BTP fields
+    btpInvoiceType: btpType,
+    retenueGarantieAmount: (invoice as any).retenueGarantieAmount != null ? Number((invoice as any).retenueGarantieAmount) : null,
+    situationNumber: (invoice as any).situationNumber ?? null,
+    referenceContract: (invoice as any).referenceContract ?? null,
+    previousCumulativeAmount: (invoice as any).previousCumulativeAmount != null ? Number((invoice as any).previousCumulativeAmount) : null,
+    previousInvoiceNumber: (invoice as any).previousInvoiceNumber ?? null,
+    // Chorus Pro routing
+    codeService: (invoice as any).codeService ?? null,
+    buyerReference: (invoice as any).numeroEngagement ?? null,
+    cadreDeTravail,
   });
 
   // Get Factur-X PDF: use stored URL if available, otherwise generate in-memory

@@ -12,7 +12,9 @@ export type InvoiceReadinessReasonCode =
   | "missing_issuer_siret"
   | "missing_payment_terms"
   | "missing_late_penalty_rate"
-  | "missing_legal_mentions";
+  | "missing_legal_mentions"
+  | "situation_missing_number"
+  | "situation_missing_contract";
 
 export interface InvoiceReadinessReason {
   code: InvoiceReadinessReasonCode;
@@ -39,6 +41,10 @@ export interface InvoiceReadinessInput {
     quantity?: number | null;
     unitPrice?: number | null;
   }> | null;
+  // BTP sub-contractor fields
+  btpInvoiceType?: 'standard' | 'situation' | 'autoliquidation' | null;
+  situationNumber?: number | null;
+  referenceContract?: string | null;
 }
 
 export interface InvoiceReadinessResult {
@@ -112,6 +118,16 @@ export function evaluateInvoiceReadiness(input: InvoiceReadinessInput): InvoiceR
   // Legal mentions
   if (!input.legalMentions) {
     blockingReasons.push(blocking("missing_legal_mentions", "Les mentions légales sont requises."));
+  }
+
+  // BTP: facture de situation requires situation number + contract reference
+  if (input.btpInvoiceType === 'situation') {
+    if (!input.situationNumber) {
+      blockingReasons.push(blocking("situation_missing_number", "Le numéro de situation est requis pour une facture de situation BTP."));
+    }
+    if (!input.referenceContract) {
+      blockingReasons.push(blocking("situation_missing_contract", "La référence du marché / contrat est requise pour une facture de situation BTP."));
+    }
   }
 
   return {
