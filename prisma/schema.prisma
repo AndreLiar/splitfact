@@ -57,6 +57,9 @@ model User {
   subscriptionStatus        String    @default("free")  // free | trialing | active | past_due | canceled
   planId                    String    @default("free")  // free | pro
   subscriptionPeriodEnd     DateTime?
+  // Automatic payment reminder preferences
+  reminderEnabled           Boolean   @default(true)
+  reminderSchedule          Json?     // [{ triggerDays: number, label: string }] — null = use default ladder
   // Per-tenant Chorus Pro / PISTE credentials (passwords AES-256-GCM encrypted)
   cproTechLogin       String?
   cproTechPassword    String?
@@ -170,6 +173,25 @@ model Invoice {
   ppfSubmittedAt      DateTime?
   ppfLastEventAt      DateTime?
   ppfError            String?
+  // Automatic payment reminder tracking
+  reminderEnabled     Boolean   @default(true)
+  reminderCount       Int       @default(0)
+  lastReminderSentAt  DateTime?
+  nextReminderAt      DateTime?
+
+  // ── BTP sub-contractor fields ─────────────────────────────
+  btpInvoiceType          BtpInvoiceType @default(standard)
+  isAutoliquidation       Boolean        @default(false)
+  retenueGarantieRate     Decimal?       @db.Decimal(5, 2)
+  retenueGarantieAmount   Decimal?       @db.Decimal(12, 2)
+  situationNumber         Int?
+  referenceContract       String?
+  previousCumulativeAmount Decimal?      @db.Decimal(12, 2)
+  cumulativeAmount        Decimal?       @db.Decimal(12, 2)
+  previousInvoiceNumber   String?
+  // Chorus Pro / B2G routing fields (Marchés Publics)
+  codeService             String?
+  numeroEngagement        String?
 }
 
 model InvoiceItem {
@@ -273,6 +295,12 @@ enum TransactionType {
   B2B
   B2C
   B2G
+}
+
+enum BtpInvoiceType {
+  standard
+  situation
+  autoliquidation
 }
 
 enum PpfStatus {

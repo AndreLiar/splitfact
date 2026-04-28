@@ -2,33 +2,20 @@ import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { renderToStream } from '@react-pdf/renderer';
 
-import InvoicePdf from '@/app/components/InvoicePdf';
 import cloudinary from '@/lib/cloudinary';
 import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
 import { generateFacturxDocument } from '@/domains/invoices/facturx';
 import { logActivity } from '@/domains/invoices/activity-log';
 import { sendInvoiceEmail } from '@/lib/email-service';
-
+import { renderInvoicePdfBuffer } from '@/lib/facturx-pdf-generator';
+import { computeNextReminderDate, parseReminderSchedule } from '@/domains/invoices/reminder-schedule';
 
 const safeToNumber = (value: unknown) => {
   if (value === null || value === undefined || value === '') return 0;
   const numeric = Number(value);
   return Number.isNaN(numeric) ? 0 : numeric;
 };
-
-async function renderInvoicePdfBuffer(invoice: any) {
-  const doc = <InvoicePdf invoice={invoice} />;
-  const stream = await renderToStream(doc);
-
-  return await new Promise<Buffer>((resolve, reject) => {
-    const buffers: Uint8Array[] = [];
-    stream.on('data', (chunk) => buffers.push(chunk));
-    stream.on('end', () => resolve(Buffer.concat(buffers)));
-    stream.on('error', (error) => reject(error));
-  });
-}
 
 async function uploadRawAsset(dataUri: string, folder: string, publicId: string) {
   const uploadResult = await cloudinary.uploader.upload(dataUri, {
@@ -53,10 +40,16 @@ export async function POST(
   const { invoiceId } = await params;
 
   try {
-    const invoice = await prisma.invoice.findFirst({
-      where: { id: invoiceId, userId: session.user.id },
-      include: { client: true, items: true },
-    });
+    const [invoice, issuer] = await Promise.all([
+      prisma.invoice.findFirst({
+        where: { id: invoiceId, userId: session.user.id },
+        include: { client: true, items: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { reminderEnabled: true, reminderSchedule: true },
+      }),
+    ]);
 
     if (!invoice) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
@@ -81,6 +74,9 @@ export async function POST(
         quantity: safeToNumber(item.quantity),
         unitPrice: safeToNumber(item.unitPrice),
       })),
+      btpInvoiceType: (invoice as any).btpInvoiceType as 'standard' | 'situation' | 'autoliquidation' | null,
+      situationNumber: (invoice as any).situationNumber ?? null,
+      referenceContract: (invoice as any).referenceContract ?? null,
     });
 
     if (readiness.status === 'blocked') {
@@ -157,6 +153,14 @@ export async function POST(
       paymentTerms: invoice.paymentTerms,
       latePenaltyRate: invoice.latePenaltyRate,
       recoveryIndemnity: invoice.recoveryIndemnity != null ? safeToNumber(invoice.recoveryIndemnity) : null,
+      btpInvoiceType: (invoice as any).btpInvoiceType as 'standard' | 'situation' | 'autoliquidation' | null ?? null,
+      retenueGarantieAmount: (invoice as any).retenueGarantieAmount != null ? safeToNumber((invoice as any).retenueGarantieAmount) : null,
+      situationNumber: (invoice as any).situationNumber ?? null,
+      referenceContract: (invoice as any).referenceContract ?? null,
+      previousCumulativeAmount: (invoice as any).previousCumulativeAmount != null ? safeToNumber((invoice as any).previousCumulativeAmount) : null,
+      previousInvoiceNumber: (invoice as any).previousInvoiceNumber ?? null,
+      codeService: (invoice as any).codeService ?? null,
+      buyerReference: (invoice as any).numeroEngagement ?? null,
     }, pdfBuffer);
 
     if (!facturx.success) {
@@ -215,6 +219,12 @@ export async function POST(
       }
     }
 
+    // Compute first reminder date from user's schedule (resets on issuance)
+    const reminderSchedule = parseReminderSchedule(issuer?.reminderSchedule);
+    const nextReminderAt = issuer?.reminderEnabled !== false && invoice.reminderEnabled
+      ? computeNextReminderDate(invoice.dueDate, 0, reminderSchedule)
+      : null;
+
     const updatedInvoice = await prisma.invoice.update({
       where: { id: invoice.id },
       data: {
@@ -227,6 +237,8 @@ export async function POST(
         facturxStatus: 'generated',
         facturxGeneratedAt: new Date(),
         facturxValidationErrors: [],
+        reminderCount: 0,
+        nextReminderAt,
       },
       include: { client: true, items: true },
     });

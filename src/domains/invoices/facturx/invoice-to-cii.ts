@@ -27,22 +27,30 @@ export interface FacturxInvoiceInput {
   legalMentions?: string | null;
   // EN 16931 EXTENDED fields
   transactionType?: 'B2B' | 'B2C' | 'B2G' | null;
-  buyerReference?: string | null;        // numéro de bon de commande acheteur
+  buyerReference?: string | null;        // N° engagement / bon de commande (BT-13)
+  codeService?: string | null;           // Code service destinataire Chorus Pro (BT-10)
+  cadreDeTravail?: string | null;        // Cadre de facturation Chorus Pro (A1/A2…) — SpecifiedProcuringProject/ID
   deliveryAddress?: string | null;       // adresse de livraison / prestation
   paymentTerms?: string | null;          // conditions de paiement texte libre
   latePenaltyRate?: string | null;       // taux de pénalités de retard
   recoveryIndemnity?: number | null;     // indemnité forfaitaire de recouvrement (€40)
+  // BTP sub-contractor fields
+  btpInvoiceType?: 'standard' | 'situation' | 'autoliquidation' | null;
+  retenueGarantieAmount?: number | null; // retenue de garantie deduction in EUR
+  situationNumber?: number | null;       // numéro de situation (e.g. 3)
+  referenceContract?: string | null;     // référence du marché / contrat
+  previousCumulativeAmount?: number | null; // montant HT cumulé précédent
+  previousInvoiceNumber?: string | null; // n° facture précédente (situation)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const XML_ESCAPE_MAP: Record<string, string> = {
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;',
+};
+
 function escapeXml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
+  return value.replace(/[&<>"']/g, (ch) => XML_ESCAPE_MAP[ch]);
 }
 
 /** Any ISO date string → YYYYMMDD (CII format 102). Handles both "YYYY-MM-DD" and full ISO timestamps. */
@@ -83,12 +91,13 @@ interface TaxGroup {
   calculatedAmount: number;
 }
 
-function aggregateTaxes(lines: FacturxLineItem[]): TaxGroup[] {
+function aggregateTaxes(lines: FacturxLineItem[], isAutoliquidation: boolean): TaxGroup[] {
   const groups = new Map<string, TaxGroup>();
   for (const line of lines) {
     const lineTotal = line.quantity * line.unitPrice;
     const taxAmt = parseFloat((lineTotal * line.taxRate / 100).toFixed(2));
     const key = `${line.taxRate}`;
+    const categoryCode = isAutoliquidation ? "AE" : (line.taxRate === 0 ? "E" : "S");
     const existing = groups.get(key);
     if (existing) {
       existing.basisAmount = parseFloat((existing.basisAmount + lineTotal).toFixed(2));
@@ -96,7 +105,7 @@ function aggregateTaxes(lines: FacturxLineItem[]): TaxGroup[] {
     } else {
       groups.set(key, {
         typeCode: "VAT",
-        categoryCode: line.taxRate === 0 ? "E" : "S",
+        categoryCode,
         rate: line.taxRate,
         basisAmount: parseFloat(lineTotal.toFixed(2)),
         calculatedAmount: taxAmt,
@@ -133,14 +142,25 @@ function renderParty(party: FacturxParty, tag: string): string {
 // ── Main builder ──────────────────────────────────────────────────────────────
 
 export function buildFacturxXml(input: FacturxInvoiceInput): string {
-  const taxes = aggregateTaxes(input.lines);
+  const isAutoliquidation = input.btpInvoiceType === 'autoliquidation';
+  const isSituation = input.btpInvoiceType === 'situation';
+  const retenueAmount = (input.retenueGarantieAmount != null && input.retenueGarantieAmount > 0)
+    ? input.retenueGarantieAmount
+    : 0;
+
+  const taxes = aggregateTaxes(input.lines, isAutoliquidation);
   const lineTotal = input.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0);
   const taxTotal = taxes.reduce((s, t) => s + t.calculatedAmount, 0);
-  const grandTotal = parseFloat((lineTotal + taxTotal).toFixed(2));
+  const taxBasis = parseFloat((lineTotal - retenueAmount).toFixed(2));
+  const grandTotal = parseFloat((taxBasis + taxTotal).toFixed(2));
+
   const lineTotalStr = lineTotal.toFixed(2);
   const taxTotalStr = taxTotal.toFixed(2);
+  const taxBasisStr = taxBasis.toFixed(2);
   const grandTotalStr = grandTotal.toFixed(2);
-  const dueStr = input.totalAmount.toFixed(2);
+
+  // Dominant tax category for the retenue allowance charge
+  const dominantTaxCat = taxes.length > 0 ? taxes[0] : { categoryCode: isAutoliquidation ? 'AE' : 'E', rate: 0 };
 
   const linesXml = input.lines
     .map(
@@ -163,7 +183,7 @@ export function buildFacturxXml(input: FacturxInvoiceInput): string {
       <ram:SpecifiedLineTradeSettlement>
         <ram:ApplicableTradeTax>
           <ram:TypeCode>VAT</ram:TypeCode>
-          <ram:CategoryCode>${line.taxRate === 0 ? "E" : "S"}</ram:CategoryCode>
+          <ram:CategoryCode>${isAutoliquidation ? "AE" : (line.taxRate === 0 ? "E" : "S")}</ram:CategoryCode>
           <ram:RateApplicablePercent>${line.taxRate.toFixed(2)}</ram:RateApplicablePercent>
         </ram:ApplicableTradeTax>
         <ram:SpecifiedTradeSettlementLineMonetarySummation>
@@ -180,19 +200,57 @@ export function buildFacturxXml(input: FacturxInvoiceInput): string {
     <ram:ApplicableTradeTax>
       <ram:CalculatedAmount>${t.calculatedAmount.toFixed(2)}</ram:CalculatedAmount>
       <ram:TypeCode>${t.typeCode}</ram:TypeCode>
+      ${isAutoliquidation ? `<ram:ExemptionReason>Autoliquidation de TVA - Art. 283, 2 nonies CGI</ram:ExemptionReason>` : ""}
       <ram:BasisAmount>${t.basisAmount.toFixed(2)}</ram:BasisAmount>
       <ram:CategoryCode>${t.categoryCode}</ram:CategoryCode>
+      ${isAutoliquidation ? `<ram:ExemptionReasonCode>VATEX-EU-AE</ram:ExemptionReasonCode>` : ""}
       <ram:RateApplicablePercent>${t.rate.toFixed(2)}</ram:RateApplicablePercent>
     </ram:ApplicableTradeTax>`
     )
     .join("");
+
+  // Retenue de garantie — document-level allowance (ChargeIndicator=false)
+  const retenueXml = retenueAmount > 0
+    ? `
+    <ram:SpecifiedTradeAllowanceCharge>
+      <ram:ChargeIndicator>
+        <udt:Indicator>false</udt:Indicator>
+      </ram:ChargeIndicator>
+      <ram:ActualAmount>${retenueAmount.toFixed(2)}</ram:ActualAmount>
+      <ram:Reason>Retenue de garantie</ram:Reason>
+      <ram:CategoryTradeTax>
+        <ram:TypeCode>VAT</ram:TypeCode>
+        <ram:CategoryCode>${dominantTaxCat.categoryCode}</ram:CategoryCode>
+        <ram:RateApplicablePercent>${dominantTaxCat.rate.toFixed(2)}</ram:RateApplicablePercent>
+      </ram:CategoryTradeTax>
+    </ram:SpecifiedTradeAllowanceCharge>`
+    : "";
+
+  // Preceding invoice reference for situation invoices (BT-25)
+  const precedingInvoiceXml = isSituation && input.previousInvoiceNumber
+    ? `
+      <ram:InvoiceReferencedDocument>
+        <ram:IssuerAssignedID>${escapeXml(input.previousInvoiceNumber)}</ram:IssuerAssignedID>
+      </ram:InvoiceReferencedDocument>`
+    : "";
 
   // Business process context — maps transactionType to BII profile URNs
   const bpUrn = input.transactionType === 'B2G'
     ? 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0'
     : 'urn:factur-x.eu:1p0:en16931';
 
-  // Delivery block — emit ShipToTradeParty only when deliveryAddress is provided
+  // Situation note — appended as IncludedNote in ExchangedDocument
+  const situationNoteContent = isSituation && input.situationNumber != null
+    ? [
+        `Situation n°${input.situationNumber}`,
+        input.referenceContract ? `Contrat : ${input.referenceContract}` : null,
+        input.previousCumulativeAmount != null
+          ? `Montant HT cumulé précédent : ${input.previousCumulativeAmount.toFixed(2)} €`
+          : null,
+      ].filter(Boolean).join(' — ')
+    : null;
+
+  // Delivery block
   const deliveryXml = input.deliveryAddress
     ? `
     <ram:ApplicableHeaderTradeDelivery>
@@ -206,7 +264,7 @@ export function buildFacturxXml(input: FacturxInvoiceInput): string {
     </ram:ApplicableHeaderTradeDelivery>`
     : `<ram:ApplicableHeaderTradeDelivery/>`;
 
-  // Payment terms — description + due date + late penalty note
+  // Payment terms
   const penaltyNote = [
     input.paymentTerms,
     input.latePenaltyRate ? `Pénalités de retard : ${input.latePenaltyRate}` : null,
@@ -220,6 +278,11 @@ export function buildFacturxXml(input: FacturxInvoiceInput): string {
           <udt:DateTimeString format="102">${ciiDate(input.dueDate)}</udt:DateTimeString>
         </ram:DueDateDateTime>
       </ram:SpecifiedTradePaymentTerms>`;
+
+  // Monetary summary — AllowanceTotalAmount only present when retenue > 0
+  const allowanceXml = retenueAmount > 0
+    ? `<ram:AllowanceTotalAmount>${retenueAmount.toFixed(2)}</ram:AllowanceTotalAmount>`
+    : "";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rsm:CrossIndustryInvoice
@@ -241,44 +304,33 @@ export function buildFacturxXml(input: FacturxInvoiceInput): string {
       <udt:DateTimeString format="102">${ciiDate(input.invoiceDate)}</udt:DateTimeString>
     </ram:IssueDateTime>
     ${input.legalMentions ? `<ram:IncludedNote><ram:Content>${escapeXml(input.legalMentions)}</ram:Content></ram:IncludedNote>` : ""}
+    ${situationNoteContent ? `<ram:IncludedNote><ram:Content>${escapeXml(situationNoteContent)}</ram:Content></ram:IncludedNote>` : ""}
   </rsm:ExchangedDocument>
   <rsm:SupplyChainTradeTransaction>
     ${linesXml}
     <ram:ApplicableHeaderTradeAgreement>
+      ${input.codeService ? `<ram:BuyerReference>${escapeXml(input.codeService)}</ram:BuyerReference>` : ''}
       ${input.buyerReference ? `<ram:BuyerOrderReferencedDocument><ram:IssuerAssignedID>${escapeXml(input.buyerReference)}</ram:IssuerAssignedID></ram:BuyerOrderReferencedDocument>` : ''}
       ${renderParty(input.seller, "SellerTradeParty")}
       ${renderParty(input.buyer, "BuyerTradeParty")}
+      ${input.cadreDeTravail ? `<ram:SpecifiedProcuringProject><ram:ID>${escapeXml(input.cadreDeTravail)}</ram:ID></ram:SpecifiedProcuringProject>` : ''}
     </ram:ApplicableHeaderTradeAgreement>
     ${deliveryXml}
     <ram:ApplicableHeaderTradeSettlement>
       <ram:InvoiceCurrencyCode>${escapeXml(input.currency)}</ram:InvoiceCurrencyCode>
       ${taxesXml}
       ${paymentTermsXml}
+      ${retenueXml}
+      ${precedingInvoiceXml}
       <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
         <ram:LineTotalAmount>${lineTotalStr}</ram:LineTotalAmount>
-        <ram:TaxBasisTotalAmount>${lineTotalStr}</ram:TaxBasisTotalAmount>
+        ${allowanceXml}
+        <ram:TaxBasisTotalAmount>${taxBasisStr}</ram:TaxBasisTotalAmount>
         <ram:TaxTotalAmount>${taxTotalStr}</ram:TaxTotalAmount>
         <ram:GrandTotalAmount>${grandTotalStr}</ram:GrandTotalAmount>
-        <ram:DuePayableAmount>${dueStr}</ram:DuePayableAmount>
+        <ram:DuePayableAmount>${grandTotalStr}</ram:DuePayableAmount>
       </ram:SpecifiedTradeSettlementHeaderMonetarySummation>
     </ram:ApplicableHeaderTradeSettlement>
   </rsm:SupplyChainTradeTransaction>
 </rsm:CrossIndustryInvoice>`;
-}
-
-/** Kept for compatibility — wraps buildFacturxXml input into a plain object */
-export function mapInvoiceToCiiModel(input: FacturxInvoiceInput) {
-  return {
-    document: {
-      invoiceNumber: input.invoiceNumber,
-      invoiceDate: input.invoiceDate,
-      dueDate: input.dueDate,
-      currency: input.currency,
-      totalAmount: input.totalAmount,
-      legalMentions: input.legalMentions ?? "",
-    },
-    seller: input.seller,
-    buyer: input.buyer,
-    lines: input.lines,
-  };
 }

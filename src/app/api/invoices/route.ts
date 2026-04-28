@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth-options';
 import { getLegalMentionsByFiscalRegime } from '@/lib/utils';
 import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
 import { getUserPlan, getMonthlyInvoiceCount, FREE_INVOICE_LIMIT } from '@/lib/subscription';
+import { computeNextReminderDate, parseReminderSchedule } from '@/domains/invoices/reminder-schedule';
 
 const invoiceSchema = z.object({
   clientId: z.string(),
@@ -31,9 +32,21 @@ const invoiceSchema = z.object({
   clientContactName: z.string().optional(),
   clientEmail: z.string().optional(),
   clientPhone: z.string().optional(),
+  // BTP sub-contractor fields
+  btpInvoiceType: z.enum(['standard', 'situation', 'autoliquidation']).optional(),
+  retenueGarantieRate: z.number().min(0).max(100).optional(),
+  retenueGarantieAmount: z.number().min(0).optional(),
+  situationNumber: z.number().int().positive().optional(),
+  referenceContract: z.string().optional(),
+  previousCumulativeAmount: z.number().optional(),
+  cumulativeAmount: z.number().optional(),
+  previousInvoiceNumber: z.string().optional(),
+  // Chorus Pro B2G routing
+  codeService: z.string().optional(),
+  numeroEngagement: z.string().optional(),
 });
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -60,7 +73,7 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, siret: true, tvaNumber: true, fiscalRegime: true, address: true, legalStatus: true, rcsNumber: true, shareCapital: true, apeCode: true, microEntrepreneurType: true },
+    select: { name: true, siret: true, tvaNumber: true, fiscalRegime: true, address: true, legalStatus: true, rcsNumber: true, shareCapital: true, apeCode: true, microEntrepreneurType: true, reminderEnabled: true, reminderSchedule: true },
   });
 
   // Completeness Check for Micro-Entrepreneurs
@@ -93,7 +106,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error.format() }, { status: 400 });
     }
 
-    const { clientId, invoiceDate, dueDate, transactionType, deliveryAddress, items, paymentTerms, latePenaltyRate, recoveryIndemnity, clientName, clientAddress, clientSiret, clientTvaNumber, clientLegalStatus, clientShareCapital, clientContactName, clientEmail, clientPhone } = validation.data;
+    const {
+      clientId, invoiceDate, dueDate, transactionType, deliveryAddress, items,
+      paymentTerms, latePenaltyRate, recoveryIndemnity,
+      clientName, clientAddress, clientSiret, clientTvaNumber, clientLegalStatus,
+      clientShareCapital, clientContactName, clientEmail, clientPhone,
+      btpInvoiceType, retenueGarantieRate, retenueGarantieAmount,
+      situationNumber, referenceContract, previousCumulativeAmount, cumulativeAmount,
+      previousInvoiceNumber, codeService, numeroEngagement,
+    } = validation.data;
 
     // Safe number parsing to prevent malformed currency values
     const safeToNumber = (value: any) => {
@@ -167,6 +188,9 @@ export async function POST(req: NextRequest) {
         quantity: safeToNumber(item.quantity),
         unitPrice: safeToNumber(item.unitPrice),
       })),
+      btpInvoiceType: btpInvoiceType ?? null,
+      situationNumber: situationNumber ?? null,
+      referenceContract: referenceContract ?? null,
     });
 
     const newInvoice = await prisma.invoice.create({
@@ -202,6 +226,24 @@ export async function POST(req: NextRequest) {
         latePenaltyRate: latePenaltyRate || "3 fois le taux d'intérêt légal",
         recoveryIndemnity: recoveryIndemnity || 40.0,
         legalMentions,
+        btpInvoiceType: btpInvoiceType ?? 'standard',
+        retenueGarantieRate: retenueGarantieRate != null ? retenueGarantieRate : null,
+        retenueGarantieAmount: retenueGarantieAmount != null ? retenueGarantieAmount : null,
+        situationNumber: situationNumber ?? null,
+        referenceContract: referenceContract ?? null,
+        previousCumulativeAmount: previousCumulativeAmount ?? null,
+        cumulativeAmount: cumulativeAmount ?? null,
+        previousInvoiceNumber: previousInvoiceNumber ?? null,
+        codeService: codeService ?? null,
+        numeroEngagement: numeroEngagement ?? null,
+        // Pre-schedule first reminder based on user's ladder
+        nextReminderAt: user?.reminderEnabled !== false
+          ? computeNextReminderDate(
+              new Date(dueDate),
+              0,
+              parseReminderSchedule(user?.reminderSchedule)
+            )
+          : null,
         items: {
           create: items.map(item => ({
             description: item.description,
