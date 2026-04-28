@@ -41,6 +41,7 @@ function SettingsPageInner() {
 
   const [subscription, setSubscription] = useState<{ planId: string; subscriptionStatus: string; subscriptionPeriodEnd: string | null } | null>(null);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState<string | null>(null);
 
   // Chorus Pro / PISTE credentials
   const [pisteForm, setPisteForm] = useState({
@@ -73,6 +74,7 @@ function SettingsPageInner() {
   };
 
   const handleUpgrade = async () => {
+    setBillingError(null);
     setBillingLoading(true);
     try {
       const res = await fetch('/api/billing/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
@@ -80,13 +82,14 @@ function SettingsPageInner() {
       const { url } = await res.json();
       window.location.href = url;
     } catch (err: any) {
-      setProfileMessage({ type: 'error', text: err.message });
+      setBillingError(err.message);
     } finally {
       setBillingLoading(false);
     }
   };
 
   const handleManageBilling = async () => {
+    setBillingError(null);
     setBillingLoading(true);
     try {
       const res = await fetch('/api/billing/portal', { method: 'POST' });
@@ -94,7 +97,7 @@ function SettingsPageInner() {
       const { url } = await res.json();
       window.location.href = url;
     } catch (err: any) {
-      setProfileMessage({ type: 'error', text: err.message });
+      setBillingError(err.message);
     } finally {
       setBillingLoading(false);
     }
@@ -641,6 +644,12 @@ function SettingsPageInner() {
                   Paiement annulé. Vous pouvez réessayer à tout moment.
                 </div>
               )}
+              {billingError && (
+                <div className="alert alert-danger d-flex align-items-center gap-2 mb-3">
+                  <i className="bi bi-exclamation-triangle-fill"></i>
+                  {billingError}
+                </div>
+              )}
 
               {subscription ? (
                 <div className="d-flex align-items-center justify-content-between py-2">
@@ -676,7 +685,7 @@ function SettingsPageInner() {
                   ) : (
                     <button className="btn btn-sm btn-primary" onClick={handleUpgrade} disabled={billingLoading}>
                       {billingLoading ? <span className="spinner-border spinner-border-sm me-1" /> : <i className="bi bi-lightning-fill me-1"></i>}
-                      Passer au Pro — 14 jours gratuits
+                      Passer au Pro — 30 jours gratuits
                     </button>
                   )}
                 </div>
