@@ -158,7 +158,9 @@ export async function POST(
       situationNumber: (invoice as any).situationNumber ?? null,
       referenceContract: (invoice as any).referenceContract ?? null,
       previousCumulativeAmount: (invoice as any).previousCumulativeAmount != null ? safeToNumber((invoice as any).previousCumulativeAmount) : null,
-      previousInvoiceNumber: null,
+      previousInvoiceNumber: (invoice as any).previousInvoiceNumber ?? null,
+      codeService: (invoice as any).codeService ?? null,
+      buyerReference: (invoice as any).numeroEngagement ?? null,
     }, pdfBuffer);
 
     if (!facturx.success) {

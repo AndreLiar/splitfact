@@ -42,6 +42,10 @@ interface FormData {
   situationNumber: string;
   referenceContract: string;
   previousCumulativeAmount: string;
+  previousInvoiceNumber: string;
+  // Chorus Pro B2G routing
+  codeService: string;
+  numeroEngagement: string;
 }
 
 const invoiceSchema = z.object({
@@ -96,6 +100,9 @@ export default function CreateInvoicePage() {
     situationNumber: '',
     referenceContract: '',
     previousCumulativeAmount: '',
+    previousInvoiceNumber: '',
+    codeService: '',
+    numeroEngagement: '',
   });
   const { clients, mutate: refetchClients } = useApiClients();
   const { quota } = useQuota();
@@ -110,7 +117,8 @@ export default function CreateInvoicePage() {
   const [extractionSource, setExtractionSource] = useState<string | null>(null);
   const [suggestNewClient, setSuggestNewClient] = useState<{ name: string; address?: string; email?: string; siret?: string } | null>(null);
   const [creatingClient, setCreatingClient] = useState(false);
-  const [siretCheck, setSiretCheck] = useState<{ loading: boolean; result: { valid: boolean; active: boolean; companyName: string | null; error?: string } | null }>({ loading: false, result: null });
+  const [siretCheck, setSiretCheck] = useState<{ loading: boolean; result: { valid: boolean; active: boolean; companyName: string | null; isPublicEntity?: boolean; error?: string } | null }>({ loading: false, result: null });
+  const [isPublicClient, setIsPublicClient] = useState(false);
 
   const handleDocumentUpload = async (file: File) => {
     setExtracting(true);
@@ -194,6 +202,7 @@ export default function CreateInvoicePage() {
       const res = await fetch(`/api/siret?siret=${encodeURIComponent(clientSiret)}`);
       const data = await res.json();
       setSiretCheck({ loading: false, result: data });
+      setIsPublicClient(data.isPublicEntity === true);
       if (data.valid && data.active && formData.clientId) {
         await fetch('/api/siret', {
           method: 'POST',
@@ -212,6 +221,7 @@ export default function CreateInvoicePage() {
     if (name === 'clientId') {
       const selectedClient = clients.find((client: Client) => client.id === value);
       setSiretCheck({ loading: false, result: null });
+      setIsPublicClient(false);
       setFormData({
         ...formData,
         clientId: value,
@@ -288,6 +298,9 @@ export default function CreateInvoicePage() {
         situationNumber: formData.situationNumber ? parseInt(formData.situationNumber) : undefined,
         referenceContract: formData.referenceContract || undefined,
         previousCumulativeAmount: formData.previousCumulativeAmount ? parseFloat(formData.previousCumulativeAmount) : undefined,
+        previousInvoiceNumber: formData.previousInvoiceNumber || undefined,
+        codeService: formData.codeService || undefined,
+        numeroEngagement: formData.numeroEngagement || undefined,
       };
 
       const response = await fetch('/api/invoices', {
@@ -714,6 +727,45 @@ export default function CreateInvoicePage() {
                           </div>
                         );
                       })()}
+
+                      {/* Marchés Publics — Code Service + N° Engagement */}
+                      {isPublicClient && (
+                        <div className="alert alert-info border-info mt-2 mb-0 p-3" style={{ fontSize: '0.85rem' }}>
+                          <div className="fw-semibold mb-2">
+                            <i className="bi bi-building-check me-1"></i>
+                            Entité publique détectée (Chorus Pro)
+                          </div>
+                          <p className="mb-2 text-muted" style={{ fontSize: '0.8rem' }}>
+                            Ce client utilise Chorus Pro. Renseignez les champs obligatoires pour éviter le rejet de votre facture.
+                          </p>
+                          <div className="row g-2">
+                            <div className="col-md-6">
+                              <label className="form-label fw-semibold small mb-1">Code Service <span className="text-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                name="codeService"
+                                value={formData.codeService}
+                                onChange={handleInputChange}
+                                placeholder="ex: DGFIP-001"
+                              />
+                              <div className="form-text" style={{ fontSize: '0.75rem' }}>Service destinataire dans l'entité publique</div>
+                            </div>
+                            <div className="col-md-6">
+                              <label className="form-label fw-semibold small mb-1">N° Engagement <span className="text-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                name="numeroEngagement"
+                                value={formData.numeroEngagement}
+                                onChange={handleInputChange}
+                                placeholder="ex: 2024-EJ-00042"
+                              />
+                              <div className="form-text" style={{ fontSize: '0.75rem' }}>N° de bon de commande / engagement juridique</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="col-lg-4 col-md-6 col-12">
@@ -851,6 +903,18 @@ export default function CreateInvoicePage() {
                               step="0.01"
                               placeholder="0.00"
                             />
+                          </div>
+                          <div className="col-md-4">
+                            <label className="form-label fw-semibold">N° facture précédente</label>
+                            <input
+                              type="text"
+                              className="form-control rounded-input"
+                              name="previousInvoiceNumber"
+                              value={formData.previousInvoiceNumber}
+                              onChange={handleInputChange}
+                              placeholder="ex: FA-2024-003"
+                            />
+                            <div className="form-text">Référence CII — optionnel</div>
                           </div>
                         </>
                       )}

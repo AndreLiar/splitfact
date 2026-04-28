@@ -40,6 +40,10 @@ const invoiceSchema = z.object({
   referenceContract: z.string().optional(),
   previousCumulativeAmount: z.number().optional(),
   cumulativeAmount: z.number().optional(),
+  previousInvoiceNumber: z.string().optional(),
+  // Chorus Pro B2G routing
+  codeService: z.string().optional(),
+  numeroEngagement: z.string().optional(),
 });
 
 export async function GET(_req: NextRequest) {
@@ -109,6 +113,7 @@ export async function POST(req: NextRequest) {
       clientShareCapital, clientContactName, clientEmail, clientPhone,
       btpInvoiceType, retenueGarantieRate, retenueGarantieAmount,
       situationNumber, referenceContract, previousCumulativeAmount, cumulativeAmount,
+      previousInvoiceNumber, codeService, numeroEngagement,
     } = validation.data;
 
     // Safe number parsing to prevent malformed currency values
@@ -228,6 +233,9 @@ export async function POST(req: NextRequest) {
         referenceContract: referenceContract ?? null,
         previousCumulativeAmount: previousCumulativeAmount ?? null,
         cumulativeAmount: cumulativeAmount ?? null,
+        previousInvoiceNumber: previousInvoiceNumber ?? null,
+        codeService: codeService ?? null,
+        numeroEngagement: numeroEngagement ?? null,
         // Pre-schedule first reminder based on user's ladder
         nextReminderAt: user?.reminderEnabled !== false
           ? computeNextReminderDate(

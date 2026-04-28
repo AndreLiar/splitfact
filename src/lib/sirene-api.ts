@@ -18,6 +18,10 @@ export interface SireneEtablissement {
     libelleCommuneEtablissement: string | null;
   };
   etatAdministratifEtablissement: 'A' | 'F'; // A=active, F=closed
+  uniteLegale?: {
+    categorieJuridiqueUniteLegale?: string | null;
+    denominationUniteLegale?: string | null;
+  };
 }
 
 export interface SireneResult {
@@ -26,8 +30,24 @@ export interface SireneResult {
   companyName: string | null;
   address: string | null;
   active: boolean;
+  isPublicEntity: boolean;  // true when categorieJuridique indicates a Chorus Pro public buyer
+  categorieJuridique: string | null;
   raw: SireneEtablissement | null;
   error?: string;
+}
+
+/**
+ * Returns true when the INSEE categorieJuridique code indicates a public entity
+ * that uses Chorus Pro (État, collectivités, EPIC/EPA, organismes publics).
+ * Codes 1xxx–3xxx are state/public-law bodies; 7xxx are public services.
+ */
+export function isPublicEntityByCode(code: string | null | undefined): boolean {
+  if (!code) return false;
+  const n = parseInt(code, 10);
+  if (isNaN(n)) return false;
+  // 1000–3999: État, organismes de l'État, personnes soumises au droit administratif
+  // 7000–7999: Administrations et services publics
+  return (n >= 1000 && n < 4000) || (n >= 7000 && n < 8000);
 }
 
 // E2-S2: Luhn-based SIRET format validator (14 digits, valid Luhn)
@@ -69,7 +89,7 @@ function buildAddress(e: SireneEtablissement): string | null {
 async function fetchFromSirene(siret: string): Promise<SireneResult> {
   const apiKey = process.env.SIRENE_API_KEY;
   if (!apiKey) {
-    return { valid: false, siret, companyName: null, address: null, active: false, raw: null, error: 'SIRENE_API_KEY not configured' };
+    return { valid: false, siret, companyName: null, address: null, active: false, isPublicEntity: false, categorieJuridique: null, raw: null, error: 'SIRENE_API_KEY not configured' };
   }
 
   const res = await fetch(`${SIRENE_BASE}/siret/${siret}`, {
@@ -78,15 +98,16 @@ async function fetchFromSirene(siret: string): Promise<SireneResult> {
   });
 
   if (res.status === 404) {
-    return { valid: false, siret, companyName: null, address: null, active: false, raw: null, error: 'SIRET introuvable dans le répertoire SIRENE' };
+    return { valid: false, siret, companyName: null, address: null, active: false, isPublicEntity: false, categorieJuridique: null, raw: null, error: 'SIRET introuvable dans le répertoire SIRENE' };
   }
 
   if (!res.ok) {
-    return { valid: false, siret, companyName: null, address: null, active: false, raw: null, error: `Erreur SIRENE: ${res.status}` };
+    return { valid: false, siret, companyName: null, address: null, active: false, isPublicEntity: false, categorieJuridique: null, raw: null, error: `Erreur SIRENE: ${res.status}` };
   }
 
   const json = await res.json();
   const etablissement: SireneEtablissement = json.etablissement;
+  const categorieJuridique = etablissement.uniteLegale?.categorieJuridiqueUniteLegale ?? null;
 
   return {
     valid: true,
@@ -94,6 +115,8 @@ async function fetchFromSirene(siret: string): Promise<SireneResult> {
     companyName: buildCompanyName(etablissement),
     address: buildAddress(etablissement),
     active: etablissement.etatAdministratifEtablissement === 'A',
+    isPublicEntity: isPublicEntityByCode(categorieJuridique),
+    categorieJuridique,
     raw: etablissement,
   };
 }
@@ -102,7 +125,7 @@ export async function lookupSiret(siret: string): Promise<SireneResult> {
   const cleaned = siret.replace(/\s/g, '');
 
   if (!validateSiretFormat(cleaned)) {
-    return { valid: false, siret: cleaned, companyName: null, address: null, active: false, raw: null, error: 'Format SIRET invalide (14 chiffres requis)' };
+    return { valid: false, siret: cleaned, companyName: null, address: null, active: false, isPublicEntity: false, categorieJuridique: null, raw: null, error: 'Format SIRET invalide (14 chiffres requis)' };
   }
 
   // Check cache

@@ -27,7 +27,9 @@ export interface FacturxInvoiceInput {
   legalMentions?: string | null;
   // EN 16931 EXTENDED fields
   transactionType?: 'B2B' | 'B2C' | 'B2G' | null;
-  buyerReference?: string | null;        // numéro de bon de commande acheteur
+  buyerReference?: string | null;        // N° engagement / bon de commande (BT-13)
+  codeService?: string | null;           // Code service destinataire Chorus Pro (BT-10)
+  cadreDeTravail?: string | null;        // Cadre de facturation Chorus Pro (A1/A2…) — SpecifiedProcuringProject/ID
   deliveryAddress?: string | null;       // adresse de livraison / prestation
   paymentTerms?: string | null;          // conditions de paiement texte libre
   latePenaltyRate?: string | null;       // taux de pénalités de retard
@@ -307,9 +309,11 @@ export function buildFacturxXml(input: FacturxInvoiceInput): string {
   <rsm:SupplyChainTradeTransaction>
     ${linesXml}
     <ram:ApplicableHeaderTradeAgreement>
+      ${input.codeService ? `<ram:BuyerReference>${escapeXml(input.codeService)}</ram:BuyerReference>` : ''}
       ${input.buyerReference ? `<ram:BuyerOrderReferencedDocument><ram:IssuerAssignedID>${escapeXml(input.buyerReference)}</ram:IssuerAssignedID></ram:BuyerOrderReferencedDocument>` : ''}
       ${renderParty(input.seller, "SellerTradeParty")}
       ${renderParty(input.buyer, "BuyerTradeParty")}
+      ${input.cadreDeTravail ? `<ram:SpecifiedProcuringProject><ram:ID>${escapeXml(input.cadreDeTravail)}</ram:ID></ram:SpecifiedProcuringProject>` : ''}
     </ram:ApplicableHeaderTradeAgreement>
     ${deliveryXml}
     <ram:ApplicableHeaderTradeSettlement>
