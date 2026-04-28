@@ -35,11 +35,17 @@ interface FormData {
   clientContactName?: string;
   clientEmail?: string;
   clientPhone?: string;
+  // BTP sub-contractor fields
+  btpInvoiceType: 'standard' | 'situation' | 'autoliquidation';
+  retenueGarantieEnabled: boolean;
+  retenueGarantieRate: number;
+  situationNumber: string;
+  referenceContract: string;
+  previousCumulativeAmount: string;
 }
 
 const invoiceSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
-
   invoiceDate: z.string().min(1, 'Invoice date is required'),
   dueDate: z.string().min(1, 'Due date is required'),
   items: z.array(z.object({
@@ -62,6 +68,12 @@ const invoiceSchema = z.object({
   clientContactName: z.string().optional(),
   clientEmail: z.string().optional(),
   clientPhone: z.string().optional(),
+  btpInvoiceType: z.enum(['standard', 'situation', 'autoliquidation']).optional(),
+  retenueGarantieRate: z.number().min(0).max(100).optional(),
+  retenueGarantieAmount: z.number().min(0).optional(),
+  situationNumber: z.number().int().positive().optional(),
+  referenceContract: z.string().optional(),
+  previousCumulativeAmount: z.number().optional(),
 });
 
 export default function CreateInvoicePage() {
@@ -78,11 +90,16 @@ export default function CreateInvoicePage() {
     paymentTerms: 'Paiement à 30 jours fin de mois',
     latePenaltyRate: "3 fois le taux d'intérêt légal",
     recoveryIndemnity: 40,
+    btpInvoiceType: 'standard',
+    retenueGarantieEnabled: false,
+    retenueGarantieRate: 5,
+    situationNumber: '',
+    referenceContract: '',
+    previousCumulativeAmount: '',
   });
   const { clients, mutate: refetchClients } = useApiClients();
   const { quota } = useQuota();
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -257,10 +274,26 @@ export default function CreateInvoicePage() {
 
     setIsSubmitting(true);
     try {
+      // Compute retenue amount from rate when enabled
+      const subtotal = formData.items.reduce((t, i) => t + i.quantity * i.unitPrice, 0);
+      const retenueAmount = formData.retenueGarantieEnabled
+        ? parseFloat((subtotal * formData.retenueGarantieRate / 100).toFixed(2))
+        : undefined;
+
+      const payload = {
+        ...result.data,
+        btpInvoiceType: formData.btpInvoiceType !== 'standard' ? formData.btpInvoiceType : undefined,
+        retenueGarantieRate: formData.retenueGarantieEnabled ? formData.retenueGarantieRate : undefined,
+        retenueGarantieAmount: retenueAmount,
+        situationNumber: formData.situationNumber ? parseInt(formData.situationNumber) : undefined,
+        referenceContract: formData.referenceContract || undefined,
+        previousCumulativeAmount: formData.previousCumulativeAmount ? parseFloat(formData.previousCumulativeAmount) : undefined,
+      };
+
       const response = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result.data),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -283,33 +316,18 @@ export default function CreateInvoicePage() {
     }
   };
 
-  // Helper functions for enhanced UX with proper French fiscal regime handling
-  // For Micro-Entrepreneurs, TVA is always exempt
-  const isTvaExempt = () => {
-    return true; // Always true for Micro-Entrepreneurs
+  const calculateSubtotal = () =>
+    formData.items.reduce((t, i) => t + (Number(i.quantity) || 0) * (Number(i.unitPrice) || 0), 0);
+
+  const calculateItemTotal = (item: FormData['items'][number]) =>
+    (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+
+  const calculateRetenueAmount = () => {
+    if (!formData.retenueGarantieEnabled) return 0;
+    return parseFloat((calculateSubtotal() * formData.retenueGarantieRate / 100).toFixed(2));
   };
 
-  const calculateItemTotal = (item: FormData['items'][number]) => {
-    const quantity = Number(item.quantity) || 0;
-    const unitPrice = Number(item.unitPrice) || 0;
-    return quantity * unitPrice; // No VAT for Micro-Entrepreneurs
-  };
-
-  const calculateInvoiceTotal = () => {
-    return formData.items.reduce((total, item) => total + calculateItemTotal(item), 0);
-  };
-
-  const calculateTotalTVA = () => {
-    return 0; // Always 0 for Micro-Entrepreneurs (TVA exempt)
-  };
-
-  const calculateSubtotal = () => {
-    return formData.items.reduce((total, item) => {
-      const quantity = Number(item.quantity) || 0;
-      const unitPrice = Number(item.unitPrice) || 0;
-      return total + (quantity * unitPrice);
-    }, 0);
-  };
+  const calculateInvoiceTotal = () => calculateSubtotal() - calculateRetenueAmount();
 
   const nextStep = () => {
     if (currentStep < 3) setCurrentStep(currentStep + 1);
@@ -357,10 +375,13 @@ export default function CreateInvoicePage() {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
       })),
+      btpInvoiceType: formData.btpInvoiceType !== 'standard' ? formData.btpInvoiceType : null,
+      situationNumber: formData.situationNumber ? parseInt(formData.situationNumber) : null,
+      referenceContract: formData.referenceContract || null,
     });
   }, [formData, userProfile, siretCheck, clients]);
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading') {
     return <div className="d-flex justify-content-center align-items-center vh-100">Chargement...</div>;
   }
 
@@ -457,7 +478,7 @@ export default function CreateInvoicePage() {
                   <div className="fw-semibold mb-1">Extraction IA — Plan Pro</div>
                   <div className="text-muted small mb-3">Passez au Pro pour extraire automatiquement client, lignes et montants depuis vos devis et contrats.</div>
                   <a href="/dashboard/settings#billing" className="btn btn-primary mb-2">
-                    <i className="bi bi-lightning-fill me-2"></i>Passer au Pro — 14 jours offerts
+                    <i className="bi bi-lightning-fill me-2"></i>Passer au Pro — 30 jours offerts
                   </a>
                   <div className="mt-3">
                     <button
@@ -760,7 +781,120 @@ export default function CreateInvoicePage() {
                         onChange={handleInputChange}
                       />
                     </div>
+                  </div>
 
+                  {/* BTP sub-contractor section */}
+                  <div className="mt-4 pt-3 border-top">
+                    <h6 className="text-darkGray mb-3 d-flex align-items-center gap-2">
+                      <i className="bi bi-building-gear text-warning"></i>
+                      Options BTP (sous-traitant)
+                      <span className="badge bg-warning text-dark fw-normal" style={{ fontSize: '0.7rem' }}>Optionnel</span>
+                    </h6>
+                    <div className="row g-3">
+                      <div className="col-md-4">
+                        <label className="form-label fw-semibold">Type de facture BTP</label>
+                        <select
+                          className="form-select rounded-input"
+                          name="btpInvoiceType"
+                          value={formData.btpInvoiceType}
+                          onChange={handleInputChange}
+                        >
+                          <option value="standard">Standard</option>
+                          <option value="situation">Facture de situation</option>
+                          <option value="autoliquidation">Autoliquidation TVA</option>
+                        </select>
+                      </div>
+
+                      {formData.btpInvoiceType === 'autoliquidation' && (
+                        <div className="col-12">
+                          <div className="alert alert-info border-0 py-2 mb-0 d-flex align-items-center gap-2" style={{ fontSize: '0.85rem' }}>
+                            <i className="bi bi-info-circle-fill flex-shrink-0"></i>
+                            <span>TVA autoliquidation activée — Art. 283, 2 nonies CGI. La TVA sera à 0 % et le code <strong>AE</strong> sera encodé dans le Factur-X.</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.btpInvoiceType === 'situation' && (
+                        <>
+                          <div className="col-md-3">
+                            <label className="form-label fw-semibold">N° de situation *</label>
+                            <input
+                              type="number"
+                              className="form-control rounded-input"
+                              name="situationNumber"
+                              value={formData.situationNumber}
+                              onChange={handleInputChange}
+                              min="1"
+                              placeholder="ex: 3"
+                            />
+                          </div>
+                          <div className="col-md-5">
+                            <label className="form-label fw-semibold">Référence marché / contrat *</label>
+                            <input
+                              type="text"
+                              className="form-control rounded-input"
+                              name="referenceContract"
+                              value={formData.referenceContract}
+                              onChange={handleInputChange}
+                              placeholder="ex: MARCHE-2025-001"
+                            />
+                          </div>
+                          <div className="col-md-4">
+                            <label className="form-label fw-semibold">Montant HT cumulé précédent (€)</label>
+                            <input
+                              type="number"
+                              className="form-control rounded-input"
+                              name="previousCumulativeAmount"
+                              value={formData.previousCumulativeAmount}
+                              onChange={handleInputChange}
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      <div className="col-12">
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="retenueGarantieEnabled"
+                            checked={formData.retenueGarantieEnabled}
+                            onChange={(e) => setFormData({ ...formData, retenueGarantieEnabled: e.target.checked })}
+                          />
+                          <label className="form-check-label fw-semibold" htmlFor="retenueGarantieEnabled">
+                            Retenue de garantie
+                          </label>
+                        </div>
+                        {formData.retenueGarantieEnabled && (
+                          <div className="row g-2 mt-1">
+                            <div className="col-auto">
+                              <div className="input-group" style={{ width: '160px' }}>
+                                <input
+                                  type="number"
+                                  className="form-control rounded-input"
+                                  name="retenueGarantieRate"
+                                  value={formData.retenueGarantieRate}
+                                  onChange={(e) => setFormData({ ...formData, retenueGarantieRate: parseFloat(e.target.value) || 5 })}
+                                  min="0"
+                                  max="100"
+                                  step="0.5"
+                                />
+                                <span className="input-group-text">%</span>
+                              </div>
+                            </div>
+                            <div className="col-auto d-flex align-items-center">
+                              <span className="text-muted small">Déduit du net à payer — restitué après levée de réserves</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="row g-3 mt-0">
                     <div className="col-12">
                       <label htmlFor="deliveryAddress" className="form-label fw-semibold">
                         <i className="bi bi-geo-alt me-1 text-primary"></i>
@@ -860,34 +994,22 @@ export default function CreateInvoicePage() {
                           <div className="col-md-3">
                             <label className="form-label fw-semibold">
                               TVA (%)
-                              {isTvaExempt() && (
-                                <small className="text-info d-block">Exemption TVA</small>
-                              )}
+                              <small className="text-info d-block">
+                                {formData.btpInvoiceType === 'autoliquidation' ? 'Autoliquidation' : 'Exemption TVA'}
+                              </small>
                             </label>
-                            {isTvaExempt() ? (
-                              <div className="input-group">
-                                <input 
-                                  type="number" 
-                                  className="form-control rounded-input bg-light" 
-                                  name="tvaRate" 
-                                  value={0} 
-                                  disabled 
-                                />
-                                <span className="input-group-text bg-info text-white">
-                                  <i className="bi bi-info-circle"></i>
-                                </span>
-                              </div>
-                            ) : (
-                              <input 
-                                type="number" 
-                                className="form-control rounded-input" 
-                                name="tvaRate" 
-                                value={isNaN(item.tvaRate) ? '' : item.tvaRate} 
-                                onChange={(e) => handleItemChange(index, e)}
-                                min="0"
-                                max="100"
+                            <div className="input-group">
+                              <input
+                                type="number"
+                                className="form-control rounded-input bg-light"
+                                name="tvaRate"
+                                value={0}
+                                disabled
                               />
-                            )}
+                              <span className="input-group-text bg-info text-white">
+                                <i className="bi bi-info-circle"></i>
+                              </span>
+                            </div>
                           </div>
 
                           <div className="col-md-3">
@@ -949,13 +1071,15 @@ export default function CreateInvoicePage() {
                           <span className="text-mediumGray">Sous-total HT</span>
                           <span className="fw-semibold">{formatCurrency(calculateSubtotal())}</span>
                         </div>
-                        <div className="d-flex justify-content-between mb-2">
-                          <span className="text-mediumGray">TVA</span>
-                          <span className="fw-semibold">{formatCurrency(calculateTotalTVA())}</span>
-                        </div>
+                        {formData.retenueGarantieEnabled && (
+                          <div className="d-flex justify-content-between mb-2 text-warning">
+                            <span>Retenue de garantie ({formData.retenueGarantieRate}%)</span>
+                            <span className="fw-semibold">− {formatCurrency(calculateRetenueAmount())}</span>
+                          </div>
+                        )}
                         <hr />
                         <div className="d-flex justify-content-between">
-                          <span className="fw-bold text-darkGray">Total</span>
+                          <span className="fw-bold text-darkGray">Net à payer</span>
                           <span className="fw-bold text-primary fs-5">{formatCurrency(calculateInvoiceTotal())}</span>
                         </div>
                       </div>
@@ -1008,13 +1132,15 @@ export default function CreateInvoicePage() {
                     <span className="text-mediumGray">Sous-total HT</span>
                     <span className="fw-semibold">{formatCurrency(calculateSubtotal())}</span>
                   </div>
-                  <div className="d-flex justify-content-between mb-3">
-                    <span className="text-mediumGray">TVA</span>
-                    <span className="fw-semibold">{formatCurrency(calculateTotalTVA())}</span>
-                  </div>
+                  {formData.retenueGarantieEnabled && (
+                    <div className="d-flex justify-content-between mb-2" style={{ color: '#b45309' }}>
+                      <span style={{ fontSize: '0.85rem' }}>Retenue ({formData.retenueGarantieRate}%)</span>
+                      <span className="fw-semibold">− {formatCurrency(calculateRetenueAmount())}</span>
+                    </div>
+                  )}
                   <hr />
                   <div className="d-flex justify-content-between">
-                    <span className="fw-bold text-darkGray">Total</span>
+                    <span className="fw-bold text-darkGray">Net à payer</span>
                     <span className="fw-bold text-primary">{formatCurrency(calculateInvoiceTotal())}</span>
                   </div>
                 </div>

@@ -2,33 +2,19 @@ import prisma from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { renderToStream } from '@react-pdf/renderer';
 
-import InvoicePdf from '@/app/components/InvoicePdf';
 import cloudinary from '@/lib/cloudinary';
 import { evaluateInvoiceReadiness } from '@/domains/invoices/invoice-readiness';
 import { generateFacturxDocument } from '@/domains/invoices/facturx';
 import { logActivity } from '@/domains/invoices/activity-log';
 import { sendInvoiceEmail } from '@/lib/email-service';
-
+import { renderInvoicePdfBuffer } from '@/lib/facturx-pdf-generator';
 
 const safeToNumber = (value: unknown) => {
   if (value === null || value === undefined || value === '') return 0;
   const numeric = Number(value);
   return Number.isNaN(numeric) ? 0 : numeric;
 };
-
-async function renderInvoicePdfBuffer(invoice: any) {
-  const doc = <InvoicePdf invoice={invoice} />;
-  const stream = await renderToStream(doc);
-
-  return await new Promise<Buffer>((resolve, reject) => {
-    const buffers: Uint8Array[] = [];
-    stream.on('data', (chunk) => buffers.push(chunk));
-    stream.on('end', () => resolve(Buffer.concat(buffers)));
-    stream.on('error', (error) => reject(error));
-  });
-}
 
 async function uploadRawAsset(dataUri: string, folder: string, publicId: string) {
   const uploadResult = await cloudinary.uploader.upload(dataUri, {
@@ -81,6 +67,9 @@ export async function POST(
         quantity: safeToNumber(item.quantity),
         unitPrice: safeToNumber(item.unitPrice),
       })),
+      btpInvoiceType: (invoice as any).btpInvoiceType as 'standard' | 'situation' | 'autoliquidation' | null,
+      situationNumber: (invoice as any).situationNumber ?? null,
+      referenceContract: (invoice as any).referenceContract ?? null,
     });
 
     if (readiness.status === 'blocked') {
@@ -157,6 +146,12 @@ export async function POST(
       paymentTerms: invoice.paymentTerms,
       latePenaltyRate: invoice.latePenaltyRate,
       recoveryIndemnity: invoice.recoveryIndemnity != null ? safeToNumber(invoice.recoveryIndemnity) : null,
+      btpInvoiceType: (invoice as any).btpInvoiceType as 'standard' | 'situation' | 'autoliquidation' | null ?? null,
+      retenueGarantieAmount: (invoice as any).retenueGarantieAmount != null ? safeToNumber((invoice as any).retenueGarantieAmount) : null,
+      situationNumber: (invoice as any).situationNumber ?? null,
+      referenceContract: (invoice as any).referenceContract ?? null,
+      previousCumulativeAmount: (invoice as any).previousCumulativeAmount != null ? safeToNumber((invoice as any).previousCumulativeAmount) : null,
+      previousInvoiceNumber: null,
     }, pdfBuffer);
 
     if (!facturx.success) {

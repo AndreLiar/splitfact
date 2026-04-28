@@ -57,6 +57,12 @@ export async function generateFacturxInMemory(invoice: any): Promise<Buffer> {
       paymentTerms: invoice.paymentTerms,
       latePenaltyRate: invoice.latePenaltyRate,
       recoveryIndemnity: invoice.recoveryIndemnity != null ? safeToNumber(invoice.recoveryIndemnity) : null,
+      btpInvoiceType: invoice.btpInvoiceType as 'standard' | 'situation' | 'autoliquidation' | null ?? null,
+      retenueGarantieAmount: invoice.retenueGarantieAmount != null ? safeToNumber(invoice.retenueGarantieAmount) : null,
+      situationNumber: invoice.situationNumber ?? null,
+      referenceContract: invoice.referenceContract ?? null,
+      previousCumulativeAmount: invoice.previousCumulativeAmount != null ? safeToNumber(invoice.previousCumulativeAmount) : null,
+      previousInvoiceNumber: null,
     },
     pdfBuffer
   );

@@ -31,9 +31,17 @@ const invoiceSchema = z.object({
   clientContactName: z.string().optional(),
   clientEmail: z.string().optional(),
   clientPhone: z.string().optional(),
+  // BTP sub-contractor fields
+  btpInvoiceType: z.enum(['standard', 'situation', 'autoliquidation']).optional(),
+  retenueGarantieRate: z.number().min(0).max(100).optional(),
+  retenueGarantieAmount: z.number().min(0).optional(),
+  situationNumber: z.number().int().positive().optional(),
+  referenceContract: z.string().optional(),
+  previousCumulativeAmount: z.number().optional(),
+  cumulativeAmount: z.number().optional(),
 });
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -93,7 +101,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error.format() }, { status: 400 });
     }
 
-    const { clientId, invoiceDate, dueDate, transactionType, deliveryAddress, items, paymentTerms, latePenaltyRate, recoveryIndemnity, clientName, clientAddress, clientSiret, clientTvaNumber, clientLegalStatus, clientShareCapital, clientContactName, clientEmail, clientPhone } = validation.data;
+    const {
+      clientId, invoiceDate, dueDate, transactionType, deliveryAddress, items,
+      paymentTerms, latePenaltyRate, recoveryIndemnity,
+      clientName, clientAddress, clientSiret, clientTvaNumber, clientLegalStatus,
+      clientShareCapital, clientContactName, clientEmail, clientPhone,
+      btpInvoiceType, retenueGarantieRate, retenueGarantieAmount,
+      situationNumber, referenceContract, previousCumulativeAmount, cumulativeAmount,
+    } = validation.data;
 
     // Safe number parsing to prevent malformed currency values
     const safeToNumber = (value: any) => {
@@ -167,6 +182,9 @@ export async function POST(req: NextRequest) {
         quantity: safeToNumber(item.quantity),
         unitPrice: safeToNumber(item.unitPrice),
       })),
+      btpInvoiceType: btpInvoiceType ?? null,
+      situationNumber: situationNumber ?? null,
+      referenceContract: referenceContract ?? null,
     });
 
     const newInvoice = await prisma.invoice.create({
@@ -202,6 +220,13 @@ export async function POST(req: NextRequest) {
         latePenaltyRate: latePenaltyRate || "3 fois le taux d'intérêt légal",
         recoveryIndemnity: recoveryIndemnity || 40.0,
         legalMentions,
+        btpInvoiceType: btpInvoiceType ?? 'standard',
+        retenueGarantieRate: retenueGarantieRate != null ? retenueGarantieRate : null,
+        retenueGarantieAmount: retenueGarantieAmount != null ? retenueGarantieAmount : null,
+        situationNumber: situationNumber ?? null,
+        referenceContract: referenceContract ?? null,
+        previousCumulativeAmount: previousCumulativeAmount ?? null,
+        cumulativeAmount: cumulativeAmount ?? null,
         items: {
           create: items.map(item => ({
             description: item.description,
