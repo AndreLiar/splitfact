@@ -213,6 +213,7 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
   const [updatingPayment, setUpdatingPayment] = useState(false);
   const [issuingInvoice, setIssuingInvoice] = useState(false);
   const [submittingPpf, setSubmittingPpf] = useState(false);
+  const [refreshingPpfStatus, setRefreshingPpfStatus] = useState(false);
   const [ppfError, setPpfError] = useState<string | null>(null);
   const [preflight, setPreflight] = useState<{ ready: boolean; blockers: string[]; warnings: string[]; pisteEnv: string | null } | null>(null);
   const [preflightLoading, setPreflightLoading] = useState(false);
@@ -936,6 +937,39 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
                 {invoice.ppfError}
               </div>
             )}
+
+            {/* Live refresh — shown for in-flight statuses */}
+            {invoice.ppfTrackingId && ['deposee', 'en_cours_de_routage', 'recue'].includes(invoice.ppfStatus ?? '') && isPro && (
+              <button
+                className="btn btn-outline-secondary btn-sm mt-2 w-100"
+                disabled={refreshingPpfStatus}
+                onClick={async () => {
+                  setRefreshingPpfStatus(true);
+                  setPpfError(null);
+                  try {
+                    const res = await fetch(`/api/invoices/${invoiceId}/ppf-status`);
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error ?? 'Erreur de rafraîchissement.');
+                    if (data.changed) {
+                      setInvoice((prev) => prev ? {
+                        ...prev,
+                        ppfStatus: data.ppfStatus,
+                        ppfLastEventAt: data.ppfLastEventAt,
+                        ppfError: data.ppfError ?? null,
+                      } : prev);
+                    }
+                  } catch (e: any) {
+                    setPpfError(e.message);
+                  } finally {
+                    setRefreshingPpfStatus(false);
+                  }
+                }}
+              >
+                {refreshingPpfStatus
+                  ? <><span className="spinner-border spinner-border-sm me-1" />Vérification…</>
+                  : <><i className="bi bi-arrow-clockwise me-1" />Rafraîchir le statut Chorus Pro</>}
+              </button>
+            )}
             {ppfError && (
               <div className="alert alert-danger small mb-2 py-2">
                 <i className="bi bi-exclamation-triangle me-1"></i>
@@ -1111,6 +1145,8 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
                         : log.action === 'blocked' ? '#dc3545'
                         : log.action === 'mise_en_demeure_sent' ? '#7f1d1d'
                         : log.action === 'reminder_sent' ? '#0d6efd'
+                        : log.action === 'ppf_submitted' ? '#6610f2'
+                        : log.action === 'ppf_status_updated' ? '#6610f2'
                         : '#6c757d',
                         position: 'absolute', left: '-1.4rem', top: 4,
                       }}
@@ -1129,7 +1165,9 @@ export default function InvoiceDetailPage({ params: paramsPromise }: { params: P
                       {log.action === 'facturx_failed' && '✗ Génération Factur-X échouée'}
                       {log.action === 'workflow_updated' && '→ Workflow mis à jour'}
                       {log.action === 'readiness_changed' && '→ Readiness modifiée'}
-                      {!['issued','blocked','exception_resolved','reminder_sent','mise_en_demeure_sent','facturx_generated','facturx_failed','workflow_updated','readiness_changed'].includes(log.action) && `→ ${log.action}`}
+                      {log.action === 'ppf_submitted' && '→ Facture déposée sur Chorus Pro'}
+                      {log.action === 'ppf_status_updated' && `→ Statut Chorus Pro : ${log.metadata?.to ?? ''}`}
+                      {!['issued','blocked','exception_resolved','reminder_sent','mise_en_demeure_sent','facturx_generated','facturx_failed','workflow_updated','readiness_changed','ppf_submitted','ppf_status_updated'].includes(log.action) && `→ ${log.action}`}
                     </div>
                     <div className="text-muted" style={{ fontSize: '0.75rem' }}>
                       {log.user?.name || log.user?.email || 'Système'} — {new Date(log.createdAt).toLocaleDateString('fr-FR')} {new Date(log.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}

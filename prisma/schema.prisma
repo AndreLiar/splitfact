@@ -57,15 +57,15 @@ model User {
   subscriptionStatus        String    @default("free")  // free | trialing | active | past_due | canceled
   planId                    String    @default("free")  // free | pro
   subscriptionPeriodEnd     DateTime?
+  // Automatic payment reminder preferences
+  reminderEnabled           Boolean   @default(true)
+  reminderSchedule          Json?     // [{ triggerDays: number, label: string }] — null = use default ladder
   // Per-tenant Chorus Pro / PISTE credentials (passwords AES-256-GCM encrypted)
   cproTechLogin       String?
   cproTechPassword    String?
   pisteClientId       String?
   pisteClientSecret   String?
   pisteEnv            String   @default("sandbox")
-  // Automatic payment reminder preferences
-  reminderEnabled           Boolean   @default(true)
-  reminderSchedule          Json?     // [{ triggerDays: number, label: string }] — null = use default ladder
   accounts            Account[]
   sessions            Session[]
   clients               Client[]
@@ -297,6 +297,12 @@ enum TransactionType {
   B2G
 }
 
+enum BtpInvoiceType {
+  standard
+  situation
+  autoliquidation
+}
+
 enum PpfStatus {
   not_submitted
   pending_retry
@@ -307,12 +313,6 @@ enum PpfStatus {
   refusee
   approuvee
   payee
-}
-
-enum BtpInvoiceType {
-  standard
-  situation
-  autoliquidation
 }
 
 model UrssafReport {
