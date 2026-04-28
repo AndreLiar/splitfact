@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendReminderEmail } from '@/lib/email-service';
-import { logActivity } from '@/domains/invoices/activity-log';
 import {
   computeNextReminderDate,
   isLastReminder,
   parseReminderSchedule,
-  DEFAULT_REMINDER_SCHEDULE,
 } from '@/domains/invoices/reminder-schedule';
 
 // GET /api/cron/payment-reminders
