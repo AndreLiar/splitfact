@@ -61,6 +61,16 @@ export async function POST(
     );
   }
 
+  // Require per-user Chorus Pro credentials — platform fallback is not used
+  // (InvoiceOps is not a registered OD; each user must configure their own compte technique)
+  const userCreds = await getUserPisteCredentials(session.user.id);
+  if (!userCreds) {
+    return NextResponse.json(
+      { error: 'Configurez vos identifiants Chorus Pro dans Paramètres → Chorus Pro avant de déposer sur le PPF.' },
+      { status: 400 }
+    );
+  }
+
   // Mark as pending before async operation
   await prisma.invoice.update({
     where: { id: invoiceId },
@@ -141,9 +151,6 @@ export async function POST(
     return NextResponse.json({ error: `Impossible d'obtenir le PDF: ${err.message}` }, { status: 500 });
   }
 
-  // Resolve per-user credentials; fall back to platform env vars if not configured
-  const userCreds = await getUserPisteCredentials(session.user.id) ?? undefined;
-
   // Submit to PISTE
   const result = await submitInvoiceToPpf({
     invoiceNumber: invoice.invoiceNumber,
@@ -153,7 +160,7 @@ export async function POST(
     buyerSiret: buyerSiret ?? '',
     invoiceDate: invoice.invoiceDate.toISOString().split('T')[0],
     totalAmount: Number(invoice.totalAmount),
-    credentials: userCreds ?? undefined,
+    credentials: userCreds,
   });
 
   if (!result.success) {
