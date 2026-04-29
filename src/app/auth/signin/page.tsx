@@ -335,6 +335,12 @@ function SignInContent() {
               </div>
             </div>
 
+            <div className="text-end" style={{ marginTop: '-0.25rem' }}>
+              <Link href="/auth/forgot-password" style={{ fontSize: '0.8rem', color: '#D4921A', textDecoration: 'none' }}>
+                Mot de passe oublié ?
+              </Link>
+            </div>
+
             <button
               type="submit"
               className="btn btn-primary btn-lg"
