@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useInvoices, revalidateInvoices, type Invoice } from '@/app/hooks/useApi';
+import { useInvoices, revalidateInvoices, useQuota, type Invoice } from '@/app/hooks/useApi';
 
 function InvoicesPageInner() {
   const { data: session, status } = useSession();
@@ -27,6 +27,7 @@ function InvoicesPageInner() {
     });
   };
   const { invoices: rawInvoices, isLoading: loading, error: swrError } = useInvoices();
+  const { quota } = useQuota();
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const error = swrError?.message ?? null;
   const [pdfGenerating, setPdfGenerating] = useState<{[key: string]: boolean}>({});
@@ -197,6 +198,21 @@ function InvoicesPageInner() {
 
   return (
     <div className="container-fluid mt-4">
+      {/* Free plan quota banner */}
+      {quota?.plan === 'free' && quota.limit !== null && (
+        <div className={`alert d-flex align-items-center justify-content-between py-2 mb-3 ${quota.remaining === 0 ? 'alert-danger' : quota.remaining! <= 2 ? 'alert-warning' : 'alert-info'}`} style={{ fontSize: '0.875rem' }}>
+          <span>
+            <i className={`bi ${quota.remaining === 0 ? 'bi-x-circle-fill' : 'bi-info-circle-fill'} me-2`}></i>
+            {quota.remaining === 0
+              ? `Limite atteinte — ${quota.used}/${quota.limit} factures ce mois. Passez au Pro pour continuer.`
+              : `Plan gratuit — ${quota.used}/${quota.limit} factures ce mois (${quota.remaining} restante${quota.remaining! > 1 ? 's' : ''})`}
+          </span>
+          {quota.remaining === 0 && (
+            <Link href="/dashboard/settings" className="btn btn-sm btn-danger text-nowrap ms-3">Passer au Pro</Link>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
