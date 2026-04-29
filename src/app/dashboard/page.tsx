@@ -2,12 +2,13 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import PWAInstallPrompt from "@/app/components/PWAInstallPrompt";
 import ReformReadinessWidget from "@/app/components/ReformReadinessWidget";
-import { useRecentInvoices, useAllInvoices, useClients, useCurrentUser } from "@/app/hooks/useApi";
+import { useRecentInvoices, useAllInvoices, useClients, useCurrentUser, useQuota } from "@/app/hooks/useApi";
+import { useEffect, useState } from "react";
 
 
 export default function DashboardPage() {
@@ -19,8 +20,24 @@ export default function DashboardPage() {
   const { invoices: allInvoices, isLoading: allLoading } = useAllInvoices();
   const { clients, isLoading: clientsLoading } = useClients();
   const { userProfile } = useCurrentUser();
+  const { quota } = useQuota();
 
   const loading = recentLoading || allLoading || clientsLoading;
+
+  // Chorus Pro banner: Pro user + has issued B2G invoice + no credentials configured yet
+  const [pisteConfigured, setPisteConfigured] = useState<boolean | null>(null);
+  const hasIssuedB2G = allInvoices.some(
+    (i) => (i as any).transactionType === 'B2G' && (i as any).workflowStatus === 'issued'
+  );
+  useEffect(() => {
+    if (quota?.plan !== 'pro' || !hasIssuedB2G) return;
+    fetch('/api/settings/piste-credentials')
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d) setPisteConfigured(!!(d.pisteClientSecretSet && d.cproTechPasswordSet));
+      })
+      .catch(() => {});
+  }, [quota?.plan, hasIssuedB2G]);
   const error = recentError?.message ?? null;
 
   useEffect(() => {
@@ -131,6 +148,36 @@ export default function DashboardPage() {
       </div>
 
       <ReformReadinessWidget />
+
+      {/* ── Chorus Pro credentials missing ─────────────────── */}
+      {quota?.plan === 'pro' && hasIssuedB2G && pisteConfigured === false && (
+        <div className="alert alert-warning d-flex align-items-center justify-content-between py-2 mb-3" style={{ fontSize: '0.875rem' }}>
+          <span>
+            <i className="bi bi-shield-exclamation me-2"></i>
+            Vous avez des factures B2G émises — configurez vos identifiants Chorus Pro pour les déposer sur le PPF.
+          </span>
+          <Link href="/dashboard/settings#chorus-pro" className="btn btn-sm btn-warning text-nowrap ms-3">
+            Configurer
+          </Link>
+        </div>
+      )}
+
+      {/* ── Free plan quota ────────────────────────────────── */}
+      {quota?.plan === 'free' && quota.limit !== null && (
+        <div className={`alert d-flex align-items-center justify-content-between py-2 mb-3 ${quota.remaining === 0 ? 'alert-danger' : quota.remaining! <= 2 ? 'alert-warning' : 'alert-info'}`} style={{ fontSize: '0.875rem' }}>
+          <span>
+            <i className={`bi ${quota.remaining === 0 ? 'bi-x-circle-fill' : 'bi-info-circle-fill'} me-2`}></i>
+            {quota.remaining === 0
+              ? `Limite mensuelle atteinte — ${quota.used}/${quota.limit} factures. Passez au Pro pour continuer.`
+              : `Plan gratuit — ${quota.used}/${quota.limit} factures ce mois (${quota.remaining} restante${quota.remaining! > 1 ? 's' : ''})`}
+          </span>
+          {quota.remaining === 0 && (
+            <Link href="/dashboard/settings" className="btn btn-sm btn-danger text-nowrap ms-3">
+              Passer au Pro
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* ── Compliance Readiness ───────────────────────────── */}
       {userProfile && (() => {

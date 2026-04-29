@@ -37,6 +37,26 @@ export async function sendAccountDeletionConfirmation(email: string) {
   return resend.emails.send({ from: FROM, to: email, subject: 'Votre compte InvoiceOps a été supprimé', html });
 }
 
+export async function sendPasswordResetEmail(email: string, token: string) {
+  const url = `${APP_URL}/auth/reset-password?token=${encodeURIComponent(token)}`;
+  const html = `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#111">
+      <h2 style="color:#2563eb">Réinitialisation de votre mot de passe</h2>
+      <p>Vous avez demandé la réinitialisation de votre mot de passe InvoiceOps. Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.</p>
+      <p style="margin:24px 0">
+        <a href="${url}" style="background:#2563eb;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">
+          Réinitialiser mon mot de passe
+        </a>
+      </p>
+      <p style="color:#6b7280;font-size:13px">Ce lien est valable pendant <strong>1 heure</strong>. Si vous n'avez pas demandé cette réinitialisation, ignorez cet email — votre mot de passe reste inchangé.</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+      <p style="color:#6b7280;font-size:12px">InvoiceOps — Facturation électronique conforme EN 16931</p>
+    </div>
+  `;
+  if (!resend) { console.warn('RESEND_API_KEY not set — password reset email skipped'); return; }
+  return resend.emails.send({ from: FROM, to: email, subject: 'Réinitialisation de votre mot de passe — InvoiceOps', html });
+}
+
 export interface SendInvoiceEmailParams {
   to: string;
   clientName: string;
