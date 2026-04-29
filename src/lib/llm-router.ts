@@ -46,7 +46,7 @@ function isFallbackWorthy(err: unknown): boolean {
 }
 
 function getProvider(envKey: string, defaultProvider: LLMProvider): LLMProvider {
-  const val = process.env[envKey]?.toLowerCase();
+  const val = process.env[envKey]?.trim().toLowerCase();
   return val === 'ollama' ? 'ollama' : val === 'groq' ? 'groq' : defaultProvider;
 }
 
@@ -64,24 +64,24 @@ export function getFallbackProvider(): LLMProvider {
 function buildClient(provider: LLMProvider): OpenAI {
   if (provider === 'ollama') {
     return new OpenAI({
-      apiKey: process.env.OLLAMA_API_KEY ?? 'ollama',
-      baseURL: process.env.OLLAMA_BASE_URL ?? 'https://ollama.com/v1',
+      apiKey: process.env.OLLAMA_API_KEY?.trim() ?? 'ollama',
+      baseURL: process.env.OLLAMA_BASE_URL?.trim() ?? 'https://ollama.com/v1',
     });
   }
   return new OpenAI({
-    apiKey: process.env.GROQ_API_KEY,
+    apiKey: process.env.GROQ_API_KEY?.trim(),
     baseURL: 'https://api.groq.com/openai/v1',
   });
 }
 
 const VISION_MODELS: Record<LLMProvider, string> = {
-  groq: process.env.GROQ_VISION_MODEL ?? 'meta-llama/llama-4-scout-17b-16e-instruct',
-  ollama: process.env.OLLAMA_VISION_MODEL ?? 'gemma3:27b',
+  groq: process.env.GROQ_VISION_MODEL?.trim() ?? 'meta-llama/llama-4-scout-17b-16e-instruct',
+  ollama: process.env.OLLAMA_VISION_MODEL?.trim() ?? 'gemma3:27b',
 };
 
 const TEXT_MODELS: Record<LLMProvider, string> = {
-  groq: process.env.GROQ_MODEL ?? 'mistral-saba-24b',
-  ollama: process.env.OLLAMA_MODEL ?? 'ministral-3:8b',
+  groq: process.env.GROQ_MODEL?.trim() ?? 'mistral-saba-24b',
+  ollama: process.env.OLLAMA_MODEL?.trim() ?? 'ministral-3:8b',
 };
 
 type ChatMessages = OpenAI.Chat.ChatCompletionMessageParam[];
@@ -227,8 +227,8 @@ export async function extractFromText(
  */
 export function isLLMConfigured(): boolean {
   const primary = getPrimaryProvider();
-  if (primary === 'groq') return !!process.env.GROQ_API_KEY;
-  return !!process.env.OLLAMA_API_KEY;
+  if (primary === 'groq') return !!process.env.GROQ_API_KEY?.trim();
+  return !!process.env.OLLAMA_API_KEY?.trim();
 }
 
 /**
