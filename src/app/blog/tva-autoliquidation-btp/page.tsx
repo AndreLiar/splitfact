@@ -46,11 +46,13 @@ export default function Page() {
 
       <blockquote
         style={{
-          borderLeft: '3px solid #D4921A',
-          padding: '0.5rem 1rem',
-          background: '#fafafa',
+          borderLeft: '3px solid var(--gold)',
+          padding: '0.75rem 1rem',
+          background: 'var(--gold-surface)',
+          color: 'var(--text-primary)',
           fontStyle: 'italic',
           margin: '1.5rem 0',
+          borderRadius: '0 var(--radius-md) var(--radius-md) 0',
         }}
       >
         « Autoliquidation — TVA due par le preneur — Article 283-2 nonies du CGI »
@@ -97,7 +99,7 @@ export default function Page() {
 
       <div className="table-responsive my-4">
         <table className="table table-bordered" style={{ fontSize: '0.95rem' }}>
-          <thead style={{ background: '#fef3e2' }}>
+          <thead style={{ background: 'var(--gold-surface)' }}>
             <tr>
               <th style={{ width: '60%' }}>Désignation</th>
               <th>Quantité</th>
@@ -112,7 +114,7 @@ export default function Page() {
               <td>4 000,00 €</td>
               <td>4 000,00 €</td>
             </tr>
-            <tr style={{ background: '#fafafa' }}>
+            <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
               <td colSpan={3}>
                 <strong>Total HT</strong>
               </td>
@@ -120,7 +122,7 @@ export default function Page() {
                 <strong>4 000,00 €</strong>
               </td>
             </tr>
-            <tr style={{ background: '#fafafa' }}>
+            <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
               <td colSpan={3}>TVA 20% (autoliquidation)</td>
               <td>0,00 €</td>
             </tr>
@@ -142,11 +144,13 @@ export default function Page() {
 
       <blockquote
         style={{
-          borderLeft: '3px solid #D4921A',
-          padding: '0.5rem 1rem',
-          background: '#fafafa',
+          borderLeft: '3px solid var(--gold)',
+          padding: '0.75rem 1rem',
+          background: 'var(--gold-surface)',
+          color: 'var(--text-primary)',
           fontStyle: 'italic',
           margin: '1.5rem 0',
+          borderRadius: '0 var(--radius-md) var(--radius-md) 0',
         }}
       >
         « Autoliquidation — TVA due par le preneur — Article 283-2 nonies du CGI »
@@ -171,7 +175,7 @@ export default function Page() {
 
       <div className="table-responsive my-4">
         <table className="table table-bordered" style={{ fontSize: '0.9rem' }}>
-          <thead style={{ background: '#fef3e2' }}>
+          <thead style={{ background: 'var(--gold-surface)' }}>
             <tr>
               <th>Code EN 16931</th>
               <th>Signification</th>
@@ -200,7 +204,7 @@ export default function Page() {
               <td>Exempt</td>
               <td>Opérations exonérées (assurance, santé)</td>
             </tr>
-            <tr style={{ background: '#fff3cd' }}>
+            <tr style={{ background: 'var(--gold-surface)' }}>
               <td>
                 <strong>
                   <code>AE</code>
