@@ -80,7 +80,10 @@ export default function BlogArticleLayout({ post, children }: Props) {
           </div>
         </header>
 
-        <div className="blog-prose" style={{ fontSize: '1.0625rem', lineHeight: 1.75, color: '#1a1a1a' }}>
+        <div
+          className="blog-prose"
+          style={{ fontSize: '1.0625rem', lineHeight: 1.75, color: 'var(--text-secondary)' }}
+        >
           {children}
         </div>
 
