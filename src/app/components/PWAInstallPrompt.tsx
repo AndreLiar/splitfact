@@ -51,7 +51,7 @@ export default function PWAInstallPrompt({
         <div>
           <div className="fw-semibold mb-1">
             <i className="bi bi-phone me-2"></i>
-            Installer Splitfact
+            Installer InvoiceOps
           </div>
           <div className="small opacity-90">
             Accès rapide depuis votre écran d'accueil
