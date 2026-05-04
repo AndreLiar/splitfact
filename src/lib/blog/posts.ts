@@ -16,6 +16,16 @@ export interface BlogPost {
  */
 export const posts: BlogPost[] = [
   {
+    slug: 'retenue-de-garantie-btp-facturx',
+    title: 'Retenue de garantie 5% en BTP : comment l\'encoder dans Factur-X sans rejet Chorus Pro',
+    description:
+      "La retenue de garantie 5% sur les marchés BTP doit apparaître sur la facture ET dans le XML Factur-X. Guide pratique : règles légales, exemple chiffré, codes EN 16931, libération de la RG et erreurs Chorus Pro à éviter.",
+    publishedAt: '2026-05-04',
+    readingMinutes: 8,
+    tags: ['BTP', 'retenue de garantie', 'Factur-X', 'Chorus Pro', 'EN 16931'],
+    author: { name: 'InvoiceOps', url: 'https://invoiceops.fr' },
+  },
+  {
     slug: 'tva-autoliquidation-btp',
     title: 'TVA autoliquidation BTP : guide complet 2026 (avec exemple Factur-X)',
     description:
