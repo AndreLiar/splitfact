@@ -103,11 +103,15 @@ const faqJsonLd = {
 
 const productJsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'Product',
+  '@type': 'SoftwareApplication',
   name: 'InvoiceOps Pro',
   description:
     "Facturation électronique conforme Chorus Pro / Factur-X pour les sous-traitants BTP. Génération PDF/A-3 + XML, dépôt direct Chorus Pro, e-reporting DGFiP.",
-  brand: { '@type': 'Brand', name: 'InvoiceOps' },
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'InvoicingApplication',
+  operatingSystem: 'Web',
+  url: 'https://invoiceops.fr/pricing',
+  publisher: { '@type': 'Organization', name: 'InvoiceOps', url: 'https://invoiceops.fr' },
   offers: {
     '@type': 'Offer',
     price: '49.00',
