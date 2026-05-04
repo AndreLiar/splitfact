@@ -50,3 +50,11 @@ next-env.d.ts
 
 # Local credentials notes (never commit)
 *.local.md
+
+# Tool caches (Claude Code, Playwright MCP)
+.claude/
+.playwright-mcp/
+
+# next-pwa / Workbox source maps (regenerated on every build)
+public/sw.js.map
+public/workbox-*.js.map
