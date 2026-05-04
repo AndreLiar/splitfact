@@ -7,7 +7,7 @@ const features = [
   {
     icon: "bi-diagram-3",
     title: "Orchestration du workflow de facturation",
-    description: "Splitfact relie devis signé, jalon validé, récurrence mensuelle ou timesheet approuvée à un flux de facturation prêt à exécuter.",
+    description: "InvoiceOps relie devis signé, jalon validé, récurrence mensuelle ou timesheet approuvée à un flux de facturation prêt à exécuter.",
     details: [
       "Déclencheurs de billing centralisés",
       "Pipeline de préparation facture",
@@ -43,7 +43,7 @@ const features = [
   {
     icon: "bi-exclamation-octagon",
     title: "Gestion des exceptions",
-    description: "Au lieu de bloquer tout le flux, Splitfact isole les cas ambigus pour que l'équipe traite seulement ce qui demande un jugement humain.",
+    description: "Au lieu de bloquer tout le flux, InvoiceOps isole les cas ambigus pour que l'équipe traite seulement ce qui demande un jugement humain.",
     details: [
       "Inbox d'exceptions dédiée",
       "Motifs de blocage visibles",
@@ -123,7 +123,7 @@ export default function FonctionnalitesPage() {
               <span className="text-primary"> facturation opérationnelle</span>
             </h1>
             <p className="lead text-mediumGray mb-xl" style={{ maxWidth: "760px", margin: "0 auto" }}>
-              Splitfact ne se positionne pas comme un simple générateur de facture. Le produit orchestre le workflow
+              InvoiceOps ne se positionne pas comme un simple générateur de facture. Le produit orchestre le workflow
               entre travail validé, conformité, données client et émission.
             </p>
           </motion.div>
@@ -205,7 +205,7 @@ export default function FonctionnalitesPage() {
           >
             <h2 className="display-5 fw-bold text-white mb-lg">Voir le produit appliqué à votre workflow réel</h2>
             <p className="lead text-white opacity-90 mx-auto mb-xl" style={{ maxWidth: "760px" }}>
-              Si vous gérez des retainers, des jalons ou du temps passé, Splitfact peut montrer comment isoler les
+              Si vous gérez des retainers, des jalons ou du temps passé, InvoiceOps peut montrer comment isoler les
               exceptions et préparer la facture avant qu'elle ne ralentisse l'encaissement.
             </p>
             <div className="d-flex flex-column flex-sm-row justify-content-center gap-3">
