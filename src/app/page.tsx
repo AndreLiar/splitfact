@@ -1465,7 +1465,7 @@ export default function LandingPage() {
                 links: [
                   { label: "Comment ça marche", href: "#how-it-works" },
                   { label: "Fonctionnalités", href: "#benefits" },
-                  { label: "Tarifs", href: "#pricing" },
+                  { label: "Tarifs", href: "/pricing" },
                   { label: "Programme pilote", href: "#design-partner-form" },
                 ],
               },
