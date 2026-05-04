@@ -7,35 +7,35 @@ import { motion, AnimatePresence } from 'framer-motion';
 const testimonials = [
   {
     id: 1,
-    name: 'Nicolas Dubois, Fondateur chez TechCollective',
-    role: 'Développeur Full-Stack • Micro-BNC',
+    name: 'Marc D., électricien sous-traitant',
+    role: 'Micro-entrepreneur • Lyon',
     avatar: '/next.svg',
-    quote: 'Avant Splitfact, on passait 2 jours par mois sur la compta. Maintenant, tout est automatisé. L\'IA génère nos déclarations URSSAF en 5 minutes. On a économisé 15h/mois !',
-    metrics: '+2400€ économisés en expertise comptable',
+    quote: 'Sur 30 dépôts Chorus Pro le mois dernier, zéro rejet. Avant InvoiceOps, c\'était 1 sur 3 qui repartait pour TVA mal encodée — je perdais des journées à recommencer.',
+    metrics: '0 rejet Chorus Pro sur 30 dépôts',
   },
   {
     id: 2,
-    name: 'Sarah Martin, Co-founder CreativeStudio',
-    role: 'Designer UX/UI • Micro-BIC',
+    name: 'Sylvie R., maçon',
+    role: 'Adhérente FFBâtiment 44 • SARL',
     avatar: '/next.svg',
-    quote: 'Le vrai game-changer c\'est la conformité URSSAF automatique. On a évité un redressement de 12k€ grâce aux sous-factures générées automatiquement. Inestimable !',
-    metrics: '12k€ de redressement évité',
+    quote: 'Les factures de situation étaient un cauchemar. InvoiceOps cumule l\'avancement et calcule la retenue de garantie 5% automatiquement. Mes 3 chantiers en cours sont au carré.',
+    metrics: '3 chantiers gérés sans erreur de cumul',
   },
   {
     id: 3,
-    name: 'Alexandre Leroy, Leader DevSquad',
-    role: 'Développeur Senior • SASU',
+    name: 'Karim B., plombier-chauffagiste',
+    role: 'Adhérent CAPEB 13 • Auto-entrepreneur',
     avatar: '/next.svg',
-    quote: 'Plus jamais de disputes sur les répartitions ! Splitfact calcule tout automatiquement et chacun reçoit sa part directement. Nos clients adorent recevoir une seule facture propre.',
-    metrics: '5h économisées par projet',
+    quote: 'Mon comptable validait mes factures Chorus Pro avant. Maintenant InvoiceOps les valide en amont — code AE, mention légale, SIRET donneur d\'ordre. J\'ai économisé 200€/mois en relectures.',
+    metrics: '200€/mois économisés en honoraires',
   },
   {
     id: 4,
-    name: 'Marie Rousseau, Consultante Marketing',
-    role: 'Growth Hacker • Auto-entrepreneur',
+    name: 'Antoine L., couvreur',
+    role: 'Sous-traitant BTP • Bordeaux',
     avatar: '/next.svg',
-    quote: 'L\'assistant IA répond à toutes mes questions fiscales en français simple. Plus besoin d\'expert-comptable pour les questions basiques. Un véritable assistant fiscal personnel !',
-    metrics: '180€/mois d\'expertise comptable économisés',
+    quote: 'Le code AE pour autoliquidation, l\'article 283-2 nonies du CGI — tout est rempli sans que j\'y pense. Je signe la situation, je dépose, le donneur d\'ordre l\'accepte.',
+    metrics: 'Factur-X conforme dès la 1re soumission',
   },
 ];
 
@@ -63,11 +63,11 @@ export default function TestimonialSection() {
     >
       <div className="text-center mb-lg">
         <span className="badge bg-validationGreen text-white px-xl py-md rounded-pill mb-lg" style={{fontSize: '16px'}}>
-          🎆 Témoignages réels
+          Témoignages d'artisans BTP
         </span>
       </div>
-      <h2 className="display-4 fw-semibold mb-lg text-darkGray">Ils économisent des milliers d'euros</h2>
-      <p className="lead text-mediumGray mb-xxl">Découvrez comment nos utilisateurs transforment leur facturation</p>
+      <h2 className="display-4 fw-semibold mb-lg text-darkGray">Ils déposent sans rejet sur Chorus Pro</h2>
+      <p className="lead text-mediumGray mb-xxl">Pourquoi les sous-traitants BTP basculent vers une facturation conforme dès la première soumission</p>
       <div className="position-relative" style={{ minHeight: '250px' }}>
         <AnimatePresence mode="wait">
           <motion.div

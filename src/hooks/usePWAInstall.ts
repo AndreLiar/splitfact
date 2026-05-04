@@ -41,7 +41,7 @@ export function usePWAInstall() {
       setIsInstalled(true);
       setDeferredPrompt(null);
       setIsInstallable(false);
-      console.log('Splitfact PWA a été installée avec succès!');
+      console.log('InvoiceOps PWA a été installée avec succès!');
     };
 
     // Listen for the beforeinstallprompt event

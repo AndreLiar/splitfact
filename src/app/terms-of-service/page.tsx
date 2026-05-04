@@ -144,14 +144,14 @@ export default function TermsOfServicePage() {
                     <h3 className="h6">Support Technique</h3>
                     <p>
                       <i className="bi bi-envelope me-2"></i>
-                      <a href="mailto:support@splitfact.com">support@splitfact.com</a>
+                      <a href="mailto:support@invoiceops.fr">support@invoiceops.fr</a>
                     </p>
                   </div>
                   <div className="col-md-6">
                     <h3 className="h6">Questions Juridiques</h3>
                     <p>
                       <i className="bi bi-envelope me-2"></i>
-                      <a href="mailto:legal@splitfact.com">legal@splitfact.com</a>
+                      <a href="mailto:legal@invoiceops.fr">legal@invoiceops.fr</a>
                     </p>
                   </div>
                 </div>

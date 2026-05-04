@@ -99,7 +99,7 @@ export default function PrivacyPolicyPage() {
                 <div className="alert alert-info mt-3">
                   <i className="bi bi-info-circle me-2"></i>
                   <strong>Exercer vos droits :</strong> Contactez-nous a l&apos;adresse{' '}
-                  <a href="mailto:privacy@splitfact.com" className="alert-link">privacy@splitfact.com</a>
+                  <a href="mailto:privacy@invoiceops.fr" className="alert-link">privacy@invoiceops.fr</a>
                 </div>
               </div>
 
@@ -109,11 +109,11 @@ export default function PrivacyPolicyPage() {
                 
                 <div className="row">
                   <div className="col-md-6">
-                    <p><strong>Email :</strong> privacy@splitfact.com</p>
-                    <p><strong>Support :</strong> support@splitfact.com</p>
+                    <p><strong>Email :</strong> privacy@invoiceops.fr</p>
+                    <p><strong>Support :</strong> support@invoiceops.fr</p>
                   </div>
                   <div className="col-md-6">
-                    <p><strong>DPO :</strong> dpo@splitfact.com</p>
+                    <p><strong>DPO :</strong> dpo@invoiceops.fr</p>
                     <p><strong>Adresse :</strong> —</p>
                   </div>
                 </div>
