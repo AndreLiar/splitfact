@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       await resend.emails.send({
         from: emailFrom,
         to: [emailFrom],
-        subject: `Nouvelle demande démo Splitfact - ${submission.companyName}`,
+        subject: `Nouvelle demande démo InvoiceOps - ${submission.companyName}`,
         replyTo: submission.workEmail,
         html: `
           <h2>Nouvelle demande de démo / programme pilote</h2>
