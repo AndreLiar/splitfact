@@ -105,6 +105,7 @@ const productJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: 'InvoiceOps Pro',
+  image: 'https://invoiceops.fr/icons/icon-512x512.png',
   description:
     "Facturation électronique conforme Chorus Pro / Factur-X pour les sous-traitants BTP. Génération PDF/A-3 + XML, dépôt direct Chorus Pro, e-reporting DGFiP.",
   applicationCategory: 'BusinessApplication',
@@ -124,6 +125,28 @@ const productJsonLd = {
     },
     availability: 'https://schema.org/InStock',
     url: 'https://invoiceops.fr/pricing',
+    shippingDetails: {
+      '@type': 'OfferShippingDetails',
+      shippingRate: {
+        '@type': 'MonetaryAmount',
+        value: '0',
+        currency: 'EUR',
+      },
+      shippingDestination: {
+        '@type': 'DefinedRegion',
+        addressCountry: 'FR',
+      },
+      deliveryTime: {
+        '@type': 'ShippingDeliveryTime',
+        handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 0, unitCode: 'DAY' },
+        transitTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 0, unitCode: 'DAY' },
+      },
+    },
+    hasMerchantReturnPolicy: {
+      '@type': 'MerchantReturnPolicy',
+      applicableCountry: 'FR',
+      returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
+    },
   },
 };
 

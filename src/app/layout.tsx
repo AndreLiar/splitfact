@@ -132,10 +132,35 @@ const organizationSchema = {
   },
 };
 
+const digitalShippingDetails = {
+  "@type": "OfferShippingDetails",
+  shippingRate: {
+    "@type": "MonetaryAmount",
+    value: "0",
+    currency: "EUR",
+  },
+  shippingDestination: {
+    "@type": "DefinedRegion",
+    addressCountry: "FR",
+  },
+  deliveryTime: {
+    "@type": "ShippingDeliveryTime",
+    handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 0, unitCode: "DAY" },
+    transitTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 0, unitCode: "DAY" },
+  },
+};
+
+const noReturnsPolicy = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "FR",
+  returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+};
+
 const softwareSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: SITE_NAME,
+  image: `${SITE_URL}/icons/icon-512x512.png`,
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   inLanguage: "fr-FR",
@@ -147,14 +172,23 @@ const softwareSchema = {
       name: "Plan Gratuit",
       price: "0",
       priceCurrency: "EUR",
+      availability: "https://schema.org/InStock",
+      url: `${SITE_URL}/pricing`,
       description: "Jusqu'à 10 factures par mois, clients illimités, lien de paiement Stripe.",
+      shippingDetails: digitalShippingDetails,
+      hasMerchantReturnPolicy: noReturnsPolicy,
     },
     {
       "@type": "Offer",
       name: "Plan Pro",
+      price: "49.00",
       priceCurrency: "EUR",
+      availability: "https://schema.org/InStock",
+      url: `${SITE_URL}/pricing`,
       description:
         "Factures illimitées, Factur-X, dépôt Chorus Pro, e-reporting B2C, extraction IA, validation SIRET INSEE.",
+      shippingDetails: digitalShippingDetails,
+      hasMerchantReturnPolicy: noReturnsPolicy,
     },
   ],
   publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
