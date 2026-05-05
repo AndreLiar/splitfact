@@ -66,9 +66,9 @@ const timeline = [
 ];
 
 const stats = [
-  { value: "300 000+", label: "artisans BTP sous-traitants en France" },
-  { value: "1 rejet / 3", label: "dépôts Chorus Pro refusés, faute d'encodage" },
-  { value: "Sep 2026", label: "réception e-invoicing obligatoire" },
+  { value: "5–15 jours", label: "trésorerie bloquée à chaque facture Chorus Pro rejetée" },
+  { value: "80–200 €/h", label: "facturé par un comptable pour corriger un XML rejeté" },
+  { value: "Sep 2026", label: "Factur-X obligatoire sur toute facture B2B" },
 ];
 
 /* ── Helpers ──────────────────────────────────────────────── */
@@ -240,10 +240,22 @@ export default function LandingPage() {
                 fontSize: "1.0625rem",
                 lineHeight: 1.65,
                 color: "#8a8f98",
-                marginBottom: "2rem",
-                maxWidth: "480px",
+                marginBottom: "1.25rem",
+                maxWidth: "520px",
               }}>
-                InvoiceOps génère vos factures Factur-X conformes — autoliquidation, situations, retenue de garantie — et les dépose sur Chorus Pro en un clic. Zéro rejet, trésorerie débloquée.
+                Les artisans BTP perdent <strong style={{ color: "#d0d6e0" }}>5 à 15 jours de trésorerie</strong> à chaque facture Chorus Pro rejetée et paient un comptable <strong style={{ color: "#d0d6e0" }}>80 à 200 €/h</strong> pour corriger des erreurs XML qu'ils ne maîtrisent pas. À partir de <strong style={{ color: "#d0d6e0" }}>septembre 2026</strong>, le Factur-X devient obligatoire pour toute facture B2B.
+              </p>
+
+              <p style={{
+                fontSize: "1.0625rem",
+                lineHeight: 1.6,
+                color: "#f0f2f5",
+                marginBottom: "2rem",
+                maxWidth: "520px",
+                paddingLeft: "0.875rem",
+                borderLeft: "2px solid #D4921A",
+              }}>
+                InvoiceOps est le seul outil Factur-X qui vous <strong>empêche de déposer</strong> une facture Chorus Pro avec une erreur d'autoliquidation TVA, de retenue de garantie ou de facture de situation — 5 jours de trésorerie sauvés par rejet évité.
               </p>
 
               {/* CTAs */}
